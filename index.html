@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>HUF System Hub</title>
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
+    
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
+
+    <script src="devices.js"></script>
+    <script src="config.js"></script>
+    <style>
+        :root { 
+            --huf-red: #b80c0cf5; 
+            --huf-dark: #999; /* CAMBIO: Gris más claro para los encabezados */
+            --today-blue: #007bff; 
+            --success-green: #28a745; 
+            --warning-orange: #ffc107; 
+        }
+        body { font-family: 'Segoe UI', sans-serif; background: #f4f4f4; margin: 0; padding: 10px; overflow-x: hidden; }
+        .card { max-width: 900px; margin: auto; background: #fff; padding: 12px; border-radius: 12px; border-top: 8px solid var(--huf-red); box-shadow: 0 4px 15px rgba(0,0,0,0.1); position: relative; min-height: 550px; transition: max-width 0.4s ease; }
+        .card.wide-view { max-width: 98%; }
+        .logo-container { text-align: center; margin-bottom: 10px; }
+        .logo-container img { max-width: 200px; display: block; margin: 0 auto; }
+        .logo-subtitle { margin: 0; padding: 0; font-size: 14px; font-weight: bold; color: #555; line-height: 1.2; }
+        h2 { color: var(--huf-red); text-align: center; text-transform: uppercase; margin: 5px 0 2px 0; font-size: 1.4rem; }
+        .view-layer { display: none; }
+        .active-view { display: block; }
+        .login-box { width: 350px; margin: 50px auto; text-align: center; }
+        .input-login { width: 100%; padding: 10px; margin-bottom: 10px; text-align: center; border: 1px solid #bbb; border-radius: 6px; font-size: 18px; box-sizing: border-box; }
+        #loginError { color: var(--huf-red); font-weight: bold; font-size: 14px; margin-bottom: 10px; display: none; }
+        .menu-container { display: flex; flex-direction: column; gap: 20px; padding: 40px 20px; max-width: 500px; margin: auto; }
+        .btn-menu { background: #fff; border: 3px solid var(--huf-red); color: #333; padding: 25px; border-radius: 15px; font-size: 22px; font-weight: bold; cursor: pointer; transition: 0.3s; text-transform: uppercase; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .btn-menu:hover { background: var(--huf-red); color: white; transform: translateY(-3px); }
+        .flex-layout { display: flex; gap: 1px; flex-wrap: wrap; }
+        .column { flex: 1; min-width: 450px; }
+        label.main-label { display: block; font-weight: bold; margin-bottom: 2px; font-size: 22px; text-align: left; }
+        select, textarea, input[type="text"], input[type="number"], input[type="date"] { width: 100%; padding: 6px; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; box-sizing: border-box; background: #fff; }
+        textarea { height: 40px; resize: none; }
+        .stage-container { display: flex; gap: 8px; }
+        .btn-stage { flex: 1; padding: 6px; border: 1px solid #ccc; border-radius: 6px; background: #fff; cursor: pointer; font-weight: bold; color: #555; }
+        .btn-stage.active { background: var(--huf-red); color: white; border-color: var(--huf-red); }
+        .tasks-scroll { border: 10px solid #eee; background: #fafafa; border-radius: 6px; padding: 8px; column-count: 3; column-gap: 15px; display: block; min-height: 100px; }
+        .task-row { display: flex; align-items: center; gap: 6px; font-size: 12px; border-bottom: 1px solid #eee; padding: 4px 5px; break-inside: avoid; border-radius: 4px; }
+        .task-row.checked-task { background-color: #d4edda; color: #155724; }
+        .signature-box { border: 2px dashed #bbb; border-radius: 6px; background: #fff; height: 100px; }
+        #canvas { width: 100%; height: 100%; touch-action: none; }
+        
+        /* GANTT STYLES */
+        .tooling-input-bar { display: flex; gap: 8px; margin-bottom: 35px; background: #f9f9f9; padding: 10px; border-radius: 8px; border: 1px solid #ddd; align-items: flex-end; flex-wrap: wrap; position: relative; }
+        .tooling-input-bar div { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 110px; }
+        .tooling-input-bar label { font-size: 10px; font-weight: bold; color: #666; }
+        
+        .device-him-group { flex: 1.3 !important; display: flex !important; flex-direction: row !important; gap: 8px; position: relative; }
+        .device-him-group div { flex: 1; }
+        #availabilityInfo { position: absolute; bottom: -28px; left: 0; width: 100%; text-align: center; font-size: 16px; font-weight: bold; color: var(--huf-red); height: 18px; pointer-events: none; }
+
+        .gantt-wrapper { overflow: auto; background: white; border: 1px solid #ddd; border-radius: 8px; max-height: 600px; position: relative; scroll-behavior: smooth; }
+        .gantt-grid { display: grid; grid-template-columns: 400px 1fr; min-width: fit-content; }
+        .gantt-header-title { background: #555; color: white; padding: 10px; font-weight: bold; position: sticky; left: 0; top: 0; z-index: 110; border-right: 2px solid #ddd; display: flex; align-items: center; }
+        
+        .gantt-header-time { display: flex; flex-direction: column; position: sticky; top: 0; z-index: 100; }
+        .gantt-upper-header { display: flex; height: 30px; background: #bbb; color: #333; font-size: 11px; font-weight: bold; align-items: center; border-bottom: 1px solid #aaa; }
+        .gantt-upper-cell { flex-shrink: 0; text-align: center; border-right: 1px solid #aaa; overflow: hidden; white-space: nowrap; }
+        
+        .gantt-header-days { display: flex; background: var(--huf-dark); color: white; height: 70px; }
+        .gantt-day-cell { flex: 1 0 70px; min-width: 70px; border-right: 1px solid #aaa; display: flex; align-items: center; justify-content: center; position: relative; }
+        .gantt-day-cell.is-today { background-color: var(--today-blue) !important; color: white; }
+        .gantt-day-cell.is-shutdown { background-color: #ffcccc !important; color: #cc0000 !important; border-right: 1px solid #ff9999; }
+        
+        .vertical-text { writing-mode: vertical-rl; transform: rotate(180deg); white-space: nowrap; font-size: 11px; font-weight: bold; }
+        .gantt-row { display: contents; }
+        .gantt-task-name { padding: 12px; border-bottom: 1px solid #eee; font-size: 13px; font-weight: bold; background: #ffffff !important; border-right: 2px solid #ddd; display: flex; justify-content: space-between; align-items: center; cursor: pointer; position: sticky; left: 0; z-index: 90; box-shadow: 2px 0 5px rgba(0,0,0,0.1); }
+        .gantt-bar-container { position: relative; height: auto; min-height: 65px; border-bottom: 1px solid #eee; background: #fff; z-index: 10; display: flex; }
+        .gantt-bg-cell { flex: 1; min-width: 70px; border-right: 1px solid #eee; height: 100%; pointer-events: none; }
+        .gantt-bg-cell.is-shutdown-bg { background-color: rgba(227, 6, 19, 0.05); }
+        
+        .gantt-bar { position: absolute; border-radius: 6px; color: #333; font-size: 10px; display: flex; align-items: center; justify-content: flex-start; overflow: hidden; font-weight: bold; box-shadow: 1px 1px 3px rgba(0,0,0,0.1); transition: opacity 0.2s; user-select: none; border: 1px solid rgba(0,0,0,0.05); z-index: 20; cursor: pointer; }
+        .gantt-bar:hover { opacity: 0.9; }
+
+        .floating-label { position: absolute; left: 0; padding: 0 8px; white-space: nowrap; display: inline-block; pointer-events: none; transition: transform 0.05s linear; }
+
+        .action-btns { display: flex; gap: 5px; }
+        .btn-icon { background: none; border: none; cursor: pointer; font-size: 14px; padding: 2px; border-radius: 4px; transition: background 0.2s; }
+        .btn-icon:hover { background: #eee; }
+        .btn-icon.add { color: var(--success-green); font-size: 16px; }
+
+        .him-matrix { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 10px; font-weight: normal; background: #fdfdfd; }
+        .him-matrix th, .him-matrix td { border: 1px solid #eee; padding: 4px; text-align: left; }
+        .him-matrix th { background: #f4f4f4; color: #666; font-size: 9px; text-transform: uppercase; }
+        .him-matrix td { color: #333; }
+
+        #customContextMenu { position: fixed; display: none; background: #fff; border: 1px solid #ccc; box-shadow: 2px 2px 10px rgba(0,0,0,0.2); z-index: 10000; border-radius: 6px; overflow: hidden; min-width: 120px; }
+        .menu-item { padding: 10px 15px; cursor: pointer; font-size: 13px; font-weight: bold; color: #333; transition: 0.2s; }
+        .menu-item:hover { background: var(--huf-red); color: white; }
+        .menu-item.delete:hover { background: #cc0000; }
+
+        .stats-view-container { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; max-height: 75vh; overflow-y: auto; padding: 20px; }
+        .device-stat-row { background: #fff; border: 1px solid #ddd; border-radius: 10px; padding: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .device-stat-title { font-size: 14px; font-weight: bold; margin-bottom: 25px; color: #222; border-left: 4px solid var(--huf-red); padding-left: 8px; }
+        .chart-frame { display: flex; height: 150px; position: relative; margin-left: 45px; margin-bottom: 35px; border-left: 1.5px solid #999; border-bottom: 1.5px solid #999; }
+        .y-axis-labels { position: absolute; left: -40px; height: 100%; display: flex; flex-direction: column; justify-content: space-between; font-size: 9px; color: #666; text-align: right; width: 35px; }
+        .y-axis-title { position: absolute; left: -55px; top: 50%; transform: rotate(-90deg) translateY(-50%); font-size: 10px; font-weight: bold; color: #444; white-space: nowrap; }
+        .x-axis-title { position: absolute; bottom: -32px; left: 50%; transform: translateX(-50%); font-size: 10px; font-weight: bold; color: #444; }
+        .grid-lines { position: absolute; width: 100%; height: 100%; pointer-events: none; }
+        .grid-line { position: absolute; width: 100%; border-top: 1px dashed #eee; left: 0; }
+        .stats-week-wrapper { display: flex; flex: 1; align-items: flex-end; gap: 1px; height: 100%; padding: 0 2px; position: relative; z-index: 5; }
+        .stats-week-col { flex: 1; min-width: 4px; display: flex; flex-direction: column; justify-content: flex-end; height: 100%; position: relative; }
+        .bar-fill { width: 100%; border-radius: 1px 1px 0 0; transition: height 0.3s; position: relative; cursor: pointer; opacity: 0.8; }
+        .bar-fill:hover { opacity: 1; filter: brightness(0.8); z-index: 10; }
+        .bar-fill:hover::after { content: attr(data-label); position: absolute; top: -25px; left: 50%; transform: translateX(-50%); background: #222; color: white; font-size: 9px; padding: 2px 5px; border-radius: 3px; z-index: 100; white-space: nowrap; pointer-events: none; }
+        .week-label-stat { font-size: 7px; color: #999; margin-top: 5px; text-align: center; position: absolute; bottom: -14px; width: 100%; }
+        .trend-line-svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 6; }
+        .trend-path { fill: none; stroke: var(--huf-red); stroke-width: 1.5; stroke-linejoin: round; stroke-linecap: round; }
+
+        .shutdown-controls { background: #f9f9f9; padding: 20px; border-radius: 8px; border: 1px solid #ddd; margin-bottom: 20px; display: flex; gap: 15px; align-items: flex-end; }
+        .shutdown-impact-table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 25px; }
+        .shutdown-impact-table th { background: #555; color: white; padding: 12px; text-align: left; font-size: 14px; }
+        .shutdown-impact-table td { padding: 12px; border-bottom: 1px solid #eee; font-size: 13px; }
+        .impact-high { color: var(--huf-red); font-weight: bold; }
+
+        .btn-send { background: var(--huf-red); color: white; width: 100%; padding: 15px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 18px; margin-top: 20px; }
+        .btn-logout { position: absolute; top: 10px; right: 10px; background: #666; color: white; border: none; padding: 5px 12px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; }
+        .btn-back { position: absolute; top: 10px; left: 10px; background: #eee; color: #333; border: 1px solid #ccc; padding: 5px 12px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; }
+        
+        @media (max-width: 800px) { .stats-view-container { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body onkeydown="manejarTeclado(event)" onclick="hideContextMenu()">
+
+<div id="customContextMenu">
+    <div class="menu-item" id="menuEditBtn">✏️ EDIT DAYS</div>
+    <div class="menu-item delete" id="menuDeleteBtn" style="border-top: 1px solid #eee; color: red;">🗑️ DELETE</div>
+</div>
+
+<div id="mainCard" class="card">
+    <div class="logo-container">
+        <img src="logo.png" alt="HUF Logo" onerror="this.style.display='none';">
+        <p class="logo-subtitle">Developed By Omar Amador - HUF Mexico</p>
+    </div>
+
+    <div id="viewLogin" class="view-layer active-view">
+        <div class="login-box">
+            <h2>SYSTEM ACCESS</h2>
+            <div id="loginError">⚠️ Invalid User or Password</div>
+            <input type="text" id="userInput" class="input-login" placeholder="User" oninput="limpiarError()">
+            <input type="password" id="passInput" class="input-login" placeholder="Password" oninput="limpiarError()">
+            <button class="btn-send" onclick="validarAcceso()">ENTER</button>
+        </div>
+    </div>
+
+    <div id="viewMenu" class="view-layer">
+        <button class="btn-logout" onclick="logout()">LOGOUT</button>
+        <h2 style="margin-top: 20px;">Main Selection</h2>
+        <div class="menu-container">
+            <button class="btn-menu" onclick="showModule('viewChecklist')">📋 Check List</button>
+            <button class="btn-menu" onclick="showModule('viewTooling')">🛠 FORECAST EQUIPMENT</button>
+            <button class="btn-menu" onclick="alert('Module under development')">⚖ Report Calibration</button>
+        </div>
+    </div>
+
+    <div id="viewChecklist" class="view-layer">
+        <button class="btn-back" onclick="showModule('viewMenu')">⬅ BACK</button>
+        <h2 id="displayDeviceName">DEVICES CHECK LIST</h2>
+        <div class="flex-layout">
+            <div class="column">
+                <div class="group"><label class="main-label">Operator:</label><select id="selectOp" disabled style="background: #eee;"><option value="">-- Active User --</option></select></div>
+                <div class="group">
+                    <label class="main-label">Test Inspection:</label>
+                    <div class="stage-container">
+                        <button type="button" class="btn-stage" id="btnBefore" onclick="changeStage('BEFORE TEST')">BEFORE</button>
+                        <button type="button" class="btn-stage" id="btnAfter" onclick="changeStage('AFTER TEST')">AFTER</button>
+                    </div>
+                </div>
+                <div class="group"><label class="main-label">Send Report to:</label><select id="selectMail"><option value="">-- Select E-Mail --</option></select></div>
+            </div>
+            <div class="column">
+                <div class="group"><label class="main-label">Visual Inspection Tasks:</label><div class="tasks-scroll" id="tasksContainer"></div></div>
+                <div class="group" style="margin-top:8px;"><label class="main-label">Comments:</label><textarea id="additionalNotes" placeholder="Write here..."></textarea></div>
+                <div class="group">
+                    <div style="display:flex; justify-content:space-between; align-items:center;"><label class="main-label">Signature</label><button type="button" style="font-size:11px; cursor:pointer;" onclick="pad.clear()">🗑 CLEAR</button></div>
+                    <div class="signature-box"><canvas id="canvas"></canvas></div>
+                </div>
+            </div>
+        </div>
+        <button id="sendBtn" class="btn-send" onclick="enviarReporte()">SUBMIT & SEND REPORT</button>
+    </div>
+
+    <div id="viewTooling" class="view-layer">
+        <button class="btn-back" onclick="showModule('viewMenu')">⬅ BACK</button>
+        <h2 id="toolingTopTitle">FORECAST EQUIPMENT HUF MX</h2>
+        
+        <div class="tooling-input-bar">
+            <div><label>Project Name</label><input type="text" id="toolProject" placeholder="Ex: Project A"></div>
+            <div><label>Activity</label><input type="text" id="toolTask" placeholder="Activity"></div>
+            <div style="flex:0.3;"><label>Days</label><input type="number" id="toolDays" placeholder="0" oninput="revisarConflictoRealTime()"></div>
+            <div style="flex:0.5;"><label>Start Date</label>
+                <input type="date" id="toolStart" oninput="revisarConflictoRealTime()" ondblclick="this.showPicker()">
+            </div>
+            
+            <div class="device-him-group">
+                <div>
+                    <label>Device Type</label>
+                    <select id="deviceType" onchange="updateHIMOptions(); revisarConflictoRealTime();">
+                        <option value="">-- Select --</option>
+                    </select>
+                </div>
+                <div>
+                    <label>HIM</label>
+                    <select id="toolHIM" onchange="mostrarProximaDisponibilidad(); revisarConflictoRealTime();">
+                        <option value="">Select Device First</option>
+                    </select>
+                </div>
+                <div id="availabilityInfo"></div>
+            </div>
+
+            <div style="flex:0.5;"><label>Scale</label>
+                <select id="viewScale" onchange="renderGantt()">
+                    <option value="day">By Day</option>
+                    <option value="week">By Week</option>
+                    <option value="month">By Month</option>
+                    <option value="year">By Year</option>
+                </select>
+            </div>
+            <button onclick="addToolingRow()" style="background: var(--huf-red); color: white; border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; height: 38px;">ADD TASK</button>
+        </div>
+
+        <div class="collapse-controls" style="display:flex; gap:10px; margin-bottom:10px;">
+            <button onclick="toggleAllProjects(true)">➕ EXPAND ALL</button>
+            <button onclick="toggleAllProjects(false)">➖ COLLAPSE ALL</button>
+            <button onclick="centerToday()">🎯 CENTER TODAY</button>
+            <button onclick="showModule('viewStats')" style="background:#444; color:white;">📊 STATS</button>
+            <button onclick="showModule('viewShutdown')" style="background:var(--warning-orange); color:#333; font-weight:bold;">🚧 PREPARE SHUTDOWN</button>
+        </div>
+
+        <div class="gantt-wrapper" id="ganttScrollParent" onscroll="syncFloatingLabels()">
+            <div id="ganttContainer"></div>
+        </div>
+    </div>
+
+    <div id="viewStats" class="view-layer">
+        <button class="btn-back" onclick="showModule('viewTooling')">⬅ BACK</button>
+        <h2>Usage Stats by Device Type (2026)</h2>
+        <div id="statsMainContainer" class="stats-view-container"></div>
+    </div>
+
+    <div id="viewShutdown" class="view-layer" style="max-height: 80vh; overflow-y: auto;">
+        <button class="btn-back" onclick="showModule('viewTooling')">⬅ BACK</button>
+        <h2>Shutdown Impact Analysis</h2>
+        <div class="shutdown-controls">
+            <div style="flex:1;"><label>Shutdown Start Date</label><input type="date" id="shutStart" ondblclick="this.showPicker()"></div>
+            <div style="flex:1;"><label>Shutdown End Date</label><input type="date" id="shutEnd" ondblclick="this.showPicker()"></div>
+            <button onclick="analizarShutdown()" style="background:var(--huf-red); color:white; border:none; padding:10px 20px; border-radius:6px; cursor:pointer; font-weight:bold; height:38px;">ANALYZE IMPACT</button>
+            <button onclick="setShutdown()" style="background:var(--huf-dark); color:white; border:none; padding:10px 20px; border-radius:6px; cursor:pointer; font-weight:bold; height:38px;">SET SHUTDOWN</button>
+        </div>
+        <div id="shutdownResults">
+            <h3 style="font-size: 14px; margin-bottom: 5px; color: #555;">Live Impact Analysis:</h3>
+            <table class="shutdown-impact-table">
+                <thead>
+                    <tr>
+                        <th>Project</th>
+                        <th>Activity</th>
+                        <th>HIM (Equipment)</th>
+                        <th>Impact Status</th>
+                    </tr>
+                </thead>
+                <tbody id="shutdownTableBody">
+                    <tr><td colspan="4" style="text-align:center;">Select dates and press analyze</td></tr>
+                </tbody>
+            </table>
+
+            <h3 style="font-size: 14px; margin-bottom: 5px; color: #555;">Saved Shutdown History (Traceability):</h3>
+            <table class="shutdown-impact-table" style="box-shadow: none; border: 1px solid #ddd;">
+                <thead style="background: #666;">
+                    <tr>
+                        <th>Start</th>
+                        <th>End</th>
+                        <th>Description</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="historyTableBody"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    const firebaseConfig = { databaseURL: "https://test-huf-default-rtdb.firebaseio.com/" };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    let stage = ""; let pad; let userSession = ""; 
+    let toolingProjects = []; 
+    let shutdownLogs = [];
+
+    db.ref('toolingProjects').on('value', (snapshot) => {
+        const data = snapshot.val();
+        if (data) {
+            toolingProjects = data.map(proj => ({
+                ...proj,
+                activities: (proj.activities || []).map(act => ({
+                    ...act,
+                    teams: (act.teams || []).map(t => ({ ...t, start: new Date(t.start) }))
+                }))
+            }));
+            renderGantt(); 
+        } else { toolingProjects = []; renderGantt(); }
+    });
+
+    db.ref('shutdownLogs').on('value', (snapshot) => {
+        const data = snapshot.val();
+        shutdownLogs = data ? Object.values(data) : [];
+        renderHistoryTable();
+        renderGantt(); 
+    });
+
+    function guardarCambios() {
+        const dataParaGuardar = toolingProjects.map(proj => ({
+            ...proj,
+            activities: proj.activities.map(act => ({
+                ...act,
+                teams: act.teams.map(t => ({ ...t, start: t.start.toISOString() }))
+            }))
+        }));
+        db.ref('toolingProjects').set(dataParaGuardar);
+    }
+
+    function popularDeviceTypes() {
+        const devSelect = document.getElementById('deviceType');
+        if (!devSelect || !window.huf_devices_config) return;
+        devSelect.innerHTML = '<option value="">-- Select --</option>';
+        window.huf_devices_config.forEach(dev => devSelect.add(new Option(dev.name, dev.id)));
+    }
+
+    function updateHIMOptions() {
+        const typeId = document.getElementById('deviceType').value;
+        const himSelect = document.getElementById('toolHIM');
+        himSelect.innerHTML = "";
+        document.getElementById('availabilityInfo').innerText = "";
+        if(!typeId) { himSelect.add(new Option("Select Device First", "")); return; }
+        const deviceData = window.huf_devices_config.find(d => d.id === typeId);
+        if (deviceData && deviceData.hims) {
+            himSelect.add(new Option("-- Select HIM --", ""));
+            deviceData.hims.forEach(h => himSelect.add(new Option(h, h)));
+        }
+    }
+
+    function mostrarProximaDisponibilidad() {
+        const him = document.getElementById('toolHIM').value;
+        const infoDiv = document.getElementById('availabilityInfo');
+        if (!him) { infoDiv.innerText = ""; return; }
+        let today = new Date(); today.setHours(0,0,0,0);
+        let lastDate = new Date(today);
+        toolingProjects.forEach(p => p.activities.forEach(act => act.teams.forEach(t => {
+            if (t.name === him) {
+                let endD = new Date(t.start);
+                endD.setDate(endD.getDate() + t.days);
+                if (endD > lastDate) lastDate = new Date(endD);
+            }
+        })));
+        if (lastDate <= today) {
+            infoDiv.innerText = "Device Free";
+            infoDiv.style.color = "var(--success-green)";
+        } else {
+            const options = { year: 'numeric', month: 'short', day: 'numeric' };
+            infoDiv.innerText = `${him} free on: ${lastDate.toLocaleDateString(undefined, options)}`;
+            infoDiv.style.color = "#00000"; 
+        }
+    }
+
+    function showModule(viewId) {
+        const card = document.getElementById('mainCard');
+        document.querySelectorAll('.view-layer').forEach(v => v.classList.remove('active-view'));
+        document.getElementById(viewId).classList.add('active-view');
+        (viewId === 'viewTooling' || viewId === 'viewStats' || viewId === 'viewShutdown') ? card.classList.add('wide-view') : card.classList.remove('wide-view');
+        if(viewId === 'viewChecklist') ajustarCanvas();
+        if(viewId === 'viewTooling') renderGantt();
+        if(viewId === 'viewStats') setTimeout(renderAllStats, 100);
+    }
+
+    function validarAcceso() {
+        const u = document.getElementById('userInput').value;
+        const p = document.getElementById('passInput').value;
+        const user = (window.usuarios_password || []).find(item => item.user === u && item.pass === p);
+        if (user) {
+            userSession = user.nombre;
+            document.getElementById('selectOp').innerHTML = `<option>${userSession}</option>`;
+            cargarInfo(); popularDeviceTypes(); showModule('viewMenu');
+        } else { document.getElementById('loginError').style.display = 'block'; }
+    }
+
+    function logout() { userSession = ""; showModule('viewLogin'); }
+    
+    function manejarTeclado(event) {
+        const activeView = document.querySelector('.active-view').id;
+        if (event.key === "Enter" && activeView === 'viewLogin') { validarAcceso(); return; }
+        if (activeView === 'viewTooling') {
+            const wrapper = document.getElementById('ganttScrollParent');
+            if (!wrapper) return;
+            const scrollAmount = 200; 
+            const scrollAmountVertical = 100;
+            switch(event.key) {
+                case "ArrowLeft": event.preventDefault(); wrapper.scrollLeft -= scrollAmount; break;
+                case "ArrowRight": event.preventDefault(); wrapper.scrollLeft += scrollAmount; break;
+                case "ArrowUp": event.preventDefault(); wrapper.scrollTop -= scrollAmountVertical; break;
+                case "ArrowDown": event.preventDefault(); wrapper.scrollTop += scrollAmountVertical; break;
+            }
+        }
+    }
+
+    function limpiarError() { document.getElementById('loginError').style.display = 'none'; }
+
+    function cargarInfo() {
+        const tareas = window.lista_tareas || []; const correos = window.lista_correos || [];
+        document.getElementById('displayDeviceName').innerText = (window.nombre_dispositivo || "DEVICE") + " CHECK LIST";
+        const mailSelect = document.getElementById('selectMail');
+        if (mailSelect.options.length <= 1) {
+            correos.forEach(m => mailSelect.add(new Option(m, m)));
+            const tContainer = document.getElementById('tasksContainer');
+            tContainer.innerHTML = "";
+            tareas.forEach(t => {
+                const row = document.createElement('label'); row.className = 'task-row';
+                row.innerHTML = `<input type="checkbox" onchange="this.parentElement.classList.toggle('checked-task', this.checked)"><span>${t}</span>`;
+                tContainer.appendChild(row);
+            });
+        }
+    }
+
+    window.onload = () => { if(document.getElementById('canvas')) pad = new SignaturePad(document.getElementById('canvas')); ajustarCanvas(); };
+    function changeStage(s) { stage = s; document.getElementById('btnBefore').className = s==='BEFORE TEST'?'btn-stage active':'btn-stage'; document.getElementById('btnAfter').className = s==='AFTER TEST'?'btn-stage active':'btn-stage'; }
+    function ajustarCanvas() { const canvas = document.getElementById('canvas'); if(!canvas) return; const ratio = Math.max(window.devicePixelRatio || 1, 1); canvas.width = canvas.offsetWidth * ratio; canvas.height = canvas.offsetHeight * ratio; canvas.getContext("2d").scale(ratio, ratio); }
+
+    function enviarReporte() {
+        const mail = document.getElementById('selectMail').value;
+        if(!userSession || !mail || !stage || pad.isEmpty()) return alert("Missing info");
+        emailjs.init("mJeuEhSJ1S_wZAzDy");
+        emailjs.send("service_fono7vd", "template_egho97s", {
+            device_name: window.nombre_dispositivo, operator_name: userSession,
+            date_report: new Date().toLocaleString(), stage_report: stage, email_to: mail,
+            signature_image: document.getElementById('canvas').toDataURL()
+        }).then(() => { alert("SENT!"); location.reload(); });
+    }
+
+    function validarDisponibilidad(him, startNew, daysNew, excludeP, excludeA, excludeT) {
+        const endNew = new Date(startNew); endNew.setDate(endNew.getDate() + daysNew);
+        for (let pi=0; pi<toolingProjects.length; pi++) {
+            let proj = toolingProjects[pi];
+            for (let ai=0; ai<proj.activities.length; ai++) {
+                let act = proj.activities[ai];
+                for (let ti=0; ti<act.teams.length; ti++) {
+                    let t = act.teams[ti];
+                    if (excludeP === pi && excludeA === ai && excludeT === ti) continue;
+                    if (t.name === him) {
+                        const startExist = new Date(t.start); const endExist = new Date(t.start); endExist.setDate(endExist.getDate() + t.days);
+                        if (startNew < endExist && endNew > startExist) return { conflict: true, project: proj.name, activity: act.name };
+                    }
+                }
+            }
+        }
+        return { conflict: false };
+    }
+
+    function revisarConflictoRealTime() {
+        const him = document.getElementById('toolHIM').value;
+        const days = parseInt(document.getElementById('toolDays').value);
+        const startStr = document.getElementById('toolStart').value;
+        if (!him || !days || !startStr || !document.getElementById('deviceType').value) return;
+        const check = validarDisponibilidad(him, new Date(startStr + "T00:00:00"), days);
+        const bg = check.conflict ? "#ffcccc" : "#fff";
+        document.getElementById('deviceType').style.background = bg;
+        document.getElementById('toolHIM').style.background = bg;
+    }
+
+    function addToolingRow() {
+        const projName = document.getElementById('toolProject').value.trim() || "Unnamed Project";
+        const taskName = document.getElementById('toolTask').value.trim();
+        const days = parseInt(document.getElementById('toolDays').value);
+        const startStr = document.getElementById('toolStart').value;
+        const him = document.getElementById('toolHIM').value;
+        const devTypeId = document.getElementById('deviceType').value;
+        if (!taskName || !days || !startStr || !him) return alert("Fill all details");
+        const startDate = new Date(startStr + "T00:00:00");
+        const check = validarDisponibilidad(him, startDate, days);
+        if (check.conflict) return alert(`CONFLICT: ${him} is busy.\nProject: ${check.project}\nActivity: ${check.activity}`);
+        let project = toolingProjects.find(p => p.name.toLowerCase() === projName.toLowerCase());
+        if (!project) { project = { name: projName, activities: [], collapsed: false }; toolingProjects.push(project); }
+        let activity = project.activities.find(a => a.name.toLowerCase() === taskName.toLowerCase());
+        if (!activity) { activity = { name: taskName, teams: [] }; project.activities.push(activity); }
+        activity.teams.push({ name: him, start: startDate, days: days, typeId: devTypeId });
+        guardarCambios(); 
+    }
+
+    function copyTaskToInputs(projectName, activityName) {
+        document.getElementById('toolProject').value = projectName;
+        document.getElementById('toolTask').value = activityName || "";
+        document.getElementById('toolingTopTitle').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function deleteProject(pIdx) { if(confirm("Delete entire project?")) { toolingProjects.splice(pIdx, 1); guardarCambios(); } }
+    function editProject(pIdx) { const newName = prompt("New project name:", toolingProjects[pIdx].name); if(newName) { toolingProjects[pIdx].name = newName; guardarCambios(); } }
+    function deleteActivity(pIdx, aIdx) { if(confirm("Delete activity?")) { toolingProjects[pIdx].activities.splice(aIdx, 1); guardarCambios(); } }
+    function editActivity(pIdx, aIdx) { const newName = prompt("New activity name:", toolingProjects[pIdx].activities[aIdx].name); if(newName) { toolingProjects[pIdx].activities[aIdx].name = newName; guardarCambios(); } }
+    function deleteIndividualBar(pIdx, aIdx, tIdx) { if(confirm("Delete this equipment allocation?")) { toolingProjects[pIdx].activities[aIdx].teams.splice(tIdx, 1); if(toolingProjects[pIdx].activities[aIdx].teams.length === 0) { toolingProjects[pIdx].activities.splice(aIdx, 1); } guardarCambios(); } }
+
+    function editBarDays(pIdx, aIdx, tIdx) {
+        const team = toolingProjects[pIdx].activities[aIdx].teams[tIdx];
+        const newDays = prompt(`Edit duration for ${team.name}:\n(Current: ${team.days} days)`, team.days);
+        if (newDays !== null) {
+            const parsedDays = parseInt(newDays);
+            if (isNaN(parsedDays) || parsedDays <= 0) return alert("Invalid number of days.");
+            const check = validarDisponibilidad(team.name, team.start, parsedDays, pIdx, aIdx, tIdx);
+            if (check.conflict) return alert(`CONFLICT: Overlap with:\nProject: ${check.project}\nActivity: ${check.activity}`);
+            toolingProjects[pIdx].activities[aIdx].teams[tIdx].days = parsedDays;
+            guardarCambios();
+        }
+    }
+
+    function showBarContextMenu(pIdx, aIdx, tIdx, event) {
+        event.preventDefault(); event.stopPropagation();
+        const menu = document.getElementById('customContextMenu');
+        menu.style.display = 'block'; menu.style.left = event.pageX + 'px'; menu.style.top = event.pageY + 'px';
+        document.getElementById('menuEditBtn').onclick = () => { hideContextMenu(); editBarDays(pIdx, aIdx, tIdx); };
+        document.getElementById('menuDeleteBtn').onclick = () => { hideContextMenu(); deleteIndividualBar(pIdx, aIdx, tIdx); };
+    }
+
+    function hideContextMenu() { document.getElementById('customContextMenu').style.display = 'none'; }
+    function toggleAllProjects(expand) { toolingProjects.forEach(p => p.collapsed = !expand); guardarCambios(); }
+    function toggleProject(pIdx) { toolingProjects[pIdx].collapsed = !toolingProjects[pIdx].collapsed; guardarCambios(); }
+    function centerToday() { const wrapper = document.getElementById('ganttScrollParent'); const todayCell = document.querySelector('.gantt-day-cell.is-today'); if (wrapper && todayCell) wrapper.scrollLeft = todayCell.offsetLeft - (wrapper.offsetWidth / 2); }
+    function getPastelColor(typeId) { return `hsl(${(parseInt(typeId) || 0) * 137.5 % 360}, 70%, 75%)`; }
+    function getWeekNumber(d) { d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())); d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay()||7)); return Math.ceil((((d - new Date(Date.UTC(d.getUTCFullYear(),0,1))) / 86400000) + 1)/7); }
+
+    function syncFloatingLabels() {
+        const wrapper = document.getElementById('ganttScrollParent');
+        if (!wrapper) return;
+        const scrollX = wrapper.scrollLeft;
+        const labels = document.querySelectorAll('.floating-label');
+        labels.forEach(lbl => {
+            const bar = lbl.parentElement;
+            const barLeft = bar.offsetLeft;
+            const barWidth = bar.offsetWidth;
+            const labelWidth = lbl.offsetWidth;
+            let offset = scrollX - (barLeft - 400); 
+            if (offset < 0) offset = 0;
+            const maxOffset = barWidth - labelWidth - 10;
+            if (offset > maxOffset) offset = maxOffset;
+            lbl.style.transform = `translateX(${offset}px)`;
+        });
+    }
+
+    function renderGantt() {
+        const container = document.getElementById('ganttContainer');
+        const scale = document.getElementById('viewScale').value;
+        const today = new Date(); today.setHours(0,0,0,0);
+        if (toolingProjects.length === 0) { container.innerHTML = `<p style="text-align:center; padding:20px;">No projects added.</p>`; return; }
+        
+        let allDates = [today]; 
+        toolingProjects.forEach(p => p.activities.forEach(a => a.teams.forEach(t => { 
+            allDates.push(new Date(t.start)); 
+            let endD = new Date(t.start); endD.setDate(endD.getDate() + t.days); 
+            allDates.push(endD); 
+        })));
+        
+        let minDate = new Date(Math.min(...allDates)); minDate.setDate(minDate.getDate() - 15);
+        let maxDate = new Date(Math.max(...allDates)); maxDate.setDate(maxDate.getDate() + 45);
+        
+        let htmlLabels = [];
+        let upperLabels = []; // Para la fila superior (Jerarquía)
+        
+        const isDateShutdown = (d) => {
+            return shutdownLogs.some(s => {
+                let sStart = new Date(s.start + "T00:00:00");
+                let sEnd = new Date(s.end + "T23:59:59");
+                return d >= sStart && d <= sEnd;
+            });
+        };
+
+        if (scale === 'day') { 
+            let currentWeek = -1;
+            let count = 0;
+            for(let i=0; i<Math.ceil((maxDate-minDate)/86400000); i++){ 
+                let d=new Date(minDate); d.setDate(d.getDate()+i); 
+                htmlLabels.push({l:d.getDate()+"/"+(d.getMonth()+1), t:d.getTime()===today.getTime(), s: isDateShutdown(d)}); 
+                
+                let wn = getWeekNumber(d);
+                if (wn !== currentWeek) {
+                    if (currentWeek !== -1) upperLabels[upperLabels.length-1].span = count;
+                    upperLabels.push({ label: `CW ${wn} (${d.getFullYear()})`, span: 1 }); // CAMBIO: CW en lugar de WEEK
+                    currentWeek = wn;
+                    count = 1;
+                } else { count++; }
+            }
+            upperLabels[upperLabels.length-1].span = count;
+        }
+        else if (scale === 'week') { 
+            let currentMonth = -1;
+            let count = 0;
+            for(let i=0; i<Math.ceil((maxDate-minDate)/(86400000*7))+1; i++){ 
+                let d=new Date(minDate); d.setDate(d.getDate()+(i*7)); 
+                htmlLabels.push({l:"CW"+getWeekNumber(d), t:today>=d && today<new Date(d.getTime()+(86400000*7))}); // CAMBIO: CW en lugar de W
+                
+                let mn = d.getMonth();
+                if (mn !== currentMonth) {
+                    if (currentMonth !== -1) upperLabels[upperLabels.length-1].span = count;
+                    upperLabels.push({ label: d.toLocaleString('en', { month: 'long' }).toUpperCase() + " " + d.getFullYear(), span: 1 });
+                    currentMonth = mn;
+                    count = 1;
+                } else { count++; }
+            }
+            upperLabels[upperLabels.length-1].span = count;
+        }
+        else if (scale === 'month') { 
+            let currentYear = -1;
+            let count = 0;
+            for(let i=0; i<((maxDate.getFullYear()-minDate.getFullYear())*12+(maxDate.getMonth()-minDate.getMonth())+2); i++){ 
+                let d=new Date(minDate.getFullYear(), minDate.getMonth()+i, 1); 
+                htmlLabels.push({l:d.toLocaleString('en',{month:'short'})+" "+d.getFullYear().toString().substr(-2), t:today.getMonth()===d.getMonth()&&today.getFullYear()===d.getFullYear()}); 
+                
+                let yn = d.getFullYear();
+                if (yn !== currentYear) {
+                    if (currentYear !== -1) upperLabels[upperLabels.length-1].span = count;
+                    upperLabels.push({ label: yn, span: 1 }); // CAMBIO: Solo año numérico en lugar de YEAR YYYY
+                    currentYear = yn;
+                    count = 1;
+                } else { count++; }
+            }
+            upperLabels[upperLabels.length-1].span = count;
+        }
+        else { 
+            upperLabels.push({ label: "TIMELINE RANGES", span: 100 });
+            for(let i=0; i<(maxDate.getFullYear()-minDate.getFullYear()+2); i++){ 
+                let d=new Date(minDate.getFullYear()+i, 0, 1); 
+                htmlLabels.push({l:d.getFullYear().toString(), t:today.getFullYear()===d.getFullYear()}); 
+            } 
+        }
+        
+        let html = `<div class="gantt-grid"><div class="gantt-header-title">PROJECT / ACTIVITY (HIMs)</div><div class="gantt-header-time">`;
+        
+        // Render Upper Header
+        html += `<div class="gantt-upper-header">`;
+        upperLabels.forEach(u => {
+            let width = u.span * 70;
+            html += `<div class="gantt-upper-cell" style="width:${width}px; flex-basis:${width}px;">${u.label}</div>`;
+        });
+        html += `</div>`;
+
+        // Render Lower Header (Days/Weeks/Months)
+        html += `<div class="gantt-header-days">`;
+        htmlLabels.forEach(obj => html += `<div class="gantt-day-cell ${obj.t?'is-today':''} ${obj.s?'is-shutdown':''}"><div class="vertical-text">${obj.l}</div></div>`);
+        html += `</div></div>`;
+        
+        toolingProjects.forEach((proj, pIdx) => {
+            html += `<div class="gantt-row"><div class="gantt-task-name" style="background:#555 !important; color:white;"><span onclick="toggleProject(${pIdx})">${proj.collapsed?'➕':'➖'} 📁 ${proj.name}</span><div class="action-btns"><button class="btn-icon add" onclick="copyTaskToInputs('${proj.name.replace(/'/g, "\\'")}', '')" title="Copy Project Name">➕</button><button class="btn-icon" onclick="editProject(${pIdx})" title="Edit Name">✏️</button><button class="btn-icon" onclick="deleteProject(${pIdx})" title="Delete Project">🗑️</button></div></div><div class="gantt-bar-container" style="background:#666;"></div></div>`;
+            if (!proj.collapsed) {
+                proj.activities.forEach((act, aIdx) => {
+                    let summaryMap = {};
+                    act.teams.forEach(t => {
+                        let endD = new Date(t.start); endD.setDate(endD.getDate() + t.days);
+                        if (endD < today) return; 
+                        const typeName = (window.huf_devices_config.find(d => d.id === t.typeId) || {name: "Unknown"}).name;
+                        if(!summaryMap[typeName]) summaryMap[typeName] = new Set();
+                        summaryMap[typeName].add(t.name);
+                    });
+                    let matrixRows = "";
+                    for(let type in summaryMap) { matrixRows += `<tr><td>${type}</td><td>${Array.from(summaryMap[type]).join(", ")}</td></tr>`; }
+                    html += `<div class="gantt-row"><div class="gantt-task-name" style="padding-left:25px; flex-direction:column; align-items:flex-start; gap:0;"><div style="display:flex; justify-content:space-between; width:100%; align-items:center;"><span>🔹 ${act.name}</span><div class="action-btns"><button class="btn-icon add" onclick="copyTaskToInputs('${proj.name.replace(/'/g, "\\'")}', '${act.name.replace(/'/g, "\\'")}')" title="Copy to form">➕</button><button class="btn-icon" onclick="editActivity(${pIdx}, ${aIdx})" title="Edit Activity">✏️</button><button class="btn-icon" onclick="deleteActivity(${pIdx}, ${aIdx})" title="Delete Activity">🗑️</button></div></div>
+                    <table class="him-matrix"><thead><tr><th>Type</th><th>HIMs</th></tr></thead><tbody>${matrixRows}</tbody></table>
+                    </div><div class="gantt-bar-container">`;
+                    
+                    htmlLabels.forEach(obj => {
+                        html += `<div class="gantt-bg-cell ${obj.s?'is-shutdown-bg':''}"></div>`;
+                    });
+
+                    act.teams.forEach((t, tIdx) => {
+                        let endD = new Date(t.start); endD.setDate(endD.getDate() + t.days);
+                        if (endD < today) return;
+                        let lp=0, ws=0, div=scale==='day'?1:scale==='week'?7:scale==='month'?30:365;
+                        if(scale==='day'||scale==='week') { lp=(((t.start-minDate)/86400000)/div)*(100/htmlLabels.length); ws=(t.days/div)*(100/htmlLabels.length); }
+                        else if(scale==='month') { lp=((t.start.getFullYear()-minDate.getFullYear())*12+(t.start.getMonth()-minDate.getMonth())+(t.start.getDate()/30))*(100/htmlLabels.length); ws=(t.days/30)*(100/htmlLabels.length); }
+                        else { lp=((t.start.getFullYear()-minDate.getFullYear())+(getWeekNumber(t.start)/52))*(100/htmlLabels.length); ws=(t.days/365)*(100/htmlLabels.length); }
+                        let h = 100/act.teams.length;
+                        html += `<div class="gantt-bar" oncontextmenu="showBarContextMenu(${pIdx}, ${aIdx}, tIdx, event)" style="left:${lp}%; width:${ws}%; height:${h-4}%; top:${h*tIdx}%; background:${getPastelColor(t.typeId)};">
+                                    <span class="floating-label">${t.name}</span>
+                                 </div>`;
+                    });
+                    html += `</div></div>`;
+                });
+            }
+        });
+        container.innerHTML = html + "</div>";
+        setTimeout(() => { centerToday(); syncFloatingLabels(); }, 150);
+    }
+
+    function renderAllStats() {
+        const container = document.getElementById('statsMainContainer'); container.innerHTML = "";
+        if (!window.huf_devices_config) return;
+        window.huf_devices_config.forEach(dev => {
+            let weekData = new Array(52).fill(0); const totalHims = dev.hims.length || 1;
+            toolingProjects.forEach(p => p.activities.forEach(act => act.teams.forEach(t => {
+                if (t.typeId === dev.id) {
+                    let cur = new Date(t.start);
+                    for (let i=0; i<t.days; i++) { if (cur.getFullYear() === 2026) { let wn = getWeekNumber(cur)-1; if (wn>=0 && wn<52) weekData[wn] += (100/7)/totalHims; } cur.setDate(cur.getDate()+1); }
+                }
+            })));
+            const row = document.createElement('div'); row.className = 'device-stat-row';
+            let pathD = "";
+            let bars = weekData.map((val, idx) => {
+                let h = Math.min(val, 100); pathD += (idx===0?"M":" L")+`${(idx/51)*1000} ${100-h}`;
+                return `<div class="stats-week-col"><div class="bar-fill" style="height:${h}%; background:${getPastelColor(dev.id)};" data-label="CW${idx+1}: ${Math.round(val)}%"></div><div class="week-label-stat">${idx+1}</div></div>`;
+            }).join("");
+            row.innerHTML = `<div class="device-stat-title">${dev.name}</div>
+                             <div class="chart-frame">
+                                <div class="y-axis-title">Capacity</div>
+                                <div class="y-axis-labels"><span>100%</span><span>75%</span><span>50%</span><span>25%</span><span>0%</span></div>
+                                <div class="grid-lines"><div class="grid-line" style="top:0%;"></div><div class="grid-line" style="top:25%;"></div><div class="grid-line" style="top:50%;"></div><div class="grid-line" style="top:75%;"></div></div>
+                                <svg class="trend-line-svg" preserveAspectRatio="none" viewBox="0 0 1000 100"><path class="trend-path" d="${pathD}"></path></svg>
+                                <div class="stats-week-wrapper">${bars}</div>
+                                <div class="x-axis-title">Weeks</div>
+                             </div>`;
+            container.appendChild(row);
+        });
+    }
+
+    function analizarShutdown() {
+        const startStr = document.getElementById('shutStart').value;
+        const endStr = document.getElementById('shutEnd').value;
+        if (!startStr || !endStr) return alert("Please select both dates.");
+        const shutStart = new Date(startStr + "T00:00:00");
+        const shutEnd = new Date(endStr + "T23:59:59");
+        if (shutEnd < shutStart) return alert("End date must be after start date.");
+        const tbody = document.getElementById('shutdownTableBody');
+        tbody.innerHTML = "";
+        let impacts = [];
+        toolingProjects.forEach(proj => {
+            proj.activities.forEach(act => {
+                act.teams.forEach(t => {
+                    const tStart = new Date(t.start);
+                    const tEnd = new Date(t.start);
+                    tEnd.setDate(tEnd.getDate() + t.days);
+                    if (tStart <= shutEnd && tEnd >= shutStart) {
+                        impacts.push({ proj: proj.name, act: act.name, him: t.name });
+                    }
+                });
+            });
+        });
+        if (impacts.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:var(--success-green); font-weight:bold;">✅ No impacts found for these dates.</td></tr>`;
+        } else {
+            impacts.forEach(imp => {
+                const row = document.createElement('tr');
+                row.innerHTML = `<td>${imp.proj}</td><td>${imp.act}</td><td>${imp.him}</td><td class="impact-high">⚠️ DIRECT IMPACT</td>`;
+                tbody.appendChild(row);
+            });
+        }
+    }
+
+    function setShutdown() {
+        const start = document.getElementById('shutStart').value;
+        const end = document.getElementById('shutEnd').value;
+        if(!start || !end) return alert("Select dates first");
+        const desc = prompt("Enter Shutdown Description (e.g. Easter Break, Machine Maintenance):");
+        if(!desc) return;
+        const newLog = { start, end, desc, timestamp: new Date().toISOString() };
+        db.ref('shutdownLogs').push(newLog);
+        alert("Shutdown saved and calendar updated.");
+    }
+
+    function renderHistoryTable() {
+        const tbody = document.getElementById('historyTableBody');
+        tbody.innerHTML = "";
+        shutdownLogs.forEach((log, idx) => {
+            const row = document.createElement('tr');
+            row.innerHTML = `<td>${log.start}</td><td>${log.end}</td><td>${log.desc}</td><td><button onclick="deleteShutdown('${idx}')" style="color:red; cursor:pointer; background:none; border:none;">🗑️</button></td>`;
+            tbody.appendChild(row);
+        });
+        if(shutdownLogs.length === 0) tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#999;">No saved shutdowns.</td></tr>`;
+    }
+
+    function deleteShutdown(idx) {
+        if(!confirm("Delete this shutdown record?")) return;
+        db.ref('shutdownLogs').once('value', snapshot => {
+            const keys = Object.keys(snapshot.val());
+            db.ref('shutdownLogs/' + keys[idx]).remove();
+        });
+    }
+</script>
+</body>
+</html>
