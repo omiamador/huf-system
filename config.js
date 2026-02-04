@@ -1,0 +1,45 @@
+window.usuarios_password = [
+    { user: "oamador", pass: "1234", nombre: "Omar Amador" },
+    { user: "admin", pass: "12345", nombre: "Administrador" },
+    { user: "operador1", pass: "test1", nombre: "Juan Perez" }
+];
+
+var nombre_dispositivo = "JAILOR";
+var lista_operadores =
+ [
+"Omar Amador", 
+"Angela Lara",
+"Ignacio Rodriguez",
+"Luis Morales"
+  ];
+
+var lista_correos =
+[
+"Omar.amador@huf-group.com",
+"Angela.Lara@huf-group.com",
+"Ignacio.Rodriguez@huf-group.com",
+"Luis.Morales@huf-group.com"
+ ];
+
+var lista_tareas = 
+[
+    "WORKING DEVICE",
+	"DEVICE GOOD STATE",
+	"CLEAN DEVICE", 
+	"FREE DEVICE",
+	"COMPLETE HARDWARE", 
+	"COMPLETE SET UP",
+    "PARTS IN GOOD STATE",
+	"INITIALIZATION ERRORS",
+	"HW CALIBRATED",
+	"CALIBRATION TAGS",
+	"SAFETY TAGS",
+	"MAINTENANCE PERFORMED"
+];
+window.dispositivos_config = {
+    "1": ["HIM 1.1", "HIM 1.2", "HIM 1.3", "HIM 1.4"],
+    "2": ["HIM 2.1", "HIM 2.2"],
+    "3": ["HIM 3.1", "HIM 3.2", "HIM 3.3"],
+    "4": ["HIM 4.1", "HIM 4.2", "HIM 4.3", "HIM 4.4"],
+    "5": ["HIM 5.1"]
+};
