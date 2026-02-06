@@ -1,0 +1,3169 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>HUF System Hub</title>
+
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+
+    <script src="devices.js"></script>
+    <script src="config.js"></script>
+    <style>
+        :root { 
+            --huf-red: #aa1c25; 
+            --huf-dark: #555; 
+            --today-blue: #007bff; 
+            --success-green: #28a745; 
+            --warning-orange: #ffc107; 
+            --maint-purple: #6f42c1;
+            --priority-high: #ff4d4d;
+            --priority-med: #ffc107;
+            --priority-low: #28a745;
+            --priority-low1: #2a28a7;
+            --huf-blue: #4164a5;
+            --light-bg: #f0f2f5;
+            --border: #ddd;
+        
+  
+ 
+    --huf-border: #ccc; 
+    --huf-bg: #ececec; 
+    --huf-orange: #ff9800; 
+    --huf-green: #28a745; 
+
+    --status-execution: #a0c4ff;
+    --status-acceptance: #ffd60a;
+    --status-discarded: #adb5bd;
+    --status-approval: #0077b6;
+    --status-completed: #52b788;
+    --status-paused: #e63946;
+    --status-new: #ffffff;
+    --status-evaluation: #fb8500;
+
+    --NonProductive: #888787; 
+    --Productive: #6bcf31; 
+    --RFC: #f3ef0ccb; 
+    --Customer: #0c70f3c9; 
+
+    --loc-mexico: #006847;
+    --loc-brazil: #7b2cbf; 
+    --loc-usa: #002868;
+    --loc-germany: #ffce00;
+    --loc-china: #de2910;
+    --loc-india: #ff9933;
+    --loc-spare: #555;
+            
+        }
+        body { font-family: 'Segoe UI', sans-serif; background: #f4f4f4; margin: 0; padding: 10px; overflow-x: hidden; }
+        .card { max-width: 98%; margin: auto; background: #ffffff; padding: 12px; border-radius: 12px; border-top: 8px solid var(--huf-red); box-shadow: 0 4px 15px rgba(0,0,0,0.1); position: relative; min-height: 550px; transition: max-width 0.4s ease; }
+        .card-login { max-width: 30%; margin: auto; background: #ffffff; padding: 12px; border-radius: 12px; border-top: 8px solid var(--huf-red); box-shadow: 0 4px 15px rgba(0,0,0,0.1); position: relative; min-height: 550px; transition: max-width 0.4s ease; }
+        
+        .card.wide-view { max-width: 90%; }
+        .logo-container { text-align: center; margin-top: 20px; }
+        .logo-container img { max-width: 180px; display: block; margin: 40 ; }
+        .logo-subtitle { margin: 0; padding: 0; font-size: 14px; font-weight: bold; color: #555; line-height: 1.1;text-align: left; }
+        h2 { color: var(--huf-red); text-align: center; text-transform: uppercase; margin: 1px 0 2px 0; font-size: 1.4rem; }
+        .view-layer { display: none; }
+        .active-view { display: block; }
+
+
+.huf-btn { padding: 12px 20px; background: var(--huf-dark); color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; text-transform: uppercase; transition: 0.3s; }
+.huf-btn:hover { background: var(--huf-red); }
+.huf-btn-red { background: var(--huf-red); }
+.huf-btn-red:hover { background: #b3050f; }
+
+        .search-container {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 25px;
+    align-items: center;
+}
+
+/* Estilo para que el modal de capacidad sea gigante */
+.full-width-swal {
+    padding: 10px !important;
+    max-height: 95vh !important;
+}
+
+#capacity-table-container input:focus {
+    outline: none;
+    border-color: var(--huf-red) !important;
+    background: #fff8f8;
+    box-shadow: 0 0 5px rgba(170, 28, 37, 0.2);
+}
+
+/* Scrollbar estilizado para la tabla */
+#capacity-table-container::-webkit-scrollbar {
+    width: 8px;
+}
+#capacity-table-container::-webkit-scrollbar-thumb {
+    background: #ccc;
+    border-radius: 4px;
+}
+
+.search-container select, 
+.search-container input {
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    outline: none;
+    font-size: 14px;
+    transition: border-color 0.2s;
+}
+
+.search-container input:focus, 
+.search-container select:focus {
+    border-color: var(--primary);
+}
+
+.search-container input {
+    flex-grow: 1;
+}
+
+.btn-clear {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    background: #f8fafc;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: #64748b;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.btn-clear:hover {
+    background: #f1f5f9;
+    color: #1e293b;
+    border-color: #cbd5e1;
+}
+
+.btn-clear i {
+    font-size: 13px;
+}
+
+       .app-container { width: 98%; margin: 0px auto; background: #ffffff; padding: 10px; border-radius: 0px; border-top: 2px  }
+
+
+        
+ /* MENU */
+.menu-container { 
+            display: flex; 
+            flex-direction: row; 
+            justify-content: center; 
+            gap: 40px; 
+            padding: 80px 20px; 
+            max-width: 900px; /* Incrementado para dar espacio a botones más grandes */
+            margin: auto; 
+        }
+
+        .btn-menu { 
+            background: #fff; 
+            border: 3px solid var(--huf-red); 
+            color: #333; 
+            
+            /* --- AJUSTES DE TAMAÑO --- */
+            width: 340px;         /* Ancho fijo para que ambos botones sean iguales */
+            height: 220px;        /* Alto fijo */
+            padding: 10px;        /* Reducido ya que el tamaño lo da el width/height */
+            display: flex;        /* Centra el texto internamente */
+            align-items: center;
+            justify-content: center;
+            /* ------------------------- */
+
+            border-radius: 15px; 
+            font-size: 22px; 
+            font-weight: bold; 
+            cursor: pointer; 
+            transition: 0.8s; 
+            text-transform: uppercase; 
+        }
+
+        .btn-menu:hover { 
+            background: var(--huf-red); 
+            color: white; 
+            transform: translateY(-5px); 
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1); /* Efecto extra de profundidad */
+        }
+        /* INPUTS */
+       .tooling-input-bar { 
+    display: flex; 
+    gap: 6px; 
+    margin-bottom: 15px; 
+     margin-top: 15px; 
+    background: #f9f9f9; 
+    padding: 30px 15px;
+    border-radius: 12px; 
+    border: 3px solid #020202; 
+    align-items: flex-end; 
+    flex-wrap: nowrap; /* Evita que se baje a otra línea */
+
+}
+.tooling-input-bar div { 
+    display: flex; 
+    flex-direction: column; 
+    gap: 20px; 
+    flex: 1; 
+    min-width: 80px; /* Reducido para que quepan más */
+}
+.tooling-input-bar input, .tooling-input-bar select {
+    padding: 8px 6px; /* Inputs más compactos */
+    font-size: 14px;
+}
+        .tooling-input-bar label { font-size: 10px; font-weight: bold; color: #666; }
+        select, input { width: 100%; padding: 6px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; box-sizing: border-box; }
+
+        /* TABLE */
+        .impact-table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .impact-table th { background: #555; color: white; padding: 10px; text-align: left; font-size: 13px; }
+        .impact-table td { padding: 10px; border-bottom: 1px solid #eee; font-size: 12px; }
+
+       
+        
+        /* GANTT STYLES */
+
+        
+        .device-him-group { flex: 1.3 !important; display: flex !important; flex-direction: row !important; gap: 8px; position: relative; }
+        .device-him-group div { flex: 1; }
+        #availabilityInfo { position: absolute; top: 315px; left: 80px; width: 100%; text-align: center; font-size: 18px; font-weight: bold; color: var(--huf-black); height: 28px; pointer-events: none; }
+
+        .gantt-wrapper { overflow: auto; background: white; border: 1px solid #ddd; border-radius: 8px; max-height: 600px; position: relative; scroll-behavior: smooth; }
+        .gantt-grid { display: grid; grid-template-columns: 400px 1fr; min-width: fit-content; }
+        .gantt-header-title { background: #555; color: white; padding: 10px; font-weight: bold; position: sticky; left: 0; top: 0; z-index: 110; border-right: 2px solid #ddd; display: flex; align-items: center; }
+        
+        .gantt-header-time { display: flex; flex-direction: column; position: sticky; top: 0; z-index: 100; }
+        .gantt-upper-header { display: flex; height: 30px; background: #bbb; color: #333; font-size: 11px; font-weight: bold; align-items: center; border-bottom: 1px solid #aaa; }
+        .gantt-upper-cell { flex-shrink: 0; text-align: center; border-right: 1px solid #aaa; overflow: hidden; white-space: nowrap; }
+        
+        .gantt-header-days { display: flex; background: var(--huf-dark); color: white; height: 70px; }
+        .gantt-day-cell { flex: 1 0 70px; min-width: 70px; border-right: 1px solid #aaa; display: flex; align-items: center; justify-content: center; position: relative; }
+        .gantt-day-cell.is-today { background-color: var(--today-blue) !important; color: white; }
+        .gantt-day-cell.is-shutdown { background-color: #ffcccc !important; color: #cc0000 !important; border-right: 1px solid #ff9999; }
+        
+        .vertical-text { writing-mode: vertical-rl; transform: rotate(180deg); white-space: nowrap; font-size: 11px; font-weight: bold; }
+        .gantt-row { display: contents; }
+        .gantt-task-name { padding: 12px; border-bottom: 1px solid #eee; font-size: 13px; font-weight: bold; background: #ffffff !important; border-right: 2px solid #ddd; display: flex; justify-content: space-between; align-items: center; cursor: pointer; position: sticky; left: 0; z-index: 90; box-shadow: 2px 0 5px rgba(0,0,0,0.1); }
+        .gantt-bar-container { position: relative; height: auto; min-height: 65px; border-bottom: 1px solid #eee; background: #fff; z-index: 10; display: flex; }
+        .gantt-bg-cell { flex: 1; min-width: 70px; border-right: 1px solid #eee; height: 100%; pointer-events: none; }
+        .gantt-bg-cell.is-shutdown-bg { background-color: rgba(227, 6, 19, 0.05); }
+        .gantt-bg-cell.is-maint-bg { background-color: rgba(111, 66, 193, 0.05); }
+        
+        .gantt-bar { position: absolute; border-radius: 6px; color: #333; font-size: 10px; display: flex; align-items: center; justify-content: flex-start; overflow: hidden; font-weight: bold; box-shadow: 1px 1px 3px rgba(0,0,0,0.1); transition: opacity 0.2s; user-select: none; border: 1px solid rgba(0,0,0,0.05); z-index: 20; cursor: pointer; }
+        .gantt-bar:hover { opacity: 0.9; }
+
+        .floating-label { position: absolute; left: 0; padding: 0 8px; white-space: nowrap; display: inline-block; pointer-events: none; transition: transform 0.05s linear; }
+
+        .action-btns {  display: flex; gap: 5px; }
+        .btn-icon { background: none; border: none; cursor: pointer; font-size: 14px; padding: 2px; border-radius: 4px; transition: background 0.2s; }
+        .btn-icon:hover { background: #eee; }
+        .btn-icon.add { color: var(--success-green); font-size: 16px; }
+
+.him-matrix { 
+    width: 100%; /* Aquí ajustas el largo específico que desees */
+    table-layout: fixed; 
+    border-collapse: collapse; 
+    margin-top: 8px; 
+    font-size: 10px; 
+    font-weight: normal; 
+    background: #fdfdfd; /* O cualquier color claro para que el texto sea visible */
+width: 100%;         /* Para que se adapte al contenedor padre */
+}
+.him-matrix th, .him-matrix td { 
+    border: 1px solid #eee; 
+    padding: 4px; 
+    text-align: left; 
+    overflow: hidden; 
+    text-overflow: ellipsis; 
+    white-space: nowrap; 
+}
+        .him-matrix td { color: #333; }
+        .gantt-bar-container { position: relative; height: auto; min-height: 65px; border-bottom: 1px solid #eee; background: #fff; z-index: 10; display: flex; }
+
+        #customContextMenu { position: fixed; display: none; background: #fff; border: 1px solid #ccc; box-shadow: 2px 2px 10px rgba(0,0,0,0.2); z-index: 10000; border-radius: 6px; overflow: hidden; min-width: 120px; }
+        .menu-item { padding: 10px 15px; cursor: pointer; font-size: 13px; font-weight: bold; color: #333; transition: 0.2s; }
+        .menu-item:hover { background: var(--huf-red); color: white; }
+        .menu-item.delete:hover { background: #cc0000; }
+
+        .stats-view-container { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; max-height: 75vh; overflow-y: auto; padding: 20px; }
+        .device-stat-row { background: #fff; border: 1px solid #ddd; border-radius: 10px; padding: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .device-stat-title { font-size: 14px; font-weight: bold; margin-bottom: 25px; color: #222; border-left: 4px solid var(--huf-red); padding-left: 8px; }
+        .chart-frame { display: flex; height: 150px; position: relative; margin-left: 45px; margin-bottom: 35px; border-left: 1.5px solid #999; border-bottom: 1.5px solid #999; }
+        .y-axis-labels { position: absolute; left: -40px; height: 100%; display: flex; flex-direction: column; justify-content: space-between; font-size: 9px; color: #666; text-align: right; width: 35px; }
+        .y-axis-title { position: absolute; left: -55px; top: 50%; transform: rotate(-90deg) translateY(-50%); font-size: 10px; font-weight: bold; color: #444; white-space: nowrap; }
+        .x-axis-title { position: absolute; bottom: -32px; left: 50%; transform: translateX(-50%); font-size: 10px; font-weight: bold; color: #444; }
+        .grid-lines { position: absolute; width: 100%; height: 100%; pointer-events: none; }
+        .grid-line { position: absolute; width: 100%; border-top: 1px dashed #eee; left: 0; }
+        .stats-week-wrapper { display: flex; flex: 1; align-items: flex-end; gap: 1px; height: 100%; padding: 0 2px; position: relative; z-index: 5; }
+        .stats-week-col { flex: 1; min-width: 4px; display: flex; flex-direction: column; justify-content: flex-end; height: 100%; position: relative; }
+        .bar-fill { width: 100%; border-radius: 1px 1px 0 0; transition: height 0.3s; position: relative; cursor: pointer; opacity: 0.8; }
+        .bar-fill:hover { opacity: 1; filter: brightness(0.8); z-index: 10; }
+        .bar-fill:hover::after { content: attr(data-label); position: absolute; top: -25px; left: 50%; transform: translateX(-50%); background: #222; color: white; font-size: 9px; padding: 2px 5px; border-radius: 3px; z-index: 100; white-space: nowrap; pointer-events: none; }
+        .week-label-stat { font-size: 7px; color: #999; margin-top: 5px; text-align: center; position: absolute; bottom: -14px; width: 100%; }
+        .trend-line-svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 6; }
+        .trend-path { fill: none; stroke: var(--huf-red); stroke-width: 1.5; stroke-linejoin: round; stroke-linecap: round; }
+
+        .shutdown-controls, .maintenance-controls { background: #f9f9f9; padding: 20px; border-radius: 8px; border: 1px solid #b12525; margin-bottom: 20px; display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap; }
+        .shutdown-impact-table, .maintenance-impact-table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 25px; }
+        .shutdown-impact-table th, .maintenance-impact-table th { background: #555; color: white; padding: 12px; text-align: left; font-size: 14px; }
+        .maintenance-impact-table th { background: var(--maint-purple); }
+        .shutdown-impact-table td, .maintenance-impact-table td { padding: 12px; border-bottom: 1px solid #eee; font-size: 13px; }
+        .impact-high { color: var(--huf-red); font-weight: bold; }
+
+        .btn-send { background: var(--huf-red); color: white; width: 100%; padding: 15px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 18px; margin-top: 20px; }
+        .btn-logout { position: absolute; top: 10px; right: 10px; background: #666; color: white; border: none; padding: 5px 12px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; }
+        .btn-back { position: relative; top: -128px; left: 10px; background: #eee; color: #333; border: 1px solid #ccc; padding: 5px 12px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; }
+        .btn-back2 { position: relative; top: -128px; left: 10px; background: #eee; color: #333; border: 1px solid #ccc; padding: 5px 12px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; }
+        
+        #backupStatusBar { position: fixed; bottom: 0; right: 0; background: rgba(0,0,0,0.8); color: #fff; font-size: 10px; padding: 4px 12px; border-top-left-radius: 12px; z-index: 9999; border-top: 1px solid var(--huf-red); }
+
+        .priority-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 5px; }
+        .dot-high { background: #ff0000; box-shadow: 0 0 5px #ff0000; }
+        .dot-med { background: #ffc107; }
+        .dot-low { background: #28a745; }
+        .search-box { margin-bottom: 10px; display: flex; align-items: center; gap: 10px; background: #fff; padding: 5px 10px; border-radius: 6px; border: 1px solid #ddd; }
+
+        @media (max-width: 800px) { .stats-view-container { grid-template-columns: 1fr; } }
+
+
+
+.top-row { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; align-items: flex-end; }
+.form-group { flex: 1 1 70px; display: flex; flex-direction: column; gap: 5px; }
+.form-group.large { flex: 1 1 90px; }
+label { font-size: 11px; font-weight: bold; color: var(--huf-dark); text-transform: uppercase; }
+select, input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 13px; box-sizing: border-box; }
+
+.months-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(85px, 1fr)); gap: 10px; margin-top: 10px;
+    display: flex; 
+    gap: 6px; 
+    margin-bottom: 15px; 
+     margin-top: 15px; 
+    background: #f9f9f9; 
+    padding: 30px 15px;
+    border-radius: 12px; 
+    border: 3px solid #020202; 
+    align-items: flex-end; 
+    flex-wrap: nowrap; /* Evita que se baje a otra línea */ }
+.month-input-group { display: flex; flex-direction: column; align-items: center; background: #f4f4f4; padding: 10px; border: 1px solid #ddd; border-radius: 6px; }
+
+.charts-dashboard { display: grid; grid-template-columns: repeat(2, 1fr); gap: 25px; width: 100%; margin-top: 10px; }
+.chart-container { border: 1px solid var(--huf-border); border-radius: 8px; padding: 20px; background: white; height: 400px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+
+
+    /* Botones Profesionales */
+    .huf-btn {
+        padding: 8px 16px;
+        border: none;
+        border-radius: 4px;
+        color: white;
+        font-weight: bold;
+        font-size: 12px;
+        cursor: pointer;
+        transition: opacity 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .huf-btn:hover {
+        opacity: 0.85;
+    }
+
+    /* Total y Acciones */
+    .total-cell {
+        background-color: #2d3436 !important;
+        color: #fff;
+        font-weight: bold;
+    }
+
+    #logTableBody td {
+        padding: 8px 5px;
+        border: 1px solid #000000;
+        text-align: center;
+    }
+
+    /* Zebra Striping */
+    #logTableBody tr:nth-child(even) {
+        background-color: #ffffff;
+    }
+
+    #logTableBody tr:hover {
+        background-color: #1254be;
+    }
+table { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 1600px; table-layout: fixed; }
+thead th { background-color: var(--huf-dark); color: white; padding: 12px 2px; position: sticky; top: 0; z-index: 10; text-transform: uppercase; border: 1px solid #444; }
+
+tbody td { padding: 8px 4px; border-bottom: 1px solid #eee; text-align: center; border-right: 1px solid #f0f0f0; word-break: break-word; color: #000; }
+
+
+.filter-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0px; }
+.filter-grid-list { display: flex; flex-direction: column; }
+.filter-item { background: rgb(255, 255, 255); padding: 5px; cursor: pointer; font-size: 10px; font-weight: bold; text-align: left; border-bottom: 1px solid #000000; color: #000; border-right: 1px solid #000000; }
+.filter-item.active { background: var(--huf-red); color: white; }
+.filter-item.full-header { grid-column: span 2; background: var(--huf-red);color: #ffffff; text-align: center; border-bottom: 1px solid var(--huf-dark); position: sticky; top: 0; z-index: 5; }
+.filter-input-text { width: 100%; padding: 8px; border: 1px solid var(--huf-dark); height: 80px; box-sizing: border-box; font-size: 11px; font-weight: bold; resize: none; }
+
+
+th:nth-child(1), td:nth-child(1) { width: 160px; } 
+th:nth-child(2), td:nth-child(2) { width: 80px; }  
+th:nth-child(3), td:nth-child(3) { width: 100px; }  
+th:nth-child(4), td:nth-child(4) { width: 180px; } 
+th:nth-child(5), td:nth-child(5) { width: 180px; } 
+th:nth-child(6), td:nth-child(6) { width: 130px; } 
+th:nth-child(7), td:nth-child(7) { width: 120px; }  
+th:nth-child(8), td:nth-child(8) { width: 120px; } 
+th:nth-child(75), td:nth-child(75) { width: 53px; } 
+
+tr.row-brazil td { background-color: var(--loc-brazil) !important; color: white !important; }
+.loc-tag { font-weight: bold; padding: 4px 0; border-radius: 4px; display: block; color: white; }
+.loc-Mexico { background-color: var(--loc-mexico); }
+.loc-Brazil { background-color: var(--loc-brazil); }
+.loc-USA { background-color: var(--loc-usa); }
+.loc-Germany { background-color: var(--loc-germany); color: black !important; }
+.loc-China { background-color: var(--loc-china); }
+.loc-India { background-color: var(--loc-india); }
+.loc-Spare { background-color: var(--loc-spare); }
+
+.cell-checked { background-color: var(--huf-orange) !important; color: white !important; }
+.cell-has-hours { background-color: var(--huf-green) !important; color: white !important; }
+.prio-tag { font-weight: bold; padding: 3px 8px; border-radius: 3px; font-size: 10px; text-transform: uppercase; display: inline-block; }
+.prio-NonProductive { background-color: var(--NonProductive); color: white; }
+.prio-Productive { background-color: var(--Productive); color: #1a1a1a; }
+.prio-RFC { background-color: var(--RFC); color: #1a1a1a; }
+.prio-Customer { background-color: var(--Customer); color: white; }
+
+.action-btns i { cursor: pointer; margin: 0 5px; transition: 0.2s; color: var(--huf-dark); }
+.action-bar { display: flex; gap: 25px; margin-bottom: 25px; align-items: left; }
+.summary-trigger-btn { background: var(--huf-red); color: white; border: none; padding: 12px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 10px; }
+#summary-view .app-container { width: 100vw; max-width: 100vw; margin: 0; border-radius: 0; min-height: 100vh; box-sizing: border-box; }
+/* REGLAS DE STATUS */
+tr.row-execution td.sticky-col:nth-child(-n+7) { background-color: var(--status-execution) !important; color: #000 !important; }
+tr.row-acceptance td.sticky-col:nth-child(-n+7) { background-color: var(--status-acceptance) !important; color: #000 !important; }
+tr.row-discarded td.sticky-col:nth-child(-n+7) { background-color: var(--status-discarded) !important; color: #000 !important; }
+tr.row-approval td.sticky-col:nth-child(-n+7) { background-color: var(--status-approval) !important; color: white !important; }
+tr.row-completed td.sticky-col:nth-child(-n+7) { background-color: var(--status-completed) !important; color: #000 !important; }
+tr.row-paused td.sticky-col:nth-child(-n+7) { background-color: var(--status-paused) !important; color: white !important; }
+tr.row-new td.sticky-col:nth-child(-n+7) { background-color: var(--status-new) !important; color: #000 !important; }
+tr.row-evaluation td.sticky-col:nth-child(-n+7) { background-color: var(--status-evaluation) !important; color: #000 !important; }
+
+    /* 2. La Columna 8 (Separador) - Prioridad de País */
+tr td.sticky-col.c8 { padding: 0 !important; width: 15px !important; }
+tr.row-mexico td.sticky-col.c8 { background-color: var(--loc-mexico) !important; }
+tr.row-brazil td.sticky-col.c8 { background-color: var(--loc-brazil) !important; }
+
+
+    /* 3. Definición de anchos para Sticky */
+    .c1 { left: 0; width: 30px; }
+    .c2 { left: 30px; width: 50px; }
+    .c3 { left: 80px; width: 180px; text-align: left; }
+    .c4 { left: 260px; width: 180px; text-align: left; }
+    .c5 { left: 440px; width: 80px; }
+    .c6 { left: 520px; width: 70px; }
+    .c7 { left: 590px; width: 70px; }
+    .c8 { left: 660px; width: 15px; padding: 0 !important; }
+
+/* Asegurar visibilidad de los Tags de locación */
+.loc-Mexico { background-color: var(--loc-mexico); color: white; }
+.loc-Brazil { background-color: var(--loc-brazil); color: white; }
+#import-loader { display: none; background: #fff; padding: 10px 20px; border: 2px solid var(--huf-red); border-radius: 5px; position: fixed; top: 20px; right: 20px; z-index: 1000; box-shadow: 0 4px 10px rgba(0,0,0,0.2); font-weight: bold; }
+
+
+
+    :root {
+        --primary-color: #0056b3; /* Azul corporativo */
+        --bg-gradient: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        --card-bg: #ffffff;
+        --text-dark: #2d3436;
+        --error-red: #d63031;
+    }
+
+ 
+
+    .logo-container {
+        text-align: right;
+        margin-bottom: -10px;
+    }
+
+    .logo-container img {
+        max-height: 100px;
+        margin-top: 15px;
+    }
+
+    .logo-subtitle {
+        font-size: 0.55rem;
+        color: #555;
+        text-transform: uppercase;
+        letter-spacing: .25px;
+        margin: 0;
+    }
+
+    .login-box h2 {
+        color: var(--huf-red);
+        font-size: 2.4rem;
+        font-weight: 700;
+        text-align: center;
+        margin-bottom: 45px;
+        letter-spacing: 0.5px;
+    }
+
+.moving-title {
+    text-align: center;
+    display: inline-block;
+    animation: bounceIn 1s ease, glow 2s infinite alternate;
+    color: #00d2ff; /* O el color que prefieras */
+    text-shadow: 0 0 10px rgba(0, 210, 255, 0.5);
+}
+
+/* Animación de entrada */
+@keyframes bounceIn {
+    0% { transform: scale(0.3); opacity: 0; }
+    50% { transform: scale(1.05); opacity: 1; }
+    70% { transform: scale(0.9); }
+    100% { transform: scale(1); }
+}
+
+/* Animación de resplandor constante */
+@keyframes glow {
+    from { text-shadow: 0 0 5px #bb2217; }
+    to { text-shadow: 0 0 20px #fafeff, 0 0 30px #f7f7f7; }
+}
+
+    /* Manejo del error con suavidad */
+    #loginError {
+        display: none; /* Se activa por JS */
+        background-color: #fff5f5;
+        color: var(--error-red);
+        padding: 10px;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        border: 1px solid #feb2b2;
+        margin-bottom: 20px;
+        text-align: center;
+    }
+
+    .input-login {
+        width: 100%;
+        padding: 12px 15px;
+        margin-bottom: 15px;
+        border: 1px solid #525a5e;
+        border-radius: 8px;
+        font-size: 1rem;
+        box-sizing: border-box; /* Crucial para el padding */
+        transition: border-color 0.2s, box-shadow 0.2s;
+        outline: none;
+    }
+
+    .input-login:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px rgba(0, 86, 179, 0.1);
+    }
+
+    .btn-send {
+        width: 100%;
+        padding: 14px;
+        background-color: rgba(165, 23, 13, 0.678);
+        color: rgb(255, 255, 255);
+        border: none;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background-color 0.2s, transform 0.1s;
+        margin-top: 10px;
+    }
+
+    .btn-send:hover {
+        background-color: var(--huf-red);
+    }
+
+    .btn-send:active {
+        transform: scale(0.98);
+    }
+
+    .view-layer {
+        display: none;
+    }
+
+    .view-layer.active-view {
+        display: block;
+        animation: fadeIn 0.5s ease;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    
+
+.btn-tool {
+            /* Usamos variables con valores por defecto (fallback) */
+            --bg-color: #444; 
+            --hover-color: #555;
+
+            width: 150px;
+            height: 30px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            
+            background: linear-gradient(180deg, var(--hover-color) 0%, var(--bg-color) 100%);
+            color: #ffffff;
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            
+            border: 1px solid rgba(0,0,0,0.2);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2), 
+                        inset 0 1px 0 rgba(255, 255, 255, 0.15);
+            outline: none;
+        }
+
+        /* Comportamiento al pasar el mouse */
+        .btn-tool:hover {
+            filter: brightness(1.1);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Comportamiento al hacer clic */
+        .btn-tool:active {
+            transform: translateY(1px);
+            filter: brightness(0.9);
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        /* Estilo para el Buscador */
+        .search-wrapper {
+            display: flex;
+            align-items: center;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 0 12px;
+            height: var(--btn-height);
+            margin-left: auto;
+            width: 250px;
+        }
+
+        .search-wrapper input {
+            border: none;
+            outline: none;
+            width: 100%;
+            padding-left: 8px;
+            font-size: 14px;
+        }
+
+
+
+
+
+/* CONTENEDOR PRINCIPAL CON SCROLL */
+        .table-section {
+            overflow-x: auto;
+            max-width: 100%;
+            height: 70vh; /* Altura ajustable */
+            border: px solid var(--border);
+            background: white;
+            position: sticky;
+            top: 0;
+            z-index: 30;
+        }
+
+        table {
+               min-width: 5500px; /* Ajusta este valor según el ancho de tus 60 columnas */
+    transition: transform 0.3s ease; /* Movimiento suave al navegar */
+    table-layout: fixed;
+            border-collapse: separate; /* Obligatorio para Sticky */
+            border-spacing: 0;
+            width: 100%;
+        }
+
+        /* CONFIGURACIÓN DE COLUMNAS FIJAS (STICKY) */
+        .sticky-col {
+            position: sticky;
+            z-index: 150;
+            background: white ; /* Evita que se vea lo de atrás al scrollear */
+            border-right: 2px solid var(--border) !important;
+            border-bottom: 4px solid var(--border) !important;
+            box-shadow: 4px 0 5px -2px rgba(0,0,0,0.1);
+        }
+
+        /* Encabezados fijos deben estar por encima (z-index 20) */
+thead tr th.sticky-col {
+    z-index: 300 !important; /* El nivel más alto de todos */
+    top: 0;
+    background: var(--huf-red) !important;
+    position: sticky;
+    height: 40px; /* Mantenemos consistencia */
+}
+        /* 3. Encabezado de Meses (JAN 2024, etc.) */
+#dynamicHeaderMonths th {
+    position: sticky;
+    top: 154px;   /* Justo donde termina la fila de arriba */
+    z-index: 50;  /* Menor que las columnas fijas para que se esconda al scrollear lateralmente */
+    background: var(--huf-red) !important;
+}
+
+/* 4. Las celdas vacías de los meses (Las 8 primeras de la segunda fila) */
+#dynamicHeaderMonths th.sticky-col {
+    z-index: 160 !important; /* Mayor que el cuerpo (150) pero menor que los filtros (300) */
+    top: 154px;
+    background: var(--huf-red)!important; /* O el color de fondo de tu tabla */
+}
+
+/* Modifica tu regla actual para fijar el alto del contenedor */
+.filter-row th { 
+    background-color: var(--huf-dark); 
+    padding: 5px; 
+    border-bottom: 2px solid #000000; 
+    vertical-align: top;
+    /* CAMBIO CLAVE: El alto debe coincidir con el top de la siguiente fila */
+    height: 154px; 
+    box-sizing: border-box;
+    position: sticky;
+    top: 0;
+    z-index: 200; /* Asegura que esté sobre el cuerpo de la tabla */
+}
+/* Agrega esta regla para los cuadros de texto */
+.filter-row textarea {
+    width: 100%;
+    /* Ajusta este alto según cuánto espacio quieras que ocupen dentro de los 154px */
+    height: 80px; 
+    resize: none;
+    border: 1px solid #ccc; /* 6px era muy grueso, 1px o 2px es más estándar */
+    border-radius: 4px;
+    padding: 5px;
+    box-sizing: border-box;
+    font-family: inherit;
+    font-size: 12px;
+    /* ELIMINADO: position: sticky y top: 0 */
+}
+        /* POSICIONAMIENTO EXACTO DE LAS 8 COLUMNAS */
+        .c1 { left: 0; min-width: 160px; }
+        .c2 { left: 160px; min-width: 80px; }
+        .c3 { left: 240px; min-width: 100px; }
+        .c4 { left: 340px; min-width: 180px; }
+        .c5 { left: 520px; min-width: 180px; }
+        .c6 { left: 700px; min-width: 130px; }
+        .c7 { left: 830px; min-width: 120px; }
+        .c8 { left: 950px; min-width: 120px; }
+
+        .view-layer { display: none; }
+        .view-layer.active-view { display: block; }
+
+.month-cell {
+    min-width: 180px;
+    width: 180px;
+    text-align: center;
+    border: 1px solid #eee;
+    font-size: 11px;
+    vertical-align: middle;
+    line-height: 1.2; /* Ajusta el espacio entre mes y año */
+}
+
+/* Resaltado opcional para el mes/año actual */
+.current-month-highlight {
+    background: #fde3e6 !important;
+    color: #0d47a1;
+    font-weight: bold;
+    border: 1px solid #0d47a1 !important;
+}
+        
+
+
+    </style>
+
+    
+</head>
+<body 
+
+
+
+
+
+onkeydown="manejarTeclado(event)" onclick="hideContextMenu()">
+
+<div id="customContextMenu">
+    <div class="menu-item" id="menuEditBtn">✏️ Edit Weeks</div>
+    <div class="menu-item delete" id="menuDeleteBtn" style="border-top: 1px solid #eee; color: red;">🗑️ DELETE</div>
+</div>
+
+<div id="mainCard" class="car card-login">
+    <div class="logo-container">
+        <img src="logo.png" alt="HUF Logo" onerror="this.style.display='none';">
+        <p class="logo-subtitle">Developed By Omar Amador</p>
+    </div>
+
+    <div id="viewLogin" class="view-layer active-view"class="card">
+        <div class="login-box">
+            <h2 class="moving-title">Login System</h2>
+            <div id="loginError">⚠️ Invalid User or Password</div>
+            <input type="text" id="userInput" class="input-login" placeholder="User" oninput="limpiarError()">
+            <input type="password" id="passInput" class="input-login" placeholder="Password" oninput="limpiarError()">
+            <button class="btn-send" onclick="validarAcceso()">ENTER</button>
+        </div>
+    </div>
+    
+
+    <div id="viewMenu" class="view-layer">
+        <button class="btn-logout" onclick="logout()">LOGOUT</button>
+        <div class="login-box">
+            <h2>forecast huf system</h2></div>
+        <div class="menu-container">
+            <button class="btn-menu" onclick="showModule('viewTooling')"style="border-color: var(--huf-red);font-size: 40px;">🛠  EQUIPMENT</button>
+ <button class="btn-menu" onclick="showModule('main-app')" style="border-color: var(--huf-red);font-size: 40px;">⏱ MAN POWER </button>
+        </div>
+    </div>
+
+
+
+<div id="viewStats" class="view-layer">
+    <button class="btn-back" onclick="showModule('viewTooling')">⬅ BACK</button>
+    <button class="btn-tool" style="background:var(--huf-red); margin-left:100px;" onclick="goToCapacityEditor()">⚙️ EDIT CAPACITY</button>
+    
+    <h2>Usage Stats by Device Type</h2>
+    <div id="statsMainContainer" class="stats-view-container"></div>
+</div>
+
+
+    
+<div id="viewShutdown" class="view-layer" >
+            <button class="btn-back" onclick="showModule('viewTooling')">⬅ BACK</button>
+        <h2> ShutDown Portal</h2>
+    
+
+
+    <div class="tooling-input-bar">
+            <div style="flex:1;"><label style="display: block; text-align: center; font-size: 13px ">Shutdown Start Date</label><input type="date" id="shutStart" ondblclick="this.showPicker()"></div>
+            <div style="flex:1;"><label style="display: block; text-align: center; font-size: 13px ">Shutdown End Date</label><input type="date" id="shutEnd" ondblclick="this.showPicker()"></div>
+            <button onclick="analizarShutdown()" style="background:var(--huf-red); color:white; border:none; padding:10px 20px; border-radius:6px; cursor:pointer; font-weight:bold; height:38px;">🔍 ANALYZE</button>
+            <button onclick="setShutdown()" style="background:var(--success-green); color:white; border:none; padding:10px 20px; border-radius:6px; cursor:pointer; font-weight:bold; height:38px;">💾 SCHEDULE</button>
+            <button onclick="exportarImpactoCSV('shutdown')" style="background:#4164a5; color:white; border:none; padding:10px 20px; border-radius:6px; cursor:pointer; font-weight:bold; height:38px;">📥 EXPORT CSV</button>
+        </div>
+
+
+
+
+        <div id="shutdownResults"style="margin-top: 30px;">
+            <div style="margin-bottom: 40px;">
+                        <h3 style="font-size: 13px; color: #34495e; text-transform: uppercase; border-left: 4px solid #e30613; padding-left: 10px; margin-bottom: 15px;">Live Impact Analysis</h3>
+            <div style="background: var(--huf-red); border-radius: 8px; overflow: hidden; border: 1px solid #eee;">
+
+
+                      <table class="shutdown-impact-table" style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                    <thead>
+                        <tr style="background: #f8f9fa; border-bottom: 2px solid #dee2e6;">
+                            <th style="padding: 12px; text-align: left;">Project</th>
+                            <th style="padding: 12px; text-align: left;">Activity</th>
+                            <th style="padding: 12px; text-align: left;">HIM (Equipment)</th>
+                            <th style="padding: 12px; text-align: left;">Impact Status</th>
+                        </tr>
+                    </thead>
+                <tbody id="shutdownTableBody">
+                   <tr><td colspan="4" style="text-align:center; padding: 20px; color: #999;">Select dates and press analyze to see projected conflicts</td></tr>
+                </tbody>
+            </table>
+  </div>
+                       <h3 style="font-size: 13px; color: #34495e; text-transform: uppercase; border-left: 4px solid #e30613; padding-left: 10px; margin-bottom: 15px;"> Impact Analysis</h3>
+            <div style="background: var(--huf-red); border-radius: 8px; overflow: hidden; border: 1px solid #eee;">
+                <table class="shutdown-impact-table" style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                <thead style="background: #666;">
+                    <tr>
+                        <th>Start</th>
+                        <th>End</th>
+                        <th>Description</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="historyTableBody"></tbody>
+            </table>
+      
+    </div>
+      </div>
+       </div>
+</div>
+
+
+
+
+
+
+   <div id="viewMaintenance" class="view-layer" >
+            <button class="btn-back" onclick="showModule('viewTooling')">⬅ BACK</button>
+        <h2>Maintenance Portal</h2>
+    
+
+
+    <div class="tooling-input-bar">
+        
+        <div style="flex: 1; min-width: 185px;">
+
+<label style="display: block; text-align: center;font-size: 13px ">Equipment Type </label>
+            <select id="maintDeviceType" onchange="updateMaintHIMOptions()" style="text-align: left;width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; background: #fff;">
+                <option value="">-Select Type-</option>
+            </select>
+        </div>
+
+        <div style="flex: 1; max-width: 100px;align-self: flex-start;">
+            <label style="display: block; text-align: center; font-size: 13px ">Select HIM</label>
+            <select id="maintHIM" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; background: #fff;">
+                <option value="">-Select-</option>
+            </select>
+        </div>
+
+      
+        <div style="flex:1;max-width: 100px;align-self: flex-start;"><label style="display: block; text-align: center;font-size: 13px  "> Start Date</label><input type="date" id="maintStart" ondblclick="this.showPicker()"></div>
+        <div style="flex:1;max-width: 100px;align-self: flex-start;"><label style="display: block; text-align: center; font-size: 13px "> End Date</label><input type="date" id="maintEnd" ondblclick="this.showPicker()"></div>
+
+        <div style="flex: 2; max-width: 500px;align-self: flex-start;">
+            <label style="display: block; text-align: center; font-size: 13px ">Maintenance Description</label>
+            <input type="text" id="maintDesc" placeholder="Ex: Annual Calibration" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
+        </div>
+        
+    
+            <button onclick="analizarMantenimiento()" style="background:var(--huf-red); color:white; border:none; padding:10px 20px; border-radius:6px; cursor:pointer; font-weight:bold; height:38px;">🔍 ANALYZE
+            </button>
+            <button onclick="setMaintenance()" style="background:var(--success-green); color:white; border:none; padding:10px 20px; border-radius:6px; cursor:pointer; font-weight:bold; height:38px;">💾 SCHEDULE
+            </button>
+            <button onclick="exportarImpactoCSV('maintenance')"  style="background:#4164a5; color:white; border:none; padding:10px 20px; border-radius:6px; cursor:pointer; font-weight:bold; height:38px;">📥 EXPORT CSV</button>
+      
+    </div>
+
+    <div id="maintResults" style="margin-top: 30px;">
+        
+        <div style="margin-bottom: 40px;">
+            <h3 style="font-size: 13px; color: #34495e; text-transform: uppercase; border-left: 4px solid #e30613; padding-left: 10px; margin-bottom: 15px;">Live Impact Analysis</h3>
+            <div style="background: var(--huf-red); border-radius: 8px; overflow: hidden; border: 1px solid #eee;">
+         
+                <table class="shutdown-impact-table" style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                    <thead>
+                        <tr style="background: #f8f9fa; border-bottom: 2px solid #dee2e6;">
+                            <th style="padding: 12px; text-align: left;">Project</th>
+                            <th style="padding: 12px; text-align: left;">Activity</th>
+                            <th style="padding: 12px; text-align: left;">HIM (Equipment)</th>
+                            <th style="padding: 12px; text-align: left;">Impact Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="maintTableBody">
+                        <tr><td colspan="4" style="text-align:center; padding: 20px; color: #999;">Select dates and press analyze to see projected conflicts</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div>
+            <h3 style="font-size: 13px; color: #34495e; text-transform: uppercase; border-left: 4px solid #e30613; padding-left: 10px; margin-bottom: 15px;"> Impact Analysis</h3>
+            <div style="background: var(--huf-red); border-radius: 8px; overflow: hidden; border: 1px solid #eee;">
+                <table class="shutdown-impact-table" style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                    <thead>
+                        <tr style="background: #2569ac; border-bottom: 2px solid #dee2e6;">
+                            <th style="padding: 12px; text-align: left;">Device Type</th>
+                            <th style="padding: 12px; text-align: left;">HIM</th>
+                            <th style="padding: 12px; text-align: left;">Start</th>
+                            <th style="padding: 12px; text-align: left;">End</th>
+                            <th style="padding: 12px; text-align: left;">Description</th>
+                            <th style="padding: 12px; text-align: left;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="maintHistoryTableBody">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="viewTooling" class="view-layer">
+    <div class="header-tooling"></div>
+        <button class="btn-back" onclick="showModule('viewMenu')">⬅ BACK</button>
+        <h2 id="toolingTopTitle">FORECAST EQUIPMENT HUF MX</h2>
+        
+        <div class="tooling-input-bar">
+            <div><label style="display: block; text-align: center; font-size: 16px  ">Project Name</label><input type="text" id="toolProject" placeholder="XXX.XXX- Description"></div>
+            <div><label style="display: block; text-align: center; font-size: 16px ">Activity</label><input type="text" id="toolTask" placeholder="Test Name"></div>
+            
+
+            
+<div style="flex: 0.8;"><label style="display: block; text-align: center; font-size: 16px ">Device</label>
+    <select id="deviceType" onchange="updateHIMOptions(); revisarConflictoRealTime();">
+        <option value="">-- Select --</option>
+    </select>
+</div>
+<div style="flex: 0.8;"><label style="display: block; text-align: center; font-size: 16px ">HIM</label>
+    <select id="toolHIM" onchange="mostrarProximaDisponibilidad(); revisarConflictoRealTime();">
+        <option value="Select Device First">Select Device First</option>
+    </select>
+</div>
+            <div style="flex:0.5;"><label style="display: block; text-align: center;  font-size: 16px">Start Date</label>
+            <input type="text" id="toolStart" placeholder="Select Date..." style="background: white; cursor: pointer;">
+            </div>
+<div style="flex:0.3;"><label style="display: block; text-align: center;  font-size: 16px">Weeks</label><input type="number" id="toolDays" placeholder="0" oninput="revisarConflictoRealTime()"></div>
+<div id="availabilityInfo" style="position: absolute; bottom: -18px; font-size: 14px;"></div>
+
+
+
+            <div style="flex:0.5;"><label style="display: block; text-align: center; font-size: 16px ">Scale</label>
+                <select id="viewScale" onchange="renderGantt()">
+                    <option value="week">By Week</option>
+                    <option value="day">By Day</option>
+                    <option value="month">By Month</option>
+                    <option value="year">By Year</option>
+                </select>
+            </div>
+           
+            <button onclick="addToolingRow()" style="background: var(--huf-red); color: white; border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; height: 38px;">ADD TASK</button>
+        </div>
+
+<div class="collapse-controls" style="display:flex; gap:15px; margin-bottom:15px; align-items:center; justify-content:space-between; flex-wrap:wrap; background:#f8f9fa; padding:10px; border-radius:8px;">
+    
+    <div style="display:flex; gap:8px;">
+        <button class="btn-tool" style="--bg-color: #3498db; --hover-color: #2980b9;" onclick="toggleAllProjects(true)"> <span>➕</span> EXPAND ALL </button>
+        <button class="btn-tool" style="--bg-color: #95a5a6; --hover-color: #7f8c8d;" onclick="toggleAllProjects(false)"> <span>➖</span> COLLAPSE ALL </button>
+        <button class="btn-tool" style="--bg-color: #e67e22; --hover-color: #d35400;" onclick="centerToday()"> <span>🎯</span> CENTER TODAY</button>
+    </div>
+
+    <div style="display:flex; gap:8px;">
+        <button class="btn-tool" style="--bg-color: #2c3e50; --hover-color: #34495e;" onclick="showModule('viewStats')"> <span>📊</span> WORKLOAD </button>
+        <button class="btn-tool" style="--bg-color: #1a539e; --hover-color: #2980b9;" onclick="showModule('viewMaintenance')"> <span>🔧</span> MAINTENANCE </button>
+        <button class="btn-tool" style="--bg-color: #9c9e1a; --hover-color: #8c8e16;" onclick="showModule('viewShutdown')"> <span>🚧</span> SHUTDOWN </button>
+        <button class="btn-tool" style="--bg-color: #27ae60; --hover-color: #2ecc71;" onclick="document.getElementById('csvEquipmentInput').click()"> 
+    <span>📥</span> IMPORT CSV 
+</button>
+<input type="file" id="csvEquipmentInput" accept=".csv" style="display:none" onchange="importEquipmentCSV(event)">
+
+<div style="margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
+    <label for="yearSelector" style="font-weight: bold;">View Year:</label>
+    <select id="yearSelector" onchange="selectedYear = parseInt(this.value); renderGantt(); updateCharts();" style="padding: 5px; border-radius: 4px;">
+        <option value="2024">2024</option>
+        <option value="2025">2025</option>
+        <option value="2026" selected>2026</option>
+        <option value="2027">2027</option>
+        <option value="2028">2028</option>
+    </select>
+</div>
+
+    </div>
+
+    <div class="search-box" style="display:flex; align-items:center; background:white; border:1px solid #ccc; padding:5px 10px; border-radius:20px; margin-left:auto;">
+        <span style="margin-right:8px;">🔍</span>
+        <input type="text" id="ganttSearch" placeholder="Search project or HIM..." oninput="renderGantt()" style="border:none; outline:none; font-size:13px; width:180px;">
+    </div>
+</div>
+        <div class="gantt-wrapper" id="ganttScrollParent" onscroll="syncFloatingLabels()">
+            <div id="ganttContainer"></div>
+        </div>
+    </div>
+
+
+
+
+    
+    <div id="main-app" class="view-layer">
+            <div class="header-tooling"></div>
+        <button class="btn-back" onclick="showModule('viewMenu')">⬅ BACK</button>
+        <h2 id="toolingTopTitle">FORECAST MAN POWER HUF MX</h2>
+
+        
+               <div class="app-container">
+            <div class="tooling-input-bar">
+                <div class="form-group large"><label style="display: block; text-align: center;font-size: 16px; ">Project Name</label><input type="text" placeholder="DESCRIPTION" id="projectName"></div>
+                <div class="form-group"><label style="display: block; text-align: center;font-size: 16px ">Project N°</label><input type="text"  placeholder="XXXX.XXX" id="projectNumber"></div>
+                <div class="form-group"><label style="display: block; text-align: center;font-size: 16px ">Year</label><select id="projectYear"></select></div>
+                <div class="form-group"><label style="display: block; text-align: center;font-size: 16px ">Type</label><select id="priority">
+                    <option value="Productive">Productive</option>
+                    <option value="NonProductive">NonProductive</option>
+                    <option value="Customer Project">Customer Project</option>
+                    <option value="RFC Project">RFC Project</option>
+                </select></div>
+                <div class="form-group"><label style="display: block; text-align: center;font-size: 16px; ">Status</label><select id="projectStatus">
+                    <option>Execution</option><option>Acceptance</option><option>Discarded</option><option>Approval</option><option>Completed</option><option>Paused</option><option>New</option><option>Evaluation</option>
+                </select></div>
+                <div class="form-group"><label style="display: block; text-align: center;font-size: 16px; ">Location</label><select id="projectLocation">
+                    <option>Mexico</option><option>Brazil</option><option>USA</option><option>Germany</option><option>China</option><option>India</option><option>Spare 1</option><option>Spare 2</option>
+                </select></div>
+                <div class="form-group large"><label style="display: block; text-align: center;font-size: 16px; ">Comments</label><input type="text"  placeholder="Write here..." id="projectComments"></div>
+                <div class="form-group"><label style="display: block; text-align: center;font-size: 16px; ">PO</label><input type="text"placeholder="Write here..."  id="projectPO"></div>
+                <button class="huf-btn huf-btn-red" id="btnSave" onclick="saveData()">SAVE</button>
+            </div>
+            <div class="months-grid" id="monthsGrid"></div>
+        </div>
+                <div class="action-bar">
+            <button class="summary-trigger-btn" onclick="showModule('summary-view')"><i class="fa-solid fa-table-list"></i> OPEN PROJECT SUMMARY</button>
+            <button class="summary-trigger-btn" onclick="showModule('capacity-view')"><i class="fa-solid fa-gears"></i> EDIT CAPACITY</button>
+      
+            <div class="form-group" style="margin-left:auto; min-width: 200px;"><label>DASHBOARD START YEAR</label><select id="dashboardStartYear" onchange="saveDashboardYearPreference()"></select></div>
+        </div>
+        
+        <div id="charts-loading" style="text-align: center; padding: 20px; color: var(--huf-red); font-weight: bold;"><i class="fa fa-spinner fa-spin"></i> CARGANDO GRÁFICAS...</div>
+        <div class="charts-dashboard" id="charts-wrapper" style="opacity: 0;">
+            <div class="chart-container"><canvas id="chart-0"></canvas></div>
+            <div class="chart-container"><canvas id="chart-1"></canvas></div>
+            <div class="chart-container"><canvas id="chart-2"></canvas></div>
+            <div class="chart-container"><canvas id="chart-3"></canvas></div>
+        </div>
+        
+
+        
+    </div>    
+    
+    
+
+       
+
+       
+<div id="capacity-view" class="view-layer">
+    <div class="header-tooling"></div>
+    <button class="btn-back" onclick="showModule('viewStats')">⬅ BACK</button>
+    <h2 id="toolingTopTitle">EDIT EQUIPMENT CAPACITY</h2>
+
+    <div class="app-container">
+        <div class="top-row" style="justify-content: center; display: flex; gap: 20px; align-items: flex-end; background: #f9f9f9; padding: 15px; border-radius: 8px;">
+            <div class="form-group" style="max-width: 250px; width: 100%;">
+                <label style="display: block; text-align: center; font-size: 14px; font-weight: bold;">Device Type</label>
+                <select id="capDeviceSelect" onchange="loadCapacityGrid()" style="width: 100%;"></select>
+            </div>
+            <div class="form-group" style="max-width: 120px; width: 100%;">
+                <label style="display: block; text-align: center; font-size: 14px; font-weight: bold;">Year</label>
+                <select id="capYearSelect" onchange="loadCapacityGrid()" style="width: 100%;"></select>
+            </div>
+            <div style="border-left: 2px solid #ddd; padding-left: 20px; display: flex; align-items: flex-end; gap: 10px;">
+                <div class="form-group" style="margin-bottom:0;">
+                    <label style="display: block; font-size: 12px; color: #666;">Set to all:</label>
+                    <input type="number" id="quickCapValue" value="1" style="width: 60px; height: 35px; text-align: center; border: 1px solid #ccc; border-radius: 4px;">
+                </div>
+                <button onclick="applyValueToAllWeeks()" class="btn-send" style="background: #b30b0b; height: 35px; padding: 0 15px; font-size: 12px;">
+                    <i class="fas fa-copy"></i> APPLY TO ALL
+                </button>
+            </div>
+        </div>
+
+        <div id="capMonthsGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; margin-top: 20px; align-items: start;"></div>
+        
+        <button class="btn-send" onclick="saveCapacityData()" style="display: block; margin: 30px auto; background: var(--huf-red); padding: 15px 40px; font-size: 18px;">
+            UPDATE CAPACITY PLAN
+        </button> 
+    </div>
+</div>
+        
+<div id="summary-view" class="view-layer">
+    <button class="btn-back" onclick="showModule('main-app')">⬅ BACK</button>
+    <h2>project's summary</h2>
+<button class="huf-btn btn-clear-filters" onclick="clearFilters()" style="background: #5c5b5e;">
+    <span class="btn-icon">🧹</span> 
+    <span class="btn-text">CLEAR FILTERS</span>
+</button>
+                     <button class="huf-btn" onclick="document.getElementById('csvInput').click()" style="background: #28a745;">IMPORT CSV</button> 
+                     <input type="file" id="csvInput" accept=".csv" style="display:none" onchange="importCSV(event)">
+                    
+                     <button class="huf-btn" onclick="deleteAllProjects()" style="background: #dc3545;">DELETE ALL</button> 
+                   
+    <div class="table-section" id="scrollContainer">
+        <table> 
+            <thead>
+<tr class="filter-row">
+    <th class="sticky-col c1"><textarea id="fName" onkeyup="updateUI()" placeholder="Project..."></textarea></th>
+    <th class="sticky-col c2"><textarea id="fNum" onkeyup="updateUI()" placeholder="N°..."></textarea></th>
+    <th class="sticky-col c3"><div id="fYearBox" onclick="toggleFilterMenu('year')">Year</div></th>
+    <th class="sticky-col c4"><div id="fStatusBox" onclick="toggleFilterMenu('status')">Status</div></th>
+    <th class="sticky-col c5"><textarea id="fComm" onkeyup="updateUI()" placeholder="Comm..."></textarea></th>
+    <th class="sticky-col c6"><textarea id="fPO" onkeyup="updateUI()" placeholder="PO..."></textarea></th>
+    <th class="sticky-col c7"><div id="fTypeBox" onclick="toggleFilterMenu('priority')">Type</div></th>
+    <th class="sticky-col c8"><div id="fLocBox" onclick="toggleFilterMenu('location')">Location</div></th>
+    
+    <th id="headerHoursColspan" colspan="67" style="background: var(--huf-dark); color: white; text-align: center;">
+        <span style="float: left; margin-left: 10px; font-size: 14px;">Projects loaded: <span id="projectCount">0</span></span>
+    </th>
+</tr>
+                <tr id="dynamicHeaderMonths" style="background: #eee; font-size: 11px;">
+                    </tr>
+            </thead>
+            <tbody id="logTableBody">
+                </tbody>
+        </table>
+    </div>
+</div>
+</div>
+
+
+
+
+
+
+<script>
+    const firebaseConfig = { databaseURL: "https://test-huf-default-rtdb.firebaseio.com/" };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    const DB_PATH = "load_hours_projects";
+
+   
+    const DB_PROJECTS = "load_hours_projects";
+    const DB_CAPACITY = "capacity_settings";
+    const DB_CONFIG = "app_config";
+    const DB_TOOLING = 'toolingLogs'; // <--- ESTA ES LA QUE TE FALTA
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const monthNamesShort = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+    const currentYear = 2026;
+    let displayYears = [];
+    let projectLogs = [];
+    let capacityData = {}; 
+    let editId = null;
+    let charts = [];
+    let selF = { years: [], statuses: [], locs: [], types: [] };
+    let isSummaryActive = false;
+
+    function handleLogin() { if(document.getElementById('user').value === "admin" && document.getElementById('pass').value === "huf2026") showMenu(); else alert("Credenciales inválidas"); }
+    function showMenu() { switchView('menu-view'); }
+    function showApp() { isSummaryActive = false; switchView('main-app'); initApp(); }
+    function showSummary() { isSummaryActive = true; switchView('summary-view'); window.scrollTo(0, 0); updateUI(); }
+    function switchView(id) { document.querySelectorAll('.view').forEach(v => v.classList.remove('active')); document.getElementById(id).classList.add('active'); }
+    function handleLogout() { location.reload(); }
+
+    
+     Chart.register(ChartDataLabels);
+     window.customCapacity = JSON.parse(localStorage.getItem('huf_custom_capacity')) || {};
+    const TIEMPO_RESPALDO_MINUTOS = 30; 
+    let stage = ""; let pad; let userSession = ""; 
+    let toolingProjects = []; 
+    let shutdownLogs = [];
+    let maintenanceLogs = [];
+    let maintenanceCollapsed = false; 
+    let backupTimer;
+    let loadHoursLogs = [];
+    let selectedYear = new Date().getFullYear(); // Año actual por defecto
+    const CAPACIDAD_REAL = 460;
+db.ref('toolingProjects').on('value', (snapshot) => {
+        toolingProjects = snapshot.val() || [];
+     
+    });
+    function showModule(viewId) {
+        document.querySelectorAll('.view-layer').forEach(v => v.classList.remove('active-view'));
+        document.getElementById(viewId).classList.add('active-view');
+        const card = document.getElementById('mainCard');
+        viewId === 'viewLogin' || viewId === 'viewMenu' ? card.classList.remove('wide-view') : card.classList.add('wide-view');
+    }
+
+    function updateProjectMenus() {
+        const selCreate = document.getElementById('hoursProjectSelect');
+        const selFilter = document.getElementById('filterProject');
+        const currentFilter = selFilter.value;
+        selCreate.innerHTML = '<option value="">-- Select --</option>';
+        selFilter.innerHTML = '<option value="all">All Projects</option>';
+        toolingProjects.forEach(p => {
+            selCreate.add(new Option(p.name, p.name));
+            selFilter.add(new Option(p.name, p.name));
+        });
+        selFilter.value = currentFilter;
+    }
+
+    function prepareEdit(id) {
+        const log = loadHoursLogs.find(l => l.id === id);
+        if(log) {
+            document.getElementById('editLogId').value = log.id;
+            document.getElementById('hoursProjectSelect').value = log.project;
+            document.getElementById('hoursMonth').value = log.month;
+            document.getElementById('hoursValue').value = log.hours;
+            document.getElementById('hoursPriority').value = log.priority || 'low';
+            document.getElementById('btnSaveHours').innerText = "UPDATE";
+            document.getElementById('btnSaveHours').style.background = "var(--priority-med)";
+        }
+    }
+
+    db.ref('toolingProjects').on('value', (snapshot) => {
+        const data = snapshot.val();
+        if (data) {
+            toolingProjects = data.map(proj => ({
+                ...proj,
+                activities: (proj.activities || []).map(act => ({
+                    ...act,
+                    teams: (act.teams || []).map(t => ({ ...t, start: new Date(t.start) }))
+                }))
+            }));
+            renderGantt(); 
+        } else { toolingProjects = []; renderGantt(); }
+    });
+
+    db.ref('shutdownLogs').on('value', (snapshot) => {
+        const data = snapshot.val();
+        shutdownLogs = data ? Object.values(data) : [];
+        renderHistoryTable();
+        renderGantt(); 
+    });
+
+    db.ref('maintenanceLogs').on('value', (snapshot) => {
+        const data = snapshot.val();
+        maintenanceLogs = data ? Object.values(data) : [];
+        renderMaintHistoryTable();
+        renderGantt(); 
+    });
+
+    function guardarCambios() {
+        const dataParaGuardar = toolingProjects.map(proj => ({
+            ...proj,
+            activities: proj.activities.map(act => ({
+                ...act,
+                teams: act.teams.map(t => ({ ...t, start: t.start.toISOString() }))
+            }))
+        }));
+        db.ref('toolingProjects').set(dataParaGuardar);
+    }
+
+    function popularDeviceTypes() {
+        const devSelect = document.getElementById('deviceType');
+        const maintSelect = document.getElementById('maintDeviceType');
+        if (!window.huf_devices_config) return;
+        [devSelect, maintSelect].forEach(sel => {
+            if(sel) {
+                sel.innerHTML = '<option value="">-- Select --</option>';
+                window.huf_devices_config.forEach(dev => sel.add(new Option(dev.name, dev.id)));
+            }
+        });
+    }
+
+    function updateHIMOptions() {
+        const typeId = document.getElementById('deviceType').value;
+        const himSelect = document.getElementById('toolHIM');
+        himSelect.innerHTML = "";
+        document.getElementById('availabilityInfo').innerText = "";
+        if(!typeId) { himSelect.add(new Option("Select Device First", "")); return; }
+        const deviceData = window.huf_devices_config.find(d => d.id === typeId);
+        if (deviceData && deviceData.hims) {
+            himSelect.add(new Option("-- Select HIM --", ""));
+            deviceData.hims.forEach(h => himSelect.add(new Option(h, h)));
+        }
+    }
+
+    function updateMaintHIMOptions() {
+        const typeId = document.getElementById('maintDeviceType').value;
+        const himSelect = document.getElementById('maintHIM');
+        himSelect.innerHTML = "";
+        if(!typeId) { himSelect.add(new Option("Select Type First", "")); return; }
+        const deviceData = window.huf_devices_config.find(d => d.id === typeId);
+        if (deviceData && deviceData.hims) {
+            himSelect.add(new Option("-- Select HIM --", ""));
+            deviceData.hims.forEach(h => himSelect.add(new Option(h, h)));
+        }
+    }
+
+ 
+
+    function showModule(viewId) {
+        const card = document.getElementById('mainCard');
+        document.querySelectorAll('.view-layer').forEach(v => v.classList.remove('active-view'));
+        document.getElementById(viewId).classList.add('active-view');
+        (viewId === 'viewTooling' || viewId === 'viewStats' || viewId === 'viewShutdown' || viewId === 'viewMaintenance') ? card.classList.add('wide-view') : card.classList.remove('wide-view');
+    
+        if(viewId === 'viewTooling') renderGantt();
+        if(viewId === 'viewStats') setTimeout(renderAllStats, 100);
+        if(viewId === 'main-app') initApp();
+        if(viewId === 'capacity-view') showCapacityEditor();
+        if(viewId === 'summary-view') showSummary();
+    }
+
+    function validarAcceso() {
+        const u = document.getElementById('userInput').value;
+        const p = document.getElementById('passInput').value;
+        const user = (window.usuarios_password || []).find(item => item.user === u && item.pass === p);
+        if (user) {
+            userSession = user.nombre;
+            const card = document.getElementById('mainCard');
+        
+        // QUITAMOS la clase de 30% para que tome el 98% por defecto de .card
+        card.classList.remove('card-login');
+            // ELIMINADO: document.getElementById('selectOp').innerHTML = ... (Causaba el error)
+            popularDeviceTypes(); 
+            showModule('viewMenu');
+         
+            
+            const configCalendario = {
+                weekNumbers: true, 
+                dateFormat: "Y-m-d",
+                locale: { firstDayOfWeek: 1 }, 
+                onChange: function() {
+                    if(typeof revisarConflictoRealTime === "function") revisarConflictoRealTime();
+                }
+            };
+
+            flatpickr("#toolStart", configCalendario);
+            flatpickr("#shutStart, #shutEnd, #maintStart, #maintEnd", { 
+                weekNumbers: true, 
+                dateFormat: "Y-m-d" 
+            });
+        } else { 
+            document.getElementById('loginError').style.display = 'block'; 
+        }
+    }
+
+    function logout() { userSession = ""; showModule('viewLogin'); if(backupTimer) clearInterval(backupTimer); document.getElementById('mainCard').classList.add('card-login');
+    showModule('viewLogin');
+}
+    
+    function manejarTeclado(event) {
+        const activeView = document.querySelector('.active-view').id;
+        if (event.key === "Enter" && activeView === 'viewLogin') { validarAcceso(); return; }
+        if (activeView === 'viewTooling') {
+            const wrapper = document.getElementById('ganttScrollParent');
+            if (!wrapper) return;
+            const scrollAmount = 200; 
+            const scrollAmountVertical = 100;
+            switch(event.key) {
+                case "ArrowLeft": event.preventDefault(); wrapper.scrollLeft -= scrollAmount; break;
+                case "ArrowRight": event.preventDefault(); wrapper.scrollLeft += scrollAmount; break;
+                case "ArrowUp": event.preventDefault(); wrapper.scrollTop -= scrollAmountVertical; break;
+                case "ArrowDown": event.preventDefault(); wrapper.scrollTop += scrollAmountVertical; break;
+            }
+        }
+                if (activeView === 'summary-view') {
+            const wrapper = document.getElementById('scrollContainer');
+            if (!wrapper) return;
+            const scrollAmount = 200; 
+            const scrollAmountVertical = 100;
+            switch(event.key) {
+                case "ArrowLeft": event.preventDefault(); wrapper.scrollLeft -= scrollAmount; break;
+                case "ArrowRight": event.preventDefault(); wrapper.scrollLeft += scrollAmount; break;
+                case "ArrowUp": event.preventDefault(); wrapper.scrollTop -= scrollAmountVertical; break;
+                case "ArrowDown": event.preventDefault(); wrapper.scrollTop += scrollAmountVertical; break;
+            }
+        }
+    }
+
+    function limpiarError() { document.getElementById('loginError').style.display = 'none'; }
+
+    
+    function mostrarProximaDisponibilidad() {
+    const him = document.getElementById('toolHIM').value;
+    const infoDiv = document.getElementById('availabilityInfo');
+    
+    if (!him) { 
+        infoDiv.innerText = ""; 
+        return; 
+    }
+
+    let today = new Date(); 
+    today.setHours(0, 0, 0, 0);
+    
+    // 1. Encontrar la última fecha en la que el equipo se libera de PROYECTOS
+    let ultimaFechaProyecto = new Date(today);
+    if (typeof toolingProjects !== 'undefined') {
+        toolingProjects.forEach(p => {
+            if (p.activities) {
+                p.activities.forEach(act => {
+                    if (act.teams) {
+                        act.teams.forEach(t => {
+                            if (t.name === him) {
+                                let fechaFin = new Date(t.start);
+                                // Sumamos los días de duración (asegurando que sea número)
+                                fechaFin.setDate(fechaFin.getDate() + parseInt(t.days || 0));
+                                if (fechaFin > ultimaFechaProyecto) {
+                                    ultimaFechaProyecto = new Date(fechaFin);
+                                }
+                            }
+                        });
+                    }
+                });
+            }
+        });
+    }
+
+    // 2. Encontrar la última fecha en la que el equipo se libera de MANTENIMIENTOS
+    let ultimaFechaMantenimiento = new Date(today);
+    let estaEnMantenimientoAhora = false;
+
+    if (typeof maintenanceLogs !== 'undefined') {
+        maintenanceLogs.forEach(m => {
+            if (m.name === him) {
+                let mStart = new Date(m.start);
+                let mEnd = new Date(m.end);
+                
+                // Verificar si hoy está dentro del rango de mantenimiento
+                if (today >= mStart && today <= mEnd) {
+                    estaEnMantenimientoAhora = true;
+                }
+                
+                // Guardar la fecha más lejana de mantenimiento
+                if (mEnd > ultimaFechaMantenimiento) {
+                    ultimaFechaMantenimiento = new Date(mEnd);
+                }
+            }
+        });
+    }
+
+    // 3. Determinar la fecha real de disponibilidad (la más lejana entre ambas)
+    let fechaLibreFinal = ultimaFechaProyecto > ultimaFechaMantenimiento 
+                          ? ultimaFechaProyecto 
+                          : ultimaFechaMantenimiento;
+
+    const options = { year: 'numeric', month: 'short', day: 'numeric' };
+
+    // 4. Mostrar el mensaje con prioridad de estado
+    if (estaEnMantenimientoAhora) {
+        infoDiv.innerText = `⚠️ UNDER MAINTENANCE: ${him} until ${ultimaFechaMantenimiento.toLocaleDateString(undefined, options)}`;
+        infoDiv.style.color = "#ff9800"; // Naranja
+    } else if (fechaLibreFinal > today) {
+        infoDiv.innerText = `Equipment ${him} free from: ${fechaLibreFinal.toLocaleDateString(undefined, options)}`;
+        infoDiv.style.color = "var(--huf-red)"; 
+    } else {
+        infoDiv.innerText = "";
+        infoDiv.style.color = "var(--success-green)";
+    }
+}
+
+  
+function validarDisponibilidad(him, startNew, daysNew, excludeP, excludeA, excludeT) {
+    const endNew = new Date(startNew); 
+    endNew.setDate(endNew.getDate() + daysNew);
+
+    // 1. Revisar contra Logs de Mantenimiento
+    for (let m of maintenanceLogs) {
+        if (m.him === him) {
+            let mStart = new Date(m.start + "T00:00:00");
+            let mEnd = new Date(m.end + "T23:59:59");
+            if (startNew <= mEnd && endNew >= mStart) {
+                return { conflict: true, type: 'MAINTENANCE', desc: m.desc };
+            }
+        }
+    }
+
+    // 2. Revisar contra otros proyectos de Tooling
+    for (let pi = 0; pi < toolingProjects.length; pi++) {
+        let proj = toolingProjects[pi];
+        for (let ai = 0; ai < proj.activities.length; ai++) {
+            let act = proj.activities[ai];
+            for (let ti = 0; ti < act.teams.length; ti++) {
+                let t = act.teams[ti];
+                
+                // Excluir la misma tarea si estamos editando
+                if (excludeP === pi && excludeA === ai && excludeT === ti) continue;
+
+                if (t.name === him) {
+                    const startExist = new Date(t.start); 
+                    const endExist = new Date(t.start); 
+                    // t.days ya está guardado como días totales en el objeto
+                    endExist.setDate(endExist.getDate() + t.days);
+
+                    if (startNew < endExist && endNew > startExist) {
+                        return { conflict: true, type: 'PROJECT', project: proj.name, activity: act.name };
+                    }
+                }
+            }
+        }
+    }
+    return { conflict: false };
+}
+
+/**
+ * Revisa conflictos en tiempo real mientras el usuario escribe (Input en SEMANAS)
+ */
+function revisarConflictoRealTime() {
+    const him = document.getElementById('toolHIM').value;
+    const weeks = parseInt(document.getElementById('toolDays').value);
+    const startStr = document.getElementById('toolStart').value;
+    
+    if (!him || isNaN(weeks) || !startStr || !document.getElementById('deviceType').value) return;
+
+    // Convertimos semanas a días para la validación exacta
+    const days = weeks * 7;
+    const check = validarDisponibilidad(him, new Date(startStr + "T00:00:00"), days);
+    
+    const bg = check.conflict ? "#ffcccc" : "#fff";
+    document.getElementById('deviceType').style.background = bg;
+    document.getElementById('toolHIM').style.background = bg;
+    
+    // Opcional: mostrar un tooltip o mensaje si hay conflicto
+    if(check.conflict) {
+        console.warn("Conflicto detectado:", check);
+    }
+}
+
+/**
+ * Agrega la fila de tooling convirtiendo semanas a días para el motor del Gantt
+ */
+function addToolingRow() {
+    const project = document.getElementById('toolProject').value.trim();
+    const task = document.getElementById('toolTask').value.trim();
+    
+    // Leemos semanas del input
+    const weeksValue = parseInt(document.getElementById('toolDays').value);
+    if (isNaN(weeksValue) || weeksValue <= 0) {
+        return Swal.fire("Attention", "Please enter a valid number of weeks", "warning");
+    }
+
+    // Convertimos a días para el almacenamiento y validación
+    const days = weeksValue * 7; 
+    
+    const startStr = document.getElementById('toolStart').value;
+    const deviceTypeId = document.getElementById('deviceType').value;
+    const him = document.getElementById('toolHIM').value;
+
+    if (!project || !task || !startStr || !him) {
+        return Swal.fire("Attention", "Please fill all the fields!", "warning");
+    }
+
+    const start = new Date(startStr + "T00:00:00");
+    
+    // EJECUCIÓN DE LA VALIDACIÓN
+    const check = validarDisponibilidad(him, start, days);
+    if (check.conflict) {
+        let msg = check.type === 'MAINTENANCE' 
+            ? `The equipment ${him} is in MAINTENANCE (${check.desc}).`
+            : `The equipment ${him} is busy in Project: ${check.project}, Activity: ${check.activity}.`;
+        
+        return Swal.fire('Conflict Detected', msg, 'warning');
+    }
+
+    // Lógica de inserción en el objeto toolingProjects
+    let projObj = toolingProjects.find(p => p.name === project);
+    if (!projObj) {
+        projObj = { name: project, collapsed: false, activities: [] };
+        toolingProjects.push(projObj);
+    }
+
+    let actObj = projObj.activities.find(a => a.name === task);
+    if (!actObj) {
+        actObj = { name: task, teams: [] };
+        projObj.activities.push(actObj);
+    }
+
+    // Guardamos los datos. 'days' es vital para que el Gantt se dibuje correctamente.
+    actObj.teams.push({ 
+        name: him, 
+        start: start, 
+        days: days, 
+        weeks: weeksValue, 
+        typeId: deviceTypeId 
+    });
+    
+    guardarCambios(); // Persistencia permanente
+    renderGantt();
+    
+    // Limpiar campos
+    document.getElementById('toolTask').value = "";
+    document.getElementById('toolDays').value = "";
+    document.getElementById('deviceType').style.background = "#fff";
+    document.getElementById('toolHIM').style.background = "#fff";
+    Swal.fire("Task Added!", "", "success");
+}
+    function copyTaskToInputs(projectName, activityName) {
+        document.getElementById('toolProject').value = projectName;
+        document.getElementById('toolTask').value = activityName || "";
+        document.getElementById('toolingTopTitle').scrollIntoView({ behavior: 'smooth' });
+        document.getElementById('toolDays').focus();
+    }
+
+    function deleteProject1(pIdx) { 
+        Swal.fire({ title: 'Delete entire project?', text: "This will remove all activities", icon: 'warning', showCancelButton: true, confirmButtonColor: '#e30613'
+        }).then((result) => { if (result.isConfirmed) { toolingProjects.splice(pIdx, 1); guardarCambios(); } });
+    }
+
+    function editProject(pIdx) { 
+        Swal.fire({ title: 'Edit Project Name', input: 'text', inputValue: toolingProjects[pIdx].name, showCancelButton: true, confirmButtonColor: '#e30613'
+        }).then((result) => { if (result.isConfirmed && result.value) { toolingProjects[pIdx].name = result.value; guardarCambios(); } });
+    }
+
+    function deleteActivity(pIdx, aIdx) { 
+        Swal.fire({ title: 'Delete activity?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#e30613'
+        }).then((result) => { if (result.isConfirmed) { toolingProjects[pIdx].activities.splice(aIdx, 1); guardarCambios(); } });
+    }
+
+    function editActivity(pIdx, aIdx) { 
+        Swal.fire({ title: 'Edit Activity Name', input: 'text', inputValue: toolingProjects[pIdx].activities[aIdx].name, showCancelButton: true, confirmButtonColor: '#e30613'
+        }).then((result) => { if (result.isConfirmed && result.value) { toolingProjects[pIdx].activities[aIdx].name = result.value; guardarCambios(); } });
+    }
+
+    function deleteIndividualBar(pIdx, aIdx, tIdx) { 
+        Swal.fire({ title: 'Delete this equipment allocation?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#e30613'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                toolingProjects[pIdx].activities[aIdx].teams.splice(tIdx, 1);
+                if(toolingProjects[pIdx].activities[aIdx].teams.length === 0) { toolingProjects[pIdx].activities.splice(aIdx, 1); }
+                guardarCambios();
+            }
+        });
+    }
+
+    function editBarDays(pIdx, aIdx, tIdx) {
+    const team = toolingProjects[pIdx].activities[aIdx].teams[tIdx];
+    Swal.fire({ 
+        title: `Edit duration (Weeks) for ${team.name}`, // Claridad
+        input: 'number', 
+        inputValue: (team.days / 7).toFixed(0), // Borrado team.days, puesto cálculo semanas
+        showCancelButton: true, 
+        confirmButtonColor: '#e30613'
+    }).then((result) => {
+        if (result.isConfirmed && result.value) {
+            const parsedDays = Math.round(parseFloat(result.value) * 7); // Borrado parseInt, puesto conversión a días
+            if (isNaN(parsedDays) || parsedDays <= 0) return Swal.fire('Error', 'Invalid number', 'error');
+            const check = validarDisponibilidad(team.name, team.start, parsedDays, pIdx, aIdx, tIdx);
+            if (check.conflict) {
+                 if (check.type === 'MAINTENANCE') {
+                    return Swal.fire('BLOCKED BY MAINTENANCE', `This equipment is in maintenance.\nReason: ${check.desc}`, 'error');
+                 } else {
+                    return Swal.fire('CONFLICT', `Overlap with:\nProject: ${check.project}\nActivity: ${check.activity}`, 'warning');
+                 }
+            }
+            toolingProjects[pIdx].activities[aIdx].teams[tIdx].days = parsedDays;
+            guardarCambios();
+        }
+    });
+}
+
+    function showBarContextMenu(pIdx, aIdx, tIdx, event) {
+        event.preventDefault(); event.stopPropagation();
+        const menu = document.getElementById('customContextMenu');
+        menu.style.display = 'block'; menu.style.left = event.pageX + 'px'; menu.style.top = event.pageY + 'px';
+        document.getElementById('menuEditBtn').onclick = () => { hideContextMenu(); editBarDays(pIdx, aIdx, tIdx); };
+        document.getElementById('menuDeleteBtn').onclick = () => { hideContextMenu(); deleteIndividualBar(pIdx, aIdx, tIdx); };
+    }
+
+    function hideContextMenu() { document.getElementById('customContextMenu').style.display = 'none'; }
+    
+    function toggleAllProjects(expand) { 
+        toolingProjects.forEach(p => p.collapsed = !expand); 
+        maintenanceCollapsed = !expand;
+        renderGantt(); 
+    }
+    
+    function toggleProject(pIdx) { toolingProjects[pIdx].collapsed = !toolingProjects[pIdx].collapsed; guardarCambios(); }
+    
+    function toggleMaintenanceSection() { maintenanceCollapsed = !maintenanceCollapsed; renderGantt(); }
+    
+    function centerToday() { const wrapper = document.getElementById('ganttScrollParent'); const todayCell = document.querySelector('.gantt-day-cell.is-today'); if (wrapper && todayCell) wrapper.scrollLeft = todayCell.offsetLeft - (wrapper.offsetWidth / 2); }
+    function getPastelColor(typeId) { return `hsl(${(parseInt(typeId) || 0) * 137.5 % 360}, 70%, 75%)`; }
+    function getWeekNumber(d) { d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())); d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay()||7)); return Math.ceil((((d - new Date(Date.UTC(d.getUTCFullYear(),0,1))) / 86400000) + 1)/7); }
+
+    function syncFloatingLabels() {
+        const wrapper = document.getElementById('ganttScrollParent');
+        if (!wrapper) return;
+        const scrollX = wrapper.scrollLeft;
+        const labels = document.querySelectorAll('.floating-label');
+        labels.forEach(lbl => {
+            const bar = lbl.parentElement;
+            const barLeft = bar.offsetLeft;
+            const barWidth = bar.offsetWidth;
+            const labelWidth = lbl.offsetWidth;
+            let offset = scrollX - (barLeft - 400); 
+            if (offset < 0) offset = 0;
+            const maxOffset = barWidth - labelWidth - 10;
+            if (offset > maxOffset) offset = maxOffset;
+            lbl.style.transform = `translateX(${offset}px)`;
+        });
+    }
+
+function renderGantt() {
+    const container = document.getElementById('ganttContainer');
+    const scale = document.getElementById('viewScale').value;
+    const searchTerm = document.getElementById('ganttSearch')?.value.toLowerCase() || "";
+    const today = new Date(); today.setHours(0,0,0,0);
+
+    // --- FILTRO DE AÑO: Creamos una copia filtrada de tus proyectos ---
+    const filteredToolingProjects = toolingProjects.map(p => ({
+        ...p,
+        activities: p.activities.map(a => ({
+            ...a,
+            teams: a.teams.filter(t => new Date(t.start).getFullYear() === selectedYear)
+        })).filter(a => a.teams.length > 0)
+    })).filter(p => p.activities.length > 0);
+
+    // Filtramos también el mantenimiento por año
+    const filteredMaintenance = maintenanceLogs.filter(m => new Date(m.start).getFullYear() === selectedYear);
+
+    if (filteredToolingProjects.length === 0 && filteredMaintenance.length === 0) { 
+        container.innerHTML = `<p style="text-align:center; padding:20px;">No projects or maintenance found for year ${selectedYear}.</p>`; 
+        return; 
+    }
+
+    let allDates = [today]; 
+    // Usamos los datos filtrados para calcular el rango del calendario
+    filteredToolingProjects.forEach(p => p.activities.forEach(a => a.teams.forEach(t => { 
+        allDates.push(new Date(t.start)); 
+        let endD = new Date(t.start); endD.setDate(endD.getDate() + t.days); 
+        allDates.push(endD); 
+    })));
+    filteredMaintenance.forEach(m => { allDates.push(new Date(m.start)); allDates.push(new Date(m.end)); });
+
+    let minDate = new Date(Math.min(...allDates)); minDate.setDate(minDate.getDate() - 15);
+    let maxDate = new Date(Math.max(...allDates)); maxDate.setDate(maxDate.getDate() + 45);
+
+    let htmlLabels = []; let upperLabels = []; 
+    const isDateShutdown = (d) => shutdownLogs.some(s => { let sStart = new Date(s.start + "T00:00:00"); let sEnd = new Date(s.end + "T23:59:59"); return d >= sStart && d <= sEnd; });
+
+    if (scale === 'day') { 
+        let currentWeek = -1; let count = 0;
+        for(let i=0; i<Math.ceil((maxDate-minDate)/86400000); i++){ 
+            let d=new Date(minDate); d.setDate(d.getDate()+i); 
+            htmlLabels.push({l:d.getDate()+"/"+(d.getMonth()+1), t:d.getTime()===today.getTime(), s: isDateShutdown(d)}); 
+            let wn = getWeekNumber(d);
+            if (wn !== currentWeek) { if (currentWeek !== -1) upperLabels[upperLabels.length-1].span = count; upperLabels.push({ label: `CW ${wn} (${d.getFullYear()})`, span: 1 }); currentWeek = wn; count = 1; } else { count++; }
+        }
+        upperLabels[upperLabels.length-1].span = count;
+    }
+    else if (scale === 'week') { 
+        let currentMonth = -1; let count = 0;
+        for(let i=0; i<Math.ceil((maxDate-minDate)/(86400000*7))+1; i++){ 
+            let d=new Date(minDate); d.setDate(d.getDate()+(i*7)); 
+            htmlLabels.push({l:"CW"+getWeekNumber(d), t:today>=d && today<new Date(d.getTime()+(86400000*7)), s: isDateShutdown(d)});
+            let mn = d.getMonth();
+            if (mn !== currentMonth) { if (currentMonth !== -1) upperLabels[upperLabels.length-1].span = count; upperLabels.push({ label: d.toLocaleString('en', { month: 'long' }).toUpperCase() + " " + d.getFullYear(), span: 1 }); currentMonth = mn; count = 1; } else { count++; }
+        }
+        upperLabels[upperLabels.length-1].span = count;
+    }
+    else if (scale === 'month') { 
+        let currentYear = -1; let count = 0;
+        for(let i=0; i<((maxDate.getFullYear()-minDate.getFullYear())*12+(maxDate.getMonth()-minDate.getMonth())+2); i++){ 
+            let d=new Date(minDate.getFullYear(), minDate.getMonth()+i, 1); 
+            htmlLabels.push({l:d.toLocaleString('en',{month:'short'})+" "+d.getFullYear().toString().substr(-2), t:today.getMonth()===d.getMonth()&&today.getFullYear()===d.getFullYear(), s: false}); 
+            let yn = d.getFullYear();
+            if (yn !== currentYear) { if (currentYear !== -1) upperLabels[upperLabels.length-1].span = count; upperLabels.push({ label: yn, span: 1 }); currentYear = yn; count = 1; } else { count++; }
+        }
+        upperLabels[upperLabels.length-1].span = count;
+    }
+    else { 
+        upperLabels.push({ label: "TIMELINE RANGES", span: 100 });
+        for(let i=0; i<(maxDate.getFullYear()-minDate.getFullYear()+2); i++){ 
+            let d=new Date(minDate.getFullYear()+i, 0, 1); 
+            htmlLabels.push({l:d.getFullYear().toString(), t:today.getFullYear()===d.getFullYear(), s: false}); 
+        } 
+    }
+
+    let html = `<div class="gantt-grid"><div class="gantt-header-title">PROJECT / ACTIVITY (HIMs)</div><div class="gantt-header-time">`;
+    html += `<div class="gantt-upper-header">`;
+    upperLabels.forEach(u => { let width = u.span * 70; html += `<div class="gantt-upper-cell" style="width:${width}px; flex-basis:${width}px;">${u.label}</div>`; });
+    html += `</div><div class="gantt-header-days">`;
+    htmlLabels.forEach(obj => html += `<div class="gantt-day-cell ${obj.t?'is-today':''} ${obj.s?'is-shutdown':''}"><div class="vertical-text">${obj.l}</div></div>`);
+    html += `</div></div>`;
+
+    if (filteredMaintenance.length > 0) {
+        html += `<div class="gantt-row"><div class="gantt-task-name" style="background:var(--maint-purple) !important; color:white;" onclick="toggleMaintenanceSection()"><span>${maintenanceCollapsed?'➕':'➖'} 🛠 EQUIPMENT UNDER MAINTENANCE</span></div><div class="gantt-bar-container" style="background:#e2d1f0;"></div></div>`;
+        if (!maintenanceCollapsed) {
+            const maintByHim = {};
+            filteredMaintenance.forEach(m => { if (!maintByHim[m.him]) maintByHim[m.him] = []; maintByHim[m.him].push(m); });
+            for (const himName in maintByHim) {
+                let devTypeName = "Unknown";
+                if(window.huf_devices_config) {
+                    const devMatch = window.huf_devices_config.find(d => d.hims.includes(himName));
+                    if(devMatch) devTypeName = devMatch.name;
+                }
+                html += `<div class="gantt-row"><div class="gantt-task-name" style="padding-left:25px; border-left: 5px solid var(--maint-purple);"><span>🔧 ${himName} <small style="opacity:0.8; font-size:10px;">(${devTypeName})</small></span></div><div class="gantt-bar-container">`;
+                htmlLabels.forEach(obj => { html += `<div class="gantt-bg-cell ${obj.s?'is-shutdown-bg':''} ${obj.m?'is-maint-bg':''}"></div>`; });
+                maintByHim[himName].forEach(m => {
+                    let mStart = new Date(m.start + "T00:00:00"); let mEnd = new Date(m.end + "T23:59:59");
+                    let mDays = Math.max(1, Math.ceil((mEnd - mStart) / 86400000));
+                    let lp=0, ws=0, div=scale==='day'?1:scale==='week'?7:scale==='month'?30:365;
+                    if(scale==='day'||scale==='week') { lp=(((mStart-minDate)/86400000)/div)*(100/htmlLabels.length); ws=(mDays/div)*(100/htmlLabels.length); }
+                    else if(scale==='month') { lp=((mStart.getFullYear()-minDate.getFullYear())*12+(mStart.getMonth()-minDate.getMonth())+(mStart.getDate()/30))*(100/htmlLabels.length); ws=(mDays/30)*(100/htmlLabels.length); }
+                    else { lp=((mStart.getFullYear()-minDate.getFullYear())+(getWeekNumber(mStart)/52))*(100/htmlLabels.length); ws=(mDays/365)*(100/htmlLabels.length); }
+                    html += `<div class="gantt-bar" style="left:${lp}%; width:${ws}%; height:80%; top:10%; background:var(--maint-purple); color:white; border: 1px solid #333;" title="${m.desc}"><span class="floating-label">⚠️ MAINT: ${m.desc}</span></div>`;
+                });
+                html += `</div></div>`;
+            }
+        }
+    }
+
+    filteredToolingProjects.forEach((proj, pIdx) => {
+        const matchesProj = proj.name.toLowerCase().includes(searchTerm);
+        const matchesHims = proj.activities.some(a => a.teams.some(t => t.name.toLowerCase().includes(searchTerm)));
+        if(searchTerm && !matchesProj && !matchesHims) return;
+
+        html += `<div class="gantt-row"><div class="gantt-task-name" style="background:#555 !important; color:white;"><span onclick="toggleProject(${pIdx})">${proj.collapsed?'➕':'➖'} 📁 ${proj.name}</span><div class="action-btns"><button class="btn-icon add" onclick="copyTaskToInputs('${proj.name.replace(/'/g, "\\'")}', '')" title="Copy Project Name">➕</button><button class="btn-icon" onclick="editProject(${pIdx})" title="Edit Name">✏️</button><button class="btn-icon" onclick="deleteProject1(${pIdx})" title="Delete Project">🗑️</button></div></div><div class="gantt-bar-container" style="background:#666;"></div></div>`;
+        if (!proj.collapsed) {
+            proj.activities.forEach((act, aIdx) => {
+                let summaryMap = {};
+                act.teams.forEach(t => {
+                    const typeName = (window.huf_devices_config.find(d => d.id === t.typeId) || {name: "Unknown"}).name;
+                    if(!summaryMap[typeName]) summaryMap[typeName] = new Set();
+                    summaryMap[typeName].add(t.name);
+                });
+                let matrixRows = "";
+                for(let type in summaryMap) { matrixRows += `<tr><td>${type}</td><td>${Array.from(summaryMap[type]).join(", ")}</td></tr>`; }
+
+                html += `<div class="gantt-row">
+                    <div class="gantt-task-name" style="padding-left:5px; flex-direction:column; align-items:flex-start; gap:0;">
+                        <div style="display:flex; justify-content:space-between; width:100%; align-items:center;">
+                            <span>🔹 ${act.name}</span>
+                            <div class="action-btns">
+                                <button class="btn-icon add" onclick="copyTaskToInputs('${proj.name.replace(/'/g, "\\'")}', '${act.name.replace(/'/g, "\\'")}')" title="Copy to form">➕</button>
+                                <button class="btn-icon" onclick="editActivity(${pIdx}, ${aIdx})" title="Edit Activity">✏️</button>
+                                <button class="btn-icon" onclick="deleteActivity(${pIdx}, ${aIdx})" title="Delete Activity">🗑️</button>
+                            </div>
+                        </div>
+                        <div style="width: 100%; overflow: hidden; margin-top: 5px; border: 1px solid #eee;">
+                            <table class="him-matrix" style="width: 100%; table-layout: fixed; border-collapse: collapse; margin: 0;">
+                                <thead><tr style="background: #f4f4f4;"><th style="width: 30%; font-size: 9px;">Type</th><th style="width: 70%; font-size: 9px;">HIM's</th></tr></thead>
+                                <tbody style="font-size: 10px; font-weight: normal; color: #333;">${matrixRows || '<tr><td colspan="2">None</td></tr>'}</tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="gantt-bar-container">`;
+                    htmlLabels.forEach(obj => { html += `<div class="gantt-bg-cell ${obj.s?'is-shutdown-bg':''}"></div>`; });
+                    act.teams.forEach((t, tIdx) => {
+                        let lp=0, ws=0, div=scale==='day'?1:scale==='week'?7:scale==='month'?30:365;
+                        const startDate = new Date(t.start);
+                        if(scale==='day'||scale==='week') { lp=(((startDate-minDate)/86400000)/div)*(100/htmlLabels.length); ws=(t.days/div)*(100/htmlLabels.length); }
+                        else if(scale==='month') { lp=((startDate.getFullYear()-minDate.getFullYear())*12+(startDate.getMonth()-minDate.getMonth())+(startDate.getDate()/30))*(100/htmlLabels.length); ws=(t.days/30)*(100/htmlLabels.length); }
+                        else { lp=((startDate.getFullYear()-minDate.getFullYear())+(getWeekNumber(startDate)/52))*(100/htmlLabels.length); ws=(t.days/365)*(100/htmlLabels.length); }
+                        let h = 100/act.teams.length;
+                        let dotClass = t.priority === 'high' ? 'dot-high' : (t.priority === 'med' ? 'dot-med' : 'dot-low');
+                        html += `<div class="gantt-bar" oncontextmenu="showBarContextMenu(${pIdx}, ${aIdx}, ${tIdx}, event)" style="left:${lp}%; width:${ws}%; height:${h-4}%; top:${h*tIdx}%; background:${getPastelColor(t.typeId)};">
+                                    <span class="floating-label"><span class="priority-dot ${dotClass}"></span>${t.name}</span>
+                                 </div>`;
+                    });
+                    html += `</div></div>`;
+            });
+        }
+    });
+
+    container.innerHTML = html + "</div>";
+    setTimeout(() => { syncFloatingLabels(); }, 150);
+}
+   function renderAllStats() {
+    const container = document.getElementById('statsMainContainer'); 
+    if (!container) return;
+    container.innerHTML = "";
+    
+    if (!window.huf_devices_config) return;
+
+    window.huf_devices_config.forEach(dev => {
+        // occupancyCount almacenará cuántos equipos se usan por cada una de las 52 semanas
+        let occupancyCount = new Array(52).fill(0); 
+        const defaultTotalHims = dev.hims.length || 1;
+
+        // 1. CÁLCULO DE CARGA (Basado en tus proyectos actuales)
+        toolingProjects.forEach(p => p.activities.forEach(act => act.teams.forEach(t => {
+            if (t.typeId === dev.id) {
+                let cur = new Date(t.start);
+                for (let i = 0; i < t.days; i++) { 
+                    if (cur.getFullYear() === selectedYear) { 
+                        let wn = getWeekNumber(cur) - 1; 
+                        if (wn >= 0 && wn < 52) {
+                            occupancyCount[wn] += (1 / 7); 
+                        }
+                    } 
+                    cur.setDate(cur.getDate() + 1); 
+                }
+            }
+        })));
+
+        const row = document.createElement('div'); 
+        row.className = 'device-stat-row';
+        let pathD = "";
+        
+        // 2. GENERACIÓN DE BARRAS SEMANALES CON PORCENTAJE SUPERIOR
+        let bars = occupancyCount.map((occ, idx) => {
+            const weekNum = idx + 1;
+            
+            const currentMaxCap = (window.customCapacity[dev.id] && window.customCapacity[dev.id][weekNum] !== undefined)
+                                  ? window.customCapacity[dev.id][weekNum]
+                                  : defaultTotalHims;
+
+            let val = currentMaxCap > 0 ? (occ / currentMaxCap) * 100 : (occ > 0 ? 100 : 0);
+            let h = Math.min(val, 100); 
+
+            let barColor = val > 100 ? "var(--huf-red)" : getPastelColor(dev.id);
+            
+            pathD += (idx === 0 ? "M" : " L") + `${(idx / 51) * 1000} ${100 - h}`;
+            
+            const labelTooltip = `CW${weekNum}: ${Math.round(val)}% (${occ.toFixed(1)} de ${currentMaxCap} Equipos)`;
+
+            // Renderizado de la barra con el texto del porcentaje arriba
+            return `
+                <div class="stats-week-col" style="display: flex; flex-direction: column; justify-content: flex-end; position: relative;">
+                    <div style="
+                        position: absolute; 
+                        bottom: ${h}%; 
+                        width: 100%; 
+                        text-align: center; 
+                        font-size: 8px; 
+                        font-weight: bold; 
+                        color: ${val > 100 ? 'var(--huf-red)' : '#555'};
+                        margin-bottom: 2px;
+                        pointer-events: none;
+                    ">
+                        ${val > 0 ? Math.round(val) + '%' : ''}
+                    </div>
+
+                    <div class="bar-fill" 
+                         style="height:${h}%; background:${barColor}; width: 100%;" 
+                         data-label="${labelTooltip}">
+                    </div>
+                    
+                    <div class="week-label-stat">${weekNum}</div>
+                </div>`;
+        }).join("");
+
+        // 3. RENDERIZADO FINAL
+        row.innerHTML = `
+            <div class="device-stat-title">
+                ${dev.name} (Year: ${selectedYear})
+                <span style="font-size:11px; color:#888; font-weight:normal; margin-left:10px;">
+                    [Capacidad Dinámica: ${defaultTotalHims} Base]
+                </span>
+            </div>
+            <div class="chart-frame" style="padding-top: 20px;"> <div class="y-axis-title">Uso %</div>
+                <div class="y-axis-labels"><span>100%</span><span>75%</span><span>50%</span><span>25%</span><span>0%</span></div>
+                <div class="grid-lines">
+                    <div class="grid-line" style="top:0%;"></div>
+                    <div class="grid-line" style="top:25%;"></div>
+                    <div class="grid-line" style="top:50%;"></div>
+                    <div class="grid-line" style="top:75%;"></div>
+                </div>
+                <svg class="trend-line-svg" preserveAspectRatio="none" viewBox="0 0 1000 100" style="z-index: 5;">
+                    <path class="trend-path" d="${pathD}" fill="none" stroke="rgba(0,0,0,0.1)" stroke-width="2"></path>
+                </svg>
+                <div class="stats-week-wrapper" style="display: flex; align-items: flex-end; height: 100%;">
+                    ${bars}
+                </div>
+                <div class="x-axis-title">Semanas de ${selectedYear}</div>
+            </div>`;
+        container.appendChild(row);
+    });
+}
+    function analizarShutdown() {
+        const startStr = document.getElementById('shutStart').value;
+        const endStr = document.getElementById('shutEnd').value;
+        if (!startStr || !endStr) return Swal.fire('Error', 'Please select both dates', 'error');
+        const shutStart = new Date(startStr + "T00:00:00");
+        const shutEnd = new Date(endStr + "T23:59:59");
+        if (shutEnd < shutStart) return Swal.fire('Error', 'End date must be after start date', 'error');
+        const tbody = document.getElementById('shutdownTableBody');
+        tbody.innerHTML = ""; let impacts = [];
+        toolingProjects.forEach(proj => {
+            proj.activities.forEach(act => {
+                act.teams.forEach(t => {
+                    const tStart = new Date(t.start); const tEnd = new Date(t.start); tEnd.setDate(tEnd.getDate() + t.days);
+                    if (tStart <= shutEnd && tEnd >= shutStart) { impacts.push({ proj: proj.name, act: act.name, him: t.name }); }
+                });
+            });
+        });
+        if (impacts.length === 0) { tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:var(--success-green); font-weight:bold;">✅ No impacts found.</td></tr>`; } 
+        else { impacts.forEach(imp => { const row = document.createElement('tr'); row.innerHTML = `<td>${imp.proj}</td><td>${imp.act}</td><td>${imp.him}</td><td class="impact-high">⚠️ DIRECT IMPACT</td>`; tbody.appendChild(row); }); }
+    }
+
+    function setShutdown() {
+        const start = document.getElementById('shutStart').value;
+        const end = document.getElementById('shutEnd').value;
+        if(!start || !end) return Swal.fire('Error', 'Select dates first', 'error');
+        Swal.fire({ title: 'Shutdown Description', input: 'text', placeholder: 'Easter Break, Maintenance, etc.', showCancelButton: true
+        }).then((result) => {
+            if (result.isConfirmed && result.value) {
+                const newLog = { start, end, desc: result.value, timestamp: new Date().toISOString() };
+                db.ref('shutdownLogs').push(newLog);
+                Swal.fire('Saved', 'Shutdown saved and calendar updated', 'success');
+            }
+        });
+    }
+
+    function renderHistoryTable() {
+        const tbody = document.getElementById('historyTableBody');
+        tbody.innerHTML = "";
+        shutdownLogs.forEach((log, idx) => {
+            const row = document.createElement('tr');
+            row.innerHTML = `<td>${log.start}</td><td>${log.end}</td><td>${log.desc}</td><td><button onclick="deleteShutdown('${idx}')" style="color:red; cursor:pointer; background:none; border:none;">🗑️</button></td>`;
+            tbody.appendChild(row);
+        });
+        if(shutdownLogs.length === 0) tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#999;">No saved shutdowns.</td></tr>`;
+    }
+
+    function deleteShutdown(idx) {
+        Swal.fire({ title: 'Delete record?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#e30613'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                db.ref('shutdownLogs').once('value', snapshot => {
+                    const keys = Object.keys(snapshot.val());
+                    db.ref('shutdownLogs/' + keys[idx]).remove();
+                });
+            }
+        });
+    }
+
+    function analizarMantenimiento() {
+        const startStr = document.getElementById('maintStart').value;
+        const endStr = document.getElementById('maintEnd').value;
+        if (!startStr || !endStr) return Swal.fire('Error', 'Please select both dates', 'error');
+        const mStart = new Date(startStr + "T00:00:00");
+        const mEnd = new Date(endStr + "T23:59:59");
+        if (mEnd < mStart) return Swal.fire('Error', 'End date must be after start date', 'error');
+        const tbody = document.getElementById('maintTableBody');
+        tbody.innerHTML = ""; let impacts = [];
+        toolingProjects.forEach(proj => {
+            proj.activities.forEach(act => {
+                act.teams.forEach(t => {
+                    const tStart = new Date(t.start); const tEnd = new Date(t.start); tEnd.setDate(tEnd.getDate() + t.days);
+                    if (tStart <= mEnd && tEnd >= mStart) { impacts.push({ proj: proj.name, act: act.name, him: t.name }); }
+                });
+            });
+        });
+        if (impacts.length === 0) { tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:var(--success-green); font-weight:bold;">✅ No impacts found.</td></tr>`; } 
+        else { impacts.forEach(imp => { const row = document.createElement('tr'); row.innerHTML = `<td>${imp.proj}</td><td>${imp.act}</td><td>${imp.him}</td><td class="impact-high" style="color:var(--maint-purple);">🔧 MAINT. IMPACT</td>`; tbody.appendChild(row); }); }
+    }
+
+    function setMaintenance() {
+        const typeId = document.getElementById('maintDeviceType').value;
+        const him = document.getElementById('maintHIM').value;
+        const start = document.getElementById('maintStart').value;
+        const end = document.getElementById('maintEnd').value;
+        const desc = document.getElementById('maintDesc').value.trim();
+        
+        if(!typeId || !him || !start || !end || !desc) return Swal.fire('Error', 'All maintenance fields are required', 'error');
+        
+        const typeName = (window.huf_devices_config.find(d => d.id === typeId) || {name: "Unknown"}).name;
+        const newLog = { typeName, him, start, end, desc, timestamp: new Date().toISOString() };
+        db.ref('maintenanceLogs').push(newLog);
+        Swal.fire('Saved', 'Equipment maintenance scheduled', 'success');
+        document.getElementById('maintDesc').value = "";
+    }
+
+    function renderMaintHistoryTable() {
+        const tbody = document.getElementById('maintHistoryTableBody');
+        tbody.innerHTML = "";
+        maintenanceLogs.forEach((log, idx) => {
+            const row = document.createElement('tr');
+            row.innerHTML = `<td style="text-align: left;">${log.typeName || 'Unknown'}</td><td><b>${log.him}</b></td><td>${log.start}</td><td>${log.end}</td><td>${log.desc}</td><td style="text-align: left;">
+    <button onclick="deleteMaintenance('${idx}')" style="color:red; cursor:pointer; background:none; border:none; padding-left: 0;">🗑️</button>
+</td>`;
+            tbody.appendChild(row);
+        });
+        if(maintenanceLogs.length === 0) tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:#999;">No saved maintenance logs.</td></tr>`;
+    }
+
+    function deleteMaintenance(idx) {
+        Swal.fire({ title: 'Delete record?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#e30613'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                db.ref('maintenanceLogs').once('value', snapshot => {
+                    const keys = Object.keys(snapshot.val());
+                    db.ref('maintenanceLogs/' + keys[idx]).remove();
+                });
+            }
+        });
+    }
+
+    function exportarImpactoCSV(type) {
+        let rows = [["Project", "Activity", "HIM", "Status"]];
+        const tableId = type === 'shutdown' ? "#shutdownTableBody tr" : "#maintTableBody tr";
+        let tableRows = document.querySelectorAll(tableId);
+        tableRows.forEach(tr => {
+            let cols = tr.querySelectorAll("td");
+            if(cols.length > 1) { rows.push([cols[0].innerText, cols[1].innerText, cols[2].innerText, cols[3].innerText]); }
+        });
+        if(rows.length === 1) return Swal.fire('Wait', 'No analysis results to export', 'info');
+        let csvContent = "data:text/csv;charset=utf-8," + rows.map(e => e.join(",")).join("\n");
+        let encodedUri = encodeURI(csvContent);
+        let link = document.createElement("a");
+        link.setAttribute("href", encodedUri); link.setAttribute("download", `HUF_${type.toUpperCase()}_Report_${new Date().toLocaleDateString()}.csv`);
+        document.body.appendChild(link); link.click();
+    }
+
+    async function initApp() {
+        const configSnap = await db.ref(`${DB_CONFIG}/startYear`).get();
+        const startYear = configSnap.exists() ? configSnap.val() : currentYear - 1;
+        setupYearSelectors(startYear);
+        updateDisplayYears(startYear);
+        renderFilterGrids();
+        db.ref(DB_CAPACITY).once('value', snap => { 
+            capacityData = snap.val() || {}; 
+            if(charts.length === 0) initCharts();
+            listenData(); 
+        });
+    }
+
+    function renderFilterGrids() {
+        const statuses = ["Execution", "Acceptance", "Discarded", "Approval", "Completed", "Paused", "New", "Evaluation"];
+        const locs = ["Mexico", "Brazil", "USA", "Germany", "China", "India",];
+        const types = ["Productive", "NonProductive", "Customer Project", "RFC Project"];
+        const years = []; for(let y = currentYear - 2; y <= currentYear + 5; y++) years.push(y);
+        buildG('fStatusBox', statuses, 'statuses', true);
+        buildG('fLocBox', locs, 'locs', true);
+        buildG('fYearBox', years, 'years', true);
+        buildG('fTypeBox', types, 'types', false);
+    }
+
+    function buildG(containerId, items, key, isGrid) {
+        const box = document.getElementById(containerId);
+        let html = `<div class="${isGrid ? 'filter-grid-2' : 'filter-grid-list'}">`;
+        html += `<div class="filter-item full-header ${selF[key].length === 0 ? 'active' : ''}" onclick="toggleF('${key}', '', true)">ALL</div>`;
+        items.forEach(item => {
+            const active = selF[key].includes(item.toString());
+            html += `<div class="filter-item ${active ? 'active' : ''}" onclick="toggleF('${key}', '${item}')">${item}</div>`;
+        });
+        html += `</div>`;
+        box.innerHTML = html;
+    }
+
+    function toggleF(key, val, all) {
+        if(all) selF[key] = []; else { const idx = selF[key].indexOf(val.toString()); if(idx > -1) selF[key].splice(idx, 1); else selF[key].push(val.toString()); }
+        renderFilterGrids(); updateUI();
+    }
+    
+    function setupYearSelectors(selectedYear) {
+        const yearSelect = document.getElementById('projectYear');
+        const dashYear = document.getElementById('dashboardStartYear');
+        if(yearSelect.options.length === 0) {
+            for(let y = currentYear - 5; y <= currentYear + 10; y++) {
+                yearSelect.add(new Option(y, y, y === currentYear, y === currentYear));
+                dashYear.add(new Option(y, y, y === selectedYear, y === selectedYear));
+            }
+            document.getElementById('monthsGrid').innerHTML = months.map((m, i) => `<div class="month-input-group"><input type="checkbox" class="month-check" data-idx="${i}"><label>${m}</label><input type="number" class="month-input" data-idx="${i}" value="0"></div>`).join('');
+        }
+    }
+    
+    function updateDisplayYears(start) { displayYears = [parseInt(start), parseInt(start)+1, parseInt(start)+2, parseInt(start)+3]; }
+    function saveDashboardYearPreference() {
+        const year = document.getElementById('dashboardStartYear').value;
+        db.ref(`${DB_CONFIG}/startYear`).set(parseInt(year)).then(() => { updateDisplayYears(year); updateUI(); });
+    }
+    
+   function initCharts() {
+    Chart.register(ChartDataLabels);
+    const rootStyle = getComputedStyle(document.documentElement);
+    
+    // Limpiamos el array de charts si ya existía para evitar duplicados
+    charts = []; 
+    
+    // Solo 4 índices para 4 gráficas (Año-1, Actual, Año+1, Año+2)
+    [0, 1, 2, 3].forEach((index) => {
+        const canvas = document.getElementById(`chart-${index}`);
+        if(!canvas) return;
+        const ctx = canvas.getContext('2d');
+        
+        charts.push(new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: monthNamesShort, // "JAN", "FEB", etc.
+                datasets: [
+                    { label: 'Customer Project', data: Array(12).fill(0), backgroundColor: rootStyle.getPropertyValue('--Customer').trim(), stack: 'P' },
+                    { label: 'RFC Project', data: Array(12).fill(0), backgroundColor: rootStyle.getPropertyValue('--RFC').trim(), stack: 'P' },
+                    { label: 'Productive', data: Array(12).fill(0), backgroundColor: rootStyle.getPropertyValue('--Productive').trim(), stack: 'P' },
+                    { label: 'NonProductive', data: Array(12).fill(0), backgroundColor: rootStyle.getPropertyValue('--NonProductive').trim(), stack: 'P' },
+                    { label: 'Cap (100%)', data: Array(12).fill(100), type: 'line', borderColor: '#e30613', borderWidth: 3, pointRadius: 0, fill: false, datalabels: { display: false } }
+                ]
+            },
+            options: {
+                maintainAspectRatio: false,
+                plugins: {
+                    title: { display: true, text: 'Resource Load % - ' + (currentYear - 1 + index) },
+                    legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } },
+                    datalabels: {
+                        formatter: (val, ctx) => {
+                            if (ctx.datasetIndex < 4) return val > 5 ? val.toFixed(0) + '%' : '';
+                            return null;
+                        },
+                        color: '#000', font: { weight: 'bold', size: 9 }
+                    }
+                },
+                scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true, suggestedMax: 120 } }
+            }
+        }));
+    });
+    document.getElementById('charts-loading').style.display = 'none';
+    document.getElementById('charts-wrapper').style.opacity = '1';
+}
+    
+    function listenData() { 
+        db.ref(DB_PROJECTS).on('value', snap => { 
+            projectLogs = []; const data = snap.val(); 
+            if(data) Object.keys(data).forEach(k => projectLogs.push({ id: k, ...data[k] })); 
+            updateUI(); 
+        }); 
+    }
+
+const displayRange = [currentYear - 2, currentYear - 1, currentYear, currentYear + 1, currentYear + 2];
+const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+function updateUI() {
+    const tbody = document.getElementById('logTableBody'); 
+    if(!tbody) return;
+
+    // --- 1. OBTENCIÓN DE VALORES DE FILTROS ---
+    const fName = (document.getElementById('fName')?.value || "").toLowerCase(); 
+    const fNum = (document.getElementById('fNum')?.value || "").toLowerCase(); 
+    const fComm = (document.getElementById('fComm')?.value || "").toLowerCase(); 
+    const fPO = (document.getElementById('fPO')?.value || "").toLowerCase(); 
+    const fType = (document.getElementById('fType')?.value || "").toLowerCase();
+    const fLoc = (document.getElementById('fLoc')?.value || "").toLowerCase();
+
+    // --- 2. FILTRADO DE DATOS ---
+    const filtered = projectLogs.filter(p => {
+        const matchesName = (p.name || "").toLowerCase().includes(fName);
+        const matchesNum = (p.number || "").toLowerCase().includes(fNum);
+        const matchesComm = (p.comments || "").toLowerCase().includes(fComm);
+        const matchesPO = (p.po || "").toLowerCase().includes(fPO);
+        const matchesType = (p.priority || "").toLowerCase().includes(fType);
+        const matchesLoc = (p.location || "").toLowerCase().includes(fLoc);
+        
+        const matchesYear = (selF.years.length === 0 || selF.years.includes(p.year.toString()));
+        const matchesStatus = (selF.statuses.length === 0 || selF.statuses.includes(p.status));
+
+        return matchesName && matchesNum && matchesComm && matchesPO && 
+               matchesType && matchesLoc && matchesYear && matchesStatus;
+    });
+
+    // --- CONFIGURACIÓN DE RANGOS ---
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    
+    // Rango de la TABLA (5 años: -2 a +2)
+    const startYearTable = currentYear - 2;
+    const endYearTable = currentYear + 2;
+    
+    // Rango de las GRÁFICAS (4 años: -1 a +2)
+    const displayYearsCharts = [currentYear - 2,currentYear - 1, currentYear, currentYear + 1];
+    const monthNamesShort = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+
+    if(isSummaryActive) {
+        const fragment = document.createDocumentFragment();
+        const headerRow = document.getElementById('dynamicHeaderMonths');
+        
+        if (headerRow) {
+            let headerHtml = `
+                <th class="sticky-col c1">Project Name</th>
+                <th class="sticky-col c2">Project N°</th>
+                <th class="sticky-col c3">Year</th>
+                <th class="sticky-col c4">Status</th>
+                <th class="sticky-col c5">Comments</th>
+                <th class="sticky-col c6">PO</th>
+                <th class="sticky-col c7">Type</th>
+                <th class="sticky-col c8">Location</th>`;
+
+            for (let yr = startYearTable; yr <= endYearTable; yr++) {
+                monthNamesShort.forEach(mo => {
+                    headerHtml += `<th class="month-cell">${mo}<br>${yr}</th>`;
+                });
+            }
+            for (let yr = startYearTable; yr <= endYearTable; yr++) {
+                headerHtml += `<th style="background:#27ae60; color:white; min-width:80px;">TOTAL<br>${yr}</th>`;
+            }
+            headerHtml += `<th style="background:#2980b9; color:white;">GRAND TOTAL</th><th>ACTIONS</th>`;
+            headerRow.innerHTML = headerHtml;
+        }
+
+        filtered.forEach(p => {
+            const tr = document.createElement('tr');
+            const locVal = p.location || "Mexico";
+            const countryClass = `row-${locVal.toLowerCase().replace(/\s/g, '')}`;
+            let statusClass = "";
+            if(p.priority === "RFC Project") {
+                statusClass = `row-${(p.status || "").toLowerCase().replace(/\s/g, '')}`;
+                tr.classList.add('type-rfcproject');
+            }
+            tr.className = `${statusClass} ${countryClass}`;
+            
+            let html = `
+                <td class="sticky-col c1">${p.name}</td>
+                <td class="sticky-col c2">${p.number}</td>
+                <td class="sticky-col c3">${p.year}</td>
+                <td class="sticky-col c4">${p.status}</td>
+                <td class="sticky-col c5">${p.comments || ""}</td>
+                <td class="sticky-col c6">${p.po || ""}</td>
+                <td class="sticky-col c7">${p.priority}</td>
+                <td class="sticky-col c8">${locVal}</td>`;
+            
+            let yearlyTotals = {}; 
+            let grandTotal = 0;
+            let mIdx = 0;
+
+            for (let yr = startYearTable; yr <= endYearTable; yr++) {
+                let currentYearSum = 0;
+                for (let mo = 0; mo < 12; mo++) {
+                    let h = (p.monthlyHours && p.monthlyHours[mIdx]) ? p.monthlyHours[mIdx] : 0;
+                    currentYearSum += h;
+                    grandTotal += h;
+                    let cls = (h > 0) ? "cell-has-hours" : "";
+                    html += `<td class="month-cell ${cls}">${h}</td>`;
+                    mIdx++;
+                }
+                yearlyTotals[yr] = currentYearSum;
+            }
+
+            for (let yr = startYearTable; yr <= endYearTable; yr++) {
+                html += `<td style="font-weight:bold; text-align:center; background:#e8f8f5; border-left: 1px solid #ddd;">${yearlyTotals[yr]}</td>`;
+            }
+
+            html += `
+                <td style="font-weight:bold; text-align:center; background:#ebf5fb; border-left: 2px solid #2980b9;">${grandTotal}</td>
+                <td class="action-btns">
+                    <i class="fa fa-edit" onclick="editProject('${p.id}')"></i>
+                    <i class="fa fa-trash" onclick="deleteProject('${p.id}')"></i>
+                </td>`;
+            
+            tr.innerHTML = html;
+            fragment.appendChild(tr);
+        });
+        
+        tbody.innerHTML = '';
+        tbody.appendChild(fragment);
+        if(document.getElementById('projectCount')) {
+            document.getElementById('projectCount').innerText = filtered.length;
+        }
+    }
+    
+    // --- 3. ACTUALIZACIÓN DE GRÁFICAS (60 meses -> 4 Años) ---
+    if(charts && charts.length > 0) {
+        // Inicializamos contenedores para los 4 años de las gráficas
+        const rawHours = displayYearsCharts.map(() => ({ 
+            'NonProductive': Array(12).fill(0), 
+            'Productive': Array(12).fill(0), 
+            'RFC Project': Array(12).fill(0), 
+            'Customer Project': Array(12).fill(0) 
+        }));
+
+        filtered.forEach(p => {
+            // Solo sumamos si el proyecto no está descartado y tiene horas
+            if(p.status !== "Discarded" && p.monthlyHours) { 
+                const prio = p.priority;
+                
+                p.monthlyHours.forEach((h, globalIdx) => {
+                    // Calculamos a qué año pertenece este mes (Data inicia en currentYear - 2)
+                    const yearOfThisMonth = startYearTable + Math.floor(globalIdx / 12);
+                    
+                    // Buscamos si este año corresponde a alguna de nuestras 4 gráficas
+                    const chartIdx = displayYearsCharts.indexOf(yearOfThisMonth);
+                    
+                    if(chartIdx !== -1) {
+                        const monthInYearIdx = globalIdx % 12;
+                        if(rawHours[chartIdx][prio]) {
+                            rawHours[chartIdx][prio][monthInYearIdx] += (h || 0);
+                        }
+                    }
+                });
+            }
+        });
+
+        // Aplicamos los datos a cada objeto Chart
+        charts.forEach((chart, idx) => {
+            const year = displayYearsCharts[idx]; 
+            const capArray = (typeof capacityData !== 'undefined' && capacityData[year]) ? capacityData[year] : Array(12).fill(1790);
+            
+            chart.data.datasets[0].data = rawHours[idx]['Customer Project'].map((h, i) => capArray[i] > 0 ? (h / capArray[i]) * 100 : 0);
+            chart.data.datasets[1].data = rawHours[idx]['RFC Project'].map((h, i) => capArray[i] > 0 ? (h / capArray[i]) * 100 : 0); 
+            chart.data.datasets[2].data = rawHours[idx]['Productive'].map((h, i) => capArray[i] > 0 ? (h / capArray[i]) * 100 : 0); 
+            chart.data.datasets[3].data = rawHours[idx]['NonProductive'].map((h, i) => capArray[i] > 0 ? (h / capArray[i]) * 100 : 0); 
+            
+            chart.options.plugins.title.text = 'Resource Load % - ' + year;
+            chart.update('none');
+        });
+    }
+}
+function toggleFilterMenu(filterType) {
+    // Aquí debería abrirse tu modal o lista de checkboxes
+    // Ejemplo simplificado de lo que debe pasar cuando el usuario selecciona una opción:
+    // 1. Agregas el valor al arreglo: selF.priorities.push("RFC Project");
+    // 2. LLAMAS A UPDATEUI para que la tabla se refresque:
+    updateUI(); 
+}
+function saveData() {
+    const name = document.getElementById('projectName').value.trim(); 
+    const number = document.getElementById('projectNumber').value.trim(); 
+    
+    if(!name || !number) return Swal.fire("Attention", "Please fill all the fields!", "warning");
+    
+    const selectedYear = parseInt(document.getElementById('projectYear').value);
+    const currentYearBase = new Date().getFullYear();
+    const startYear = currentYearBase - 2;
+    const offset = (selectedYear - startYear) * 12;
+
+    // Horas que vienen de los 12 inputs del modal
+    const inputHours = Array.from(document.querySelectorAll('.month-input')).map(i => parseFloat(i.value) || 0);
+    const inputChecks = Array.from(document.querySelectorAll('.month-check')).map(c => c.checked);
+
+    if(editId) {
+        // --- MODO EDICIÓN ---
+        // 1. Buscamos el proyecto actual para no perder los datos de los otros años
+        const existingProject = projectLogs.find(p => p.id === editId);
+        
+        // 2. Si por alguna razón no tiene las 60 posiciones, las creamos
+        let fullMonthlyHours = existingProject.monthlyHours && existingProject.monthlyHours.length === 60 
+            ? [...existingProject.monthlyHours] 
+            : new Array(60).fill(0);
+            
+        let fullSelectedMonths = existingProject.selectedMonths && existingProject.selectedMonths.length === 60
+            ? [...existingProject.selectedMonths]
+            : new Array(60).fill(false);
+
+        // 3. "Parchamos" solo los 12 meses del año que estamos viendo en el modal
+        for (let i = 0; i < 12; i++) {
+            fullMonthlyHours[offset + i] = inputHours[i];
+            fullSelectedMonths[offset + i] = inputChecks[i];
+        }
+
+        const payload = { 
+            name, number, 
+            year: selectedYear, 
+            location: document.getElementById('projectLocation').value, 
+            status: document.getElementById('projectStatus').value, 
+            comments: document.getElementById('projectComments').value, 
+            po: document.getElementById('projectPO').value, 
+            priority: document.getElementById('priority').value, 
+            monthlyHours: fullMonthlyHours, 
+            selectedMonths: fullSelectedMonths, 
+            totalHours: fullMonthlyHours.reduce((a,b) => a + b, 0) 
+        };
+
+        db.ref(`${DB_PROJECTS}/${editId}`).set(payload).then(() => { 
+            Swal.fire("Updated", "Project updated successfully!", "success");
+            editId = null; 
+            document.getElementById('btnSave').innerText = "SAVE";
+            resetForm(); 
+            if(typeof updateUI === 'function') updateUI();
+        }); 
+
+    } else {
+        // --- MODO NUEVO REGISTRO ---
+        // Creamos un array vacío de 60 y colocamos los 12 meses donde correspondan
+        let newFullHours = new Array(60).fill(0);
+        let newFullChecks = new Array(60).fill(false);
+
+        for (let i = 0; i < 12; i++) {
+            if (offset + i >= 0 && offset + i < 60) {
+                newFullHours[offset + i] = inputHours[i];
+                newFullChecks[offset + i] = inputChecks[i];
+            }
+        }
+
+        const payload = { 
+            name, number, 
+            year: selectedYear, 
+            location: document.getElementById('projectLocation').value, 
+            status: document.getElementById('projectStatus').value, 
+            comments: document.getElementById('projectComments').value, 
+            po: document.getElementById('projectPO').value, 
+            priority: document.getElementById('priority').value, 
+            monthlyHours: newFullHours, 
+            selectedMonths: newFullChecks, 
+            totalHours: newFullHours.reduce((a,b) => a + b, 0) 
+        };
+
+        db.ref(DB_PROJECTS).push(payload).then(() => {
+            Swal.fire("Saved", "New project created in the 60-month forecast!", "success");
+            resetForm();
+            if(typeof updateUI === 'function') updateUI();
+        });
+    }
+}
+function getYearOffset(selectedYear) {
+    const currentYear = new Date().getFullYear();
+    const startYear = currentYear - 2; // El año 1 de los 60 meses
+    const diff = selectedYear - startYear;
+    return diff * 12; 
+}
+function editProject(id) {
+    const p = projectLogs.find(x => x.id === id); 
+    if (!p) return;
+
+    // Llenar datos básicos
+    document.getElementById('projectName').value = p.name; 
+    document.getElementById('projectNumber').value = p.number; 
+    document.getElementById('projectYear').value = p.year; 
+    document.getElementById('projectStatus').value = p.status; 
+    document.getElementById('projectLocation').value = p.location || "Mexico";
+    document.getElementById('projectComments').value = p.comments || ""; 
+    document.getElementById('projectPO').value = p.po || ""; 
+    document.getElementById('priority').value = p.priority;
+
+    // Lógica de la "Lupa": Extraer 12 meses de los 60
+    const offset = getYearOffset(parseInt(p.year));
+    const inputs = document.querySelectorAll('.month-input');
+    
+    // Solo llenamos 12 inputs con la parte correspondiente del array de 60
+    for (let i = 0; i < 12; i++) {
+        if (inputs[i]) {
+            // Buscamos en el array global p.monthlyHours[offset + i]
+            inputs[i].value = (p.monthlyHours && p.monthlyHours[offset + i]) ? p.monthlyHours[offset + i] : 0;
+        }
+    }
+
+    // Manejo de checkboxes (si aplica para los 12 meses visibles)
+    const checks = document.querySelectorAll('.month-check');
+    if (p.selectedMonths && checks.length > 0) {
+        for (let i = 0; i < 12; i++) {
+            if (checks[i]) {
+                checks[i].checked = p.selectedMonths[offset + i] || false;
+            }
+        }
+    }
+
+    editId = id; 
+    document.getElementById('btnSave').innerText = "UPDATddE"; showModule('main-app');
+    
+}
+    
+    function showCapacityEditor() { 
+    
+        const sel = document.getElementById('capYearSelect');
+        const grid = document.getElementById('capMonthsGrid');
+        if(sel.options.length === 0) { for(let y = currentYear - 2; y <= currentYear + 5; y++) { sel.add(new Option(y,y,y===currentYear,y===currentYear)); } }
+        grid.innerHTML = months.map((m, i) => `<div class="month-input-group"><label>${m}</label><input type="number" class="cap-input" data-idx="${i}" value="500"></div>`).join('');
+        loadCapacityYear();
+    }
+    function loadCapacityYear() { const year = document.getElementById('capYearSelect').value; const vals = capacityData[year] || Array(12).fill(500); document.querySelectorAll('.cap-input').forEach((inp, i) => inp.value = vals[i]); }
+    function saveCapacity() {
+         const year = document.getElementById('capYearSelect').value; const vals = Array.from(document.querySelectorAll('.cap-input')).map(i => parseFloat(i.value) || 0); db.ref(`${DB_CAPACITY}/${year}`).set(vals).then(() =>
+          { Swal.fire("Capacity Updted!", "", "success"); showModule('main-app'); }); }
+
+
+async function deleteProject(id) {
+    const result = await Swal.fire({
+        title: '¿Estás seguro?',
+        text: "Esta acción eliminará el proyecto de forma permanente.",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#aa1c25', // Color rojo institucional
+        cancelButtonColor: '#555',
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar'
+    });
+
+    if (result.isConfirmed) {
+        try {
+            await db.ref(`${DB_PROJECTS}/${id}`).remove();
+            Swal.fire(
+                '¡Eliminado!',
+                'El proyecto ha sido borrado con éxito.',
+                'success'
+            );
+        } catch (error) {
+            Swal.fire(
+                'Error',
+                'No se pudo eliminar el proyecto: ' + error.message,
+                'error'
+            );
+        }
+    }
+}
+    function clearFilters() { selF = { years: [], statuses: [], locs: [], types: [] }; ['fName','fNum','fComm','fPO'].forEach(i => document.getElementById(i).value = ''); renderFilterGrids(); updateUI(); }
+    function resetForm() { ['projectName','projectNumber','projectComments','projectPO'].forEach(id => document.getElementById(id).value = ''); document.querySelectorAll('.month-input').forEach(i => i.value = 0); document.querySelectorAll('.month-check').forEach(i => i.checked = false); document.getElementById('btnSave').innerText = "SAVE"; editId = null; }
+    function deleteAllProjects() { if (confirm("ELIMINAR TODO?")) db.ref(DB_PROJECTS).remove(); }
+
+async function importCSV(event) {
+    const file = event.target.files[0]; 
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async function(e) {
+        const lines = e.target.result.split('\n').filter(l => l.trim() !== "");
+        const total = lines.length - 1; 
+        if(total <= 0) return;
+
+        const loader = document.getElementById('import-loader');
+        const progressSpan = document.getElementById('import-progress');
+        if (loader) loader.style.display = 'block';
+
+        const currentYearBase = new Date().getFullYear();
+
+        for (let i = 1; i < lines.length; i++) {
+            const cols = lines[i].split(',');
+            if (cols.length < 8) continue;
+
+            // Extraemos las 60 columnas de horas (desde la columna índice 8 hasta la 67)
+            const full60Months = cols.slice(8, 68).map(v => parseFloat(v) || 0);
+
+            const payload = {
+                name: cols[0]?.trim() || "N/A", 
+                number: cols[1]?.trim() || "N/A", 
+                year: parseInt(cols[2]) || currentYearBase, // Año base de referencia
+                status: cols[3]?.trim() || "Execution", 
+                comments: cols[4]?.trim() || "", 
+                po: cols[5]?.trim() || "",
+                priority: cols[6]?.trim() || "Productive",
+                location: cols[7]?.trim() || "Mexico",
+                monthlyHours: full60Months, 
+                selectedMonths: full60Months.map(v => v > 0), 
+                totalHours: full60Months.reduce((a, b) => a + b, 0)
+            };
+
+            try { 
+                await db.ref(DB_PROJECTS).push(payload); 
+                if (progressSpan) {
+                    progressSpan.innerText = Math.round((i / total) * 100) + "%"; 
+                }
+            } catch (err) {
+                console.error("Error en fila " + i + ":", err);
+            }
+        }
+
+        if (loader) loader.style.display = 'none';
+        Swal.fire("Success", "Importación de 60 meses completada (1 fila por proyecto)", "success");
+        if (typeof updateUI === 'function') updateUI();
+    };
+    reader.readAsText(file);
+}
+/**
+ * IMPORTAR EQUIPMENT (TOOLING) DESDE CSV
+ * Modificación basada en las constantes y DB de tu archivo index.html
+ */
+// --- FUNCIÓN DE APOYO PARA DETECTAR EL TIPO SEGÚN EL HIM ---
+/**
+ * BUSCADOR OFICIAL HUF:
+ * Recorre tu configuración real para encontrar el ID numérico ("1", "2", etc.)
+ */
+function encontrarTipoHufPorHIM(himName) {
+    const target = himName.toString().toUpperCase().trim();
+    const config = window.huf_devices_config;
+
+    if (config && Array.isArray(config)) {
+        for (const device of config) {
+            // Buscamos dentro del array 'hims' de cada objeto de tu config
+            if (device.hims && device.hims.some(h => h.toUpperCase().trim() === target)) {
+                return device.id; // Retorna "1", "2", "9", etc.
+            }
+        }
+    }
+
+    // Si no lo encuentra, intentamos una deducción rápida para no dejarlo Unknown
+    if (target.includes("VIB")) return "9"; // Vibration
+    if (target.includes("1138") || target.includes("0941")) return "1"; // Chamber SE ejemplo
+    
+    return "equipment"; // Valor por defecto
+}
+
+async function importEquipmentCSV(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+        let content = e.target.result;
+        content = content.replace(/"([^"]*)"/g, (m, p1) => p1.replace(/\n/g, " ").replace(/\r/g, ""));
+        const lines = content.split(/\r?\n/).filter(l => l.trim().length > 0);
+        
+        if (lines.length < 2) return;
+        const separator = lines[0].includes(';') ? ';' : ',';
+        
+        let itemsToSave = [];
+        let importedYears = new Set();
+
+        for (let i = 1; i < lines.length; i++) {
+            const row = lines[i].split(separator);
+            const pName = (row[0] || "").trim();
+            const aName = (row[1] || "").trim();
+            const rowYear = parseInt((row[2] || "").trim());
+
+            if (!pName || !aName || isNaN(rowYear)) continue;
+            importedYears.add(rowYear);
+
+            let currentHIM = null, startW = null, dur = 0;
+
+            // Semanas desde Columna D (Índice 3)
+            for (let j = 3; j <= 54; j++) {
+                const cellValue = (row[j] || "").trim();
+                if (cellValue !== "") {
+                    if (cellValue === currentHIM) {
+                        dur++;
+                    } else {
+                        if (currentHIM) itemsToSave.push({ pName, aName, rowYear, currentHIM, startW, dur });
+                        currentHIM = cellValue;
+                        startW = j - 2; 
+                        dur = 1;
+                    }
+                } else if (currentHIM) {
+                    itemsToSave.push({ pName, aName, rowYear, currentHIM, startW, dur });
+                    currentHIM = null;
+                }
+            }
+            if (currentHIM) itemsToSave.push({ pName, aName, rowYear, currentHIM, startW, dur });
+        }
+
+        // PREVISUALIZADOR CON TUS NOMBRES REALES
+        const result = await Swal.fire({
+            title: 'HUF Equipment Sync',
+            html: `<div style="max-height:300px; overflow-y:auto; border:1px solid #ddd;">
+                    <table style="width:100%; font-size:11px; text-align:left; border-collapse:collapse;">
+                        <thead style="background:#f8f9fa; position:sticky; top:0;">
+                            <tr><th style="padding:5px;">HIM</th><th style="padding:5px;">HUF Category (ID)</th></tr>
+                        </thead>
+                        <tbody>${itemsToSave.map(d => {
+                            const foundId = encontrarTipoHufPorHIM(d.currentHIM);
+                            const deviceName = window.huf_devices_config.find(c => c.id === foundId)?.name || "Unknown";
+                            return `<tr style="border-bottom:1px solid #eee;">
+                                        <td style="padding:5px;"><b>${d.currentHIM}</b></td>
+                                        <td style="padding:5px; color:#27ae60;"><b>${deviceName} (${foundId})</b></td>
+                                    </tr>`;
+                        }).join('')}</tbody>
+                    </table>
+                   </div>`,
+            showCancelButton: true,
+            confirmButtonText: 'Confirm & Import',
+            width: '500px'
+        });
+
+        if (result.isConfirmed) {
+            itemsToSave.forEach(data => {
+                actualizarBaseDeDatos(data.pName, data.aName, data.currentHIM, data.startW, data.dur, data.rowYear);
+            });
+
+            if (typeof guardarCambios === 'function') await guardarCambios();
+            
+            const firstYear = Array.from(importedYears)[0];
+            if (document.getElementById('yearSelector')) {
+                document.getElementById('yearSelector').value = firstYear;
+                window.selectedYear = firstYear;
+            }
+
+            if (typeof renderGantt === 'function') renderGantt();
+            Swal.fire('Éxito', 'Equipos vinculados correctamente.', 'success');
+        }
+        event.target.value = ""; 
+    };
+    reader.readAsText(file);
+}
+
+function actualizarBaseDeDatos(p, a, h, w, d, y) {
+    if (!window.toolingProjects) window.toolingProjects = [];
+
+    let proj = toolingProjects.find(item => item.name.trim().toUpperCase() === p.toUpperCase());
+    if (!proj) {
+        proj = { name: p, collapsed: false, activities: [] };
+        toolingProjects.push(proj);
+    }
+    let act = proj.activities.find(item => item.name.trim().toUpperCase() === a.toUpperCase());
+    if (!act) {
+        act = { name: a, teams: [] };
+        proj.activities.push(act);
+    }
+
+    const date = new Date(y, 0, 1 + (w - 1) * 7);
+    const day = date.getDay();
+    const diff = date.getDate() - day + (day === 0 ? -6 : 1);
+    const monday = new Date(date.setDate(diff));
+    monday.setHours(0,0,0,0);
+
+    // DETERMINAMOS EL ID TÉCNICO ("1", "2", etc.)
+    const finalTypeId = encontrarTipoHufPorHIM(h);
+
+    act.teams.push({
+        name: h.toUpperCase(),
+        start: monday, 
+        days: d * 7,
+        weeks: d,
+        typeId: finalTypeId // Ahora sí coincidirá con tu config
+    });
+}
+
+// 1. Función para abrir el modal de edición
+function openEditCapacityModal() {
+    let options = window.huf_devices_config.map(d => `<option value="${d.id}">${d.name}</option>`).join("");
+    
+    Swal.fire({
+        title: 'MASTER CAPACITY PLANNER',
+        html: `
+            <div style="margin-bottom: 20px; background: #f8f9fa; padding: 15px; border-radius: 8px; border-bottom: 3px solid var(--huf-red);">
+                <label style="font-weight:bold; display:block; margin-bottom:10px; color:#333;">1. SELECT DEVICE TYPE:</label>
+                <select id="swal-device-select" class="swal2-input" style="width: 100%; max-width: 400px; margin: 0 auto; display: block;" 
+                        onchange="updateCapacityTable(this.value)">
+                    <option value="">-- Choose Equipment --</option>
+                    ${options}
+                </select>
+            </div>
+            
+            <div id="capacity-editor-ui" style="display:none;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding: 0 10px;">
+                    <span style="font-size: 12px; color: #666;">2. Edit weekly units:</span>
+                    <button type="button" onclick="copyFirstToAll()" style="background: #555; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 11px;">
+                        <i class="fas fa-copy"></i> Copy W1 to all weeks
+                    </button>
+                </div>
+                <div id="capacity-table-container" style="width: 100%;"></div>
+            </div>
+
+            <div id="capacity-placeholder" style="padding: 60px 20px; color: #bbb; text-align: center; background: #fff; border: 2px dashed #eee; border-radius: 8px;">
+                <i class="fas fa-layer-group" style="font-size: 40px; margin-bottom: 15px; display: block;"></i>
+                <p>Select a device from the list above to display the 52-week grid</p>
+            </div>
+        `,
+        width: '95%',
+        showCancelButton: true,
+        confirmButtonText: '<i class="fas fa-save"></i> SAVE CHANGES',
+        confirmButtonColor: '#27ae60',
+        cancelButtonText: 'CANCEL',
+        preConfirm: () => {
+            const devId = document.getElementById('swal-device-select').value;
+            if (!devId) return Swal.showValidationMessage('You must select a device first');
+            
+            if (!window.customCapacity[devId]) window.customCapacity[devId] = {};
+            for (let w = 1; w <= 52; w++) {
+                const input = document.getElementById(`cap-w-${w}`);
+                if (input) {
+                    window.customCapacity[devId][w] = parseInt(input.value) || 0;
+                }
+            }
+            localStorage.setItem('huf_custom_capacity', JSON.stringify(window.customCapacity));
+            return true;
+        }
+    }).then(result => { if(result.isConfirmed) renderAllStats(); });
+}
+
+function openEditCapacityModal() {
+    let options = window.huf_devices_config.map(d => `<option value="${d.id}">${d.name}</option>`).join("");
+    
+    Swal.fire({
+        title: '<span style="font-size:18px;">ANNUAL CAPACITY PLANNER</span>',
+        html: `
+            <div style="margin-bottom: 10px; background: #f8f9fa; padding: 10px; border-radius: 8px; border: 1px solid #ddd; display: flex; align-items: center; justify-content: center; gap: 15px;">
+                <label style="font-weight:bold; font-size:13px;">DEVICE:</label>
+                <select id="swal-device-select" class="swal2-input" style="width: 250px; margin: 0; height: 35px; font-size: 13px;" 
+                        onchange="updateCapacityTable(this.value)">
+                    <option value="">-- Select --</option>
+                    ${options}
+                </select>
+                <button type="button" onclick="copyFirstToAll()" style="background: #555; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 11px;">
+                    <i class="fas fa-copy"></i> Copy W1 to All
+                </button>
+            </div>
+            
+            <div id="capacity-editor-ui" style="display:none;">
+                <div id="capacity-table-container" style="width: 100%;"></div>
+            </div>
+
+            <div id="capacity-placeholder" style="padding: 40px; color: #bbb; text-align: center; background: #fff; border: 1px dashed #eee; border-radius: 8px;">
+                <p style="font-size:13px;">Select a device to display the compact 52-week grid</p>
+            </div>
+        `,
+        width: '98%',
+        padding: '10px',
+        showCancelButton: true,
+        confirmButtonText: 'SAVE PLAN',
+        confirmButtonColor: '#27ae60',
+        preConfirm: () => {
+            const devId = document.getElementById('swal-device-select').value;
+            if (!devId) return Swal.showValidationMessage('Select a device');
+            
+            if (!window.customCapacity[devId]) window.customCapacity[devId] = {};
+            for (let w = 1; w <= 52; w++) {
+                const input = document.getElementById(`cap-w-${w}`);
+                if (input) window.customCapacity[devId][w] = parseInt(input.value) || 0;
+            }
+            localStorage.setItem('huf_custom_capacity', JSON.stringify(window.customCapacity));
+            return true;
+        }
+    }).then(result => { if(result.isConfirmed) renderAllStats(); });
+}
+
+function updateCapacityTable(devId) {
+    const container = document.getElementById('capacity-table-container');
+    const placeholder = document.getElementById('capacity-placeholder');
+    const editorUI = document.getElementById('capacity-editor-ui');
+
+    if (!devId) {
+        placeholder.style.display = "block";
+        editorUI.style.display = "none";
+        return;
+    }
+
+    placeholder.style.display = "none";
+    editorUI.style.display = "block";
+
+    const config = window.huf_devices_config.find(d => d.id === devId);
+    const defaultCap = config ? config.hims.length : 0;
+    
+    // Diseño de 6 columnas para que sea más bajo (9 semanas por columna aprox)
+    let html = `<div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; padding: 5px;">`;
+
+    for (let col = 0; col < 6; col++) {
+        html += `<div style="background: white; border: 1px solid #ddd; border-radius: 4px;">
+                    <table style="width:100%; border-collapse: collapse; font-size: 10px;">
+                        <thead style="background: #444; color: white;">
+                            <tr>
+                                <th style="padding: 4px;">W</th>
+                                <th style="padding: 4px;">CAP</th>
+                            </tr>
+                        </thead>
+                        <tbody>`;
+        
+        // Calculamos el inicio y fin de cada columna (9 o 8 semanas por columna)
+        let weeksPerCol = Math.ceil(52 / 6);
+        for (let row = 0; row < weeksPerCol; row++) {
+            const w = (col * weeksPerCol) + row + 1;
+            if (w > 52) break;
+
+            const val = (window.customCapacity[devId] && window.customCapacity[devId][w] !== undefined) 
+                         ? window.customCapacity[devId][w] : defaultCap;
+            
+            html += `
+                <tr style="border-bottom: 1px solid #eee;">
+                    <td style="padding: 2px 4px; font-weight: bold; color: #777; background: #fdfdfd; text-align:center;">${w}</td>
+                    <td style="padding: 2px;">
+                        <input type="number" id="cap-w-${w}" value="${val}" 
+                               style="width: 100%; padding: 2px; border: 1px solid #eee; border-radius: 2px; text-align: center; font-size: 11px; font-weight: bold;">
+                    </td>
+                </tr>`;
+        }
+        html += `</tbody></table></div>`;
+    }
+    html += `</div>`;
+    container.innerHTML = html;
+}
+
+function copyFirstToAll() {
+    const firstVal = document.getElementById('cap-w-1').value;
+    for (let w = 1; w <= 52; w++) {
+        const input = document.getElementById(`cap-w-${w}`);
+        if (input) input.value = firstVal;
+    }
+    // Breve notificación visual
+    const btn = event.target;
+    const originalText = btn.innerHTML;
+    btn.innerHTML = "✓ Copied!";
+    setTimeout(() => { btn.innerHTML = originalText; }, 1500);
+}
+// Inicialización de selectores al cargar
+function initCapacitySelectors() {
+    const devSelect = document.getElementById('capDeviceSelect');
+    const yearSelect = document.getElementById('capYearSelect');
+    
+    // Llenar equipos
+    if(window.huf_devices_config) {
+        devSelect.innerHTML = window.huf_devices_config.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
+    }
+
+    // Llenar años (2024 a 2030)
+    yearSelect.innerHTML = "";
+    for(let y=2024; y<=2030; y++){
+        let opt = document.createElement('option');
+        opt.value = y; opt.textContent = y;
+        if(y === (window.selectedYear || 2026)) opt.selected = true;
+        yearSelect.appendChild(opt);
+    }
+    loadCapacityGrid();
+}
+
+function initCapacitySelectors() {
+    const devSelect = document.getElementById('capDeviceSelect');
+    const yearSelect = document.getElementById('capYearSelect');
+    
+    // Llenar equipos
+    if(window.huf_devices_config) {
+        devSelect.innerHTML = window.huf_devices_config.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
+    }
+
+    // Llenar años (2024 a 2030)
+    yearSelect.innerHTML = "";
+    for(let y=2024; y<=2030; y++){
+        let opt = document.createElement('option');
+        opt.value = y; opt.textContent = y;
+        if(y === (window.selectedYear || 2026)) opt.selected = true;
+        yearSelect.appendChild(opt);
+    }
+    loadCapacityGrid();
+}
+
+
+function goToCapacityEditor() {
+    showModule('capacity-view');
+    initCapacitySelectors();
+}
+
+function loadCapacityGrid() {
+    const grid = document.getElementById('capMonthsGrid');
+    const devId = document.getElementById('capDeviceSelect').value;
+    if(!grid || !devId) return;
+
+    grid.innerHTML = "";
+    
+    const config = window.huf_devices_config.find(d => d.id === devId);
+    const defaultCap = config ? config.hims.length : 0;
+
+    const months = ["JANUARY","FEBRUARY","MARCH","APRIL","MAY","JUNE","JULY","AUGUST","SEPTEMBER","OCTOBER","NOVEMBER","DECEMBER"];
+    
+    let weekCounter = 1;
+    months.forEach((month, mIdx) => {
+        const monthCard = document.createElement('div');
+        // Alineación hacia arriba asegurada con inline-block o grid-start
+        monthCard.style = "background: white; border: 1px solid #ddd; padding: 12px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); align-self: start;";
+        
+        let weeksHtml = `<h4 style="margin:0 0 12px 0; border-bottom:2px solid var(--huf-red); text-align:center; padding-bottom:5px; color:#333;">${month}</h4>`;
+        
+        // Lógica de semanas por mes (5 semanas en los meses 3, 6, 9, 12 para completar 52)
+        let weeksInThisMonth = ([2, 5, 8, 11].includes(mIdx)) ? 5 : 4;
+
+        for(let i=0; i < weeksInThisMonth; i++) {
+            if(weekCounter > 52) break;
+            const w = weekCounter;
+            const val = (window.customCapacity[devId] && window.customCapacity[devId][w] !== undefined) 
+                         ? window.customCapacity[devId][w] : defaultCap;
+
+            weeksHtml += `
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; font-size:13px; padding: 2px 0;">
+                    <span style="font-weight:bold; color:#666;">CW${w < 10 ? '0'+w : w}:</span>
+                    <input type="number" id="input-cap-w-${w}" class="cap-input-field" value="${val}" 
+                           style="width:55px; text-align:center; border:1px solid #ccc; border-radius:4px; padding: 4px; font-weight:bold;">
+                </div>`;
+            weekCounter++;
+        }
+        monthCard.innerHTML = weeksHtml;
+        grid.appendChild(monthCard);
+    });
+}
+
+// NUEVA FUNCIÓN: Copiar valor a todas las semanas de golpe
+function applyValueToAllWeeks() {
+    const val = document.getElementById('quickCapValue').value;
+    if (val === "" || val < 0) {
+        Swal.fire('Error', 'Please enter a valid number', 'error');
+        return;
+    }
+
+    Swal.fire({
+        title: 'Confirm Action',
+        text: `This will set ${val} units for all 52 weeks. Are you sure?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#555',
+        confirmButtonText: 'Yes, change all'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            for (let w = 1; w <= 52; w++) {
+                const input = document.getElementById(`input-cap-w-${w}`);
+                if (input) input.value = val;
+            }
+            // Pequeño efecto visual de éxito
+            const btn = event.target;
+            const originalText = btn.innerHTML;
+            btn.innerHTML = "✓ APPLIED!";
+            setTimeout(() => { btn.innerHTML = originalText; }, 2000);
+        }
+    });
+}
+
+// Función para guardar los datos (Asegúrate de tenerla)
+function saveCapacityData() {
+    const devId = document.getElementById('capDeviceSelect').value;
+    if(!devId) return;
+
+    if(!window.customCapacity[devId]) window.customCapacity[devId] = {};
+    
+    for(let w=1; w<=52; w++) {
+        const input = document.getElementById(`input-cap-w-${w}`);
+        if(input) {
+            window.customCapacity[devId][w] = parseInt(input.value) || 0;
+        }
+    }
+
+    localStorage.setItem('huf_custom_capacity', JSON.stringify(window.customCapacity));
+    
+    Swal.fire({
+        icon: 'success',
+        title: 'Plan Updated',
+        text: 'The equipment capacity has been saved successfully.',
+        timer: 1500,
+        showConfirmButton: false
+    });
+}
+
+</script>
+</body>
+</html>
