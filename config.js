@@ -1,8 +1,8 @@
 window.usuarios_password = [
     { user: "oamador", pass: "1234", nombre: "Omar Amador" },
-    { user: "alara", pass: "chtm", nombre: "Angela Lara" },
-    { user: "irodriguez", pass: "12345", nombre: "Ignacio Rodriguez" }
-	 { user: "lmorales", pass: "12345", nombre: "Luis Morales" }
+    { user: "admin", pass: "12345", nombre: "Administrador" },
+    { user: "operador1", pass: "test1", nombre: "Juan Perez" }
+
 ];
 
 var nombre_dispositivo = "JAILOR";
@@ -45,3 +45,4 @@ window.dispositivos_config = {
     "5": ["HIM 5.1"]
 
 };
+
