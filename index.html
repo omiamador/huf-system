@@ -1049,8 +1049,8 @@ onkeydown="manejarTeclado(event)" onclick="hideContextMenu()">
 </button>
 <input type="file" id="csvEquipmentInput" accept=".csv" style="display:none" onchange="importEquipmentCSV(event)">
 
-<div style="margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
-    <label for="yearSelector" style="font-weight: bold;">View Year:</label>
+<div style="display:flex; gap:8px;">
+    <label for="yearSelector" style="font-weight: bold;">Year:</label>
     <select id="yearSelector" onchange="selectedYear = parseInt(this.value); renderGantt(); updateCharts();" style="padding: 5px; border-radius: 4px;">
         <option value="2024">2024</option>
         <option value="2025">2025</option>
@@ -3217,3 +3217,4 @@ function saveCapacityData() {
 </script>
 </body>
 </html>
+
