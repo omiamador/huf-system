@@ -808,7 +808,7 @@ onkeydown="manejarTeclado(event)" onclick="hideContextMenu()">
 <div id="mainCard" class="car card-login">
     <div class="logo-container">
         <img src="logo.png" alt="HUF Logo" onerror="this.style.display='none';">
-        <p class="logo-subtitle">Developed By Omar Amador 1.2</p>
+        <p class="logo-subtitle">Developed By Omar Amador 1.3</p>
     </div>
 
     <div id="viewLogin" class="view-layer active-view"class="card">
@@ -1797,23 +1797,36 @@ function addToolingRow() {
 
 function renderGantt() {
     const container = document.getElementById('ganttContainer');
+    if (!container) return;
+
     const scale = document.getElementById('viewScale').value;
     const searchTerm = document.getElementById('ganttSearch')?.value.toLowerCase() || "";
-    const today = new Date(); today.setHours(0,0,0,0);
+    const today = new Date(); 
+    today.setHours(0,0,0,0);
 
-    // --- INDICADOR DE CONTEO DE PROYECTOS ---
+    // --- FUNCIÓN LOCAL PARA EVITAR CONFLICTOS CON TU FUNCIÓN GLOBAL ---
+    const getWeekData = (date) => {
+        let d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+        let dayNum = d.getUTCDay() || 7;
+        d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+        let yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+        let weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+        return { week: weekNo, year: d.getUTCFullYear() };
+    };
+
+    // --- INDICADOR DE CONTEO ---
     const projectCountSpan = document.getElementById('projectCount1');
     if (projectCountSpan) {
         projectCountSpan.innerText = toolingProjects.length;
     }
 
-    // --- FILTRO DE AÑO: Creamos una copia filtrada de tus proyectos ---
+    // --- FILTRO DE AÑO ---
     const filteredToolingProjects = toolingProjects.map((p, originalPIdx) => ({
         ...p,
-        originalPIdx, // Guardamos la referencia real
+        originalPIdx,
         activities: p.activities.map((a, originalAIdx) => ({
             ...a,
-            originalAIdx, // Guardamos la referencia real
+            originalAIdx,
             teams: a.teams.map((t, originalTIdx) => ({...t, originalTIdx}))
                    .filter(t => new Date(t.start).getFullYear() === selectedYear)
         })).filter(a => a.teams.length > 0)
@@ -1826,7 +1839,7 @@ function renderGantt() {
         return; 
     }
 
-    // --- CÁLCULO DE RANGOS DE FECHAS ---
+    // --- CÁLCULO DE RANGOS ---
     let allDates = [today]; 
     filteredToolingProjects.forEach(p => p.activities.forEach(a => a.teams.forEach(t => { 
         allDates.push(new Date(t.start)); 
@@ -1838,51 +1851,78 @@ function renderGantt() {
     let minDate = new Date(Math.min(...allDates)); minDate.setDate(minDate.getDate() - 15);
     let maxDate = new Date(Math.max(...allDates)); maxDate.setDate(maxDate.getDate() + 45);
 
-    let htmlLabels = []; let upperLabels = []; 
+    let htmlLabels = []; 
+    let upperLabels = []; 
     const isDateShutdown = (d) => shutdownLogs.some(s => { 
         let sStart = new Date(s.start + "T00:00:00"); 
         let sEnd = new Date(s.end + "T23:59:59"); 
         return d >= sStart && d <= sEnd; 
     });
 
-    // Lógica de Escalas
+    // --- GENERACIÓN DE ESCALAS ---
     if (scale === 'day') { 
-        let currentWeek = -1; let count = 0;
-        for(let i=0; i<Math.ceil((maxDate-minDate)/86400000); i++){ 
-            let d=new Date(minDate); d.setDate(d.getDate()+i); 
-            htmlLabels.push({l:d.getDate()+"/"+(d.getMonth()+1), t:d.getTime()===today.getTime(), s: isDateShutdown(d)}); 
-            let wn = getWeekNumber(d);
-            if (wn !== currentWeek) { if (currentWeek !== -1) upperLabels[upperLabels.length-1].span = count; upperLabels.push({ label: `CW ${wn} (${d.getFullYear()})`, span: 1 }); currentWeek = wn; count = 1; } else { count++; }
+        let currentWeekStr = ""; 
+        let count = 0;
+        let totalDays = Math.ceil((maxDate - minDate) / 86400000);
+        for(let i=0; i < totalDays; i++){ 
+            let d = new Date(minDate); d.setDate(d.getDate() + i); 
+            htmlLabels.push({l: d.getDate() + "/" + (d.getMonth() + 1), t: d.getTime() === today.getTime(), s: isDateShutdown(d)}); 
+            
+            let wn = getWeekData(d);
+            let weekKey = `CW ${wn.week} (${wn.year})`;
+
+            if (weekKey !== currentWeekStr) { 
+                if (currentWeekStr !== "") upperLabels[upperLabels.length-1].span = count; 
+                upperLabels.push({ label: weekKey, span: 1 }); 
+                currentWeekStr = weekKey; count = 1; 
+            } else { count++; }
         }
-        upperLabels[upperLabels.length-1].span = count;
+        if(upperLabels.length > 0) upperLabels[upperLabels.length-1].span = count;
+
     } else if (scale === 'week') { 
         let currentMonth = -1; let count = 0;
-        for(let i=0; i<Math.ceil((maxDate-minDate)/(86400000*7))+1; i++){ 
-            let d=new Date(minDate); d.setDate(d.getDate()+(i*7)); 
-            htmlLabels.push({l:"CW-"+getWeekNumber(d), t:today>=d && today<new Date(d.getTime()+(86400000*7)), s: isDateShutdown(d)});
+        let totalWeeks = Math.ceil((maxDate - minDate) / (86400000 * 7)) + 1;
+        for(let i=0; i < totalWeeks; i++){ 
+            let d = new Date(minDate); d.setDate(d.getDate() + (i * 7)); 
+            let wn = getWeekData(d);
+            htmlLabels.push({l: "CW-" + wn.week, t: today >= d && today < new Date(d.getTime() + (86400000 * 7)), s: isDateShutdown(d)});
             let mn = d.getMonth();
-            if (mn !== currentMonth) { if (currentMonth !== -1) upperLabels[upperLabels.length-1].span = count; upperLabels.push({ label: d.toLocaleString('en', { month: 'long' }).toUpperCase() + " " + d.getFullYear(), span: 1 }); currentMonth = mn; count = 1; } else { count++; }
+            if (mn !== currentMonth) { 
+                if (currentMonth !== -1) upperLabels[upperLabels.length-1].span = count; 
+                upperLabels.push({ label: d.toLocaleString('en', { month: 'long' }).toUpperCase() + " " + d.getFullYear(), span: 1 }); 
+                currentMonth = mn; count = 1; 
+            } else { count++; }
         }
-        upperLabels[upperLabels.length-1].span = count;
+        if(upperLabels.length > 0) upperLabels[upperLabels.length-1].span = count;
+
     } else if (scale === 'month') { 
         let currentYear = -1; let count = 0;
-        for(let i=0; i<((maxDate.getFullYear()-minDate.getFullYear())*12+(maxDate.getMonth()-minDate.getMonth())+2); i++){ 
-            let d=new Date(minDate.getFullYear(), minDate.getMonth()+i, 1); 
-            htmlLabels.push({l:d.toLocaleString('en',{month:'short'})+" "+d.getFullYear().toString().substr(-2), t:today.getMonth()===d.getMonth()&&today.getFullYear()===d.getFullYear(), s: false}); 
+        let totalMonths = ((maxDate.getFullYear() - minDate.getFullYear()) * 12 + (maxDate.getMonth() - minDate.getMonth()) + 2);
+        for(let i=0; i < totalMonths; i++){ 
+            let d = new Date(minDate.getFullYear(), minDate.getMonth() + i, 1); 
+            htmlLabels.push({l: d.toLocaleString('en', {month: 'short'}) + " " + d.getFullYear().toString().substr(-2), t: today.getMonth() === d.getMonth() && today.getFullYear() === d.getFullYear(), s: false}); 
             let yn = d.getFullYear();
-            if (yn !== currentYear) { if (currentYear !== -1) upperLabels[upperLabels.length-1].span = count; upperLabels.push({ label: yn, span: 1 }); currentYear = yn; count = 1; } else { count++; }
+            if (yn !== currentYear) { 
+                if (currentYear !== -1) upperLabels[upperLabels.length-1].span = count; 
+                upperLabels.push({ label: yn, span: 1 }); 
+                currentYear = yn; count = 1; 
+            } else { count++; }
         }
-        upperLabels[upperLabels.length-1].span = count;
+        if(upperLabels.length > 0) upperLabels[upperLabels.length-1].span = count;
     }
 
+    // --- CONSTRUCCIÓN DEL HTML ---
     let html = `<div class="gantt-grid"><div class="gantt-header-title">QM-T PROJECTS</div><div class="gantt-header-time">`;
     html += `<div class="gantt-upper-header">`;
-    upperLabels.forEach(u => { let width = u.span * 70; html += `<div class="gantt-upper-cell" style="width:${width}px; flex-basis:${width}px;">${u.label}</div>`; });
+    upperLabels.forEach(u => { 
+        let width = u.span * 70; 
+        html += `<div class="gantt-upper-cell" style="width:${width}px; flex-basis:${width}px;">${u.label}</div>`; 
+    });
     html += `</div><div class="gantt-header-days">`;
     htmlLabels.forEach(obj => html += `<div class="gantt-day-cell ${obj.t?'is-today':''} ${obj.s?'is-shutdown':''}"><div class="vertical-text">${obj.l}</div></div>`);
     html += `</div></div>`;
 
-    // Sección de Mantenimiento
+    // Mantenimiento
     if (filteredMaintenance.length > 0) {
         html += `<div class="gantt-row"><div class="gantt-task-name" style="background:var(--maint-purple) !important; color:white;" onclick="toggleMaintenanceSection()"><span>${maintenanceCollapsed?'➕':'➖'} 🛠 EQUIPMENT UNDER MAINTENANCE</span></div><div class="gantt-bar-container" style="background:#e2d1f0;"></div></div>`;
         if (!maintenanceCollapsed) {
@@ -1890,12 +1930,13 @@ function renderGantt() {
             filteredMaintenance.forEach(m => { if (!maintByHim[m.him]) maintByHim[m.him] = []; maintByHim[m.him].push(m); });
             for (const himName in maintByHim) {
                 html += `<div class="gantt-row"><div class="gantt-task-name" style="padding-left:25px; border-left: 5px solid var(--maint-purple);"><span>🔧 ${himName}</span></div><div class="gantt-bar-container">`;
-                htmlLabels.forEach(obj => { html += `<div class="gantt-bg-cell ${obj.s?'is-shutdown-bg':''}"></div>`; });
+                htmlLabels.forEach(() => { html += `<div class="gantt-bg-cell"></div>`; });
                 maintByHim[himName].forEach(m => {
                     let mStart = new Date(m.start + "T00:00:00"); let mEnd = new Date(m.end + "T23:59:59");
                     let mDays = Math.max(1, Math.ceil((mEnd - mStart) / 86400000));
-                    let lp=0, ws=0, div=scale==='day'?1:scale==='week'?7:scale==='month'?30:365;
-                    lp=(((mStart-minDate)/86400000)/div)*(100/htmlLabels.length); ws=(mDays/div)*(100/htmlLabels.length);
+                    let div = scale==='day'?1:scale==='week'?7:scale==='month'?30:365;
+                    let lp = (((mStart - minDate) / 86400000) / div) * (100 / htmlLabels.length);
+                    let ws = (mDays / div) * (100 / htmlLabels.length);
                     html += `<div class="gantt-bar" style="left:${lp}%; width:${ws}%; height:80%; top:10%; background:var(--maint-purple); color:white; border: 1px solid #333;" title="${m.desc}"><span class="floating-label">⚠️ MAINT: ${m.desc}</span></div>`;
                 });
                 html += `</div></div>`;
@@ -1903,58 +1944,35 @@ function renderGantt() {
         }
     }
 
-    // Sección de Proyectos
-    filteredToolingProjects.forEach((proj, fPIdx) => {
-        const pIdx = proj.originalPIdx; // Referencia REAL
+    // Proyectos
+    filteredToolingProjects.forEach((proj) => {
+        const pIdx = proj.originalPIdx;
         const matchesProj = proj.name.toLowerCase().includes(searchTerm);
         if(searchTerm && !matchesProj) return;
 
         html += `<div class="gantt-row"><div class="gantt-task-name" style="background:#555 !important; color:white;"><span onclick="toggleProject(${pIdx})">${proj.collapsed?'➕':'➖'} 📁 ${proj.name}</span><div class="action-btns"><button class="btn-icon add" onclick="copyTaskToInputs('${proj.name.replace(/'/g, "\\'")}', '')">➕</button><button class="btn-icon" onclick="editProject(${pIdx})">✏️</button><button class="btn-icon" onclick="deleteProject1(${pIdx})">🗑️</button></div></div><div class="gantt-bar-container" style="background:#666;"></div></div>`;
         
         if (!proj.collapsed) {
-            proj.activities.forEach((act, fAIdx) => {
-                const aIdx = act.originalAIdx; // Referencia REAL
-                let summaryMap = {};
-                act.teams.forEach(t => {
-                    const typeName = (window.huf_devices_config?.find(d => d.id === t.typeId) || {name: "Unknown"}).name;
-                    if(!summaryMap[typeName]) summaryMap[typeName] = new Set();
-                    summaryMap[typeName].add(t.name);
+            proj.activities.forEach((act) => {
+                const aIdx = act.originalAIdx;
+                html += `<div class="gantt-row"><div class="gantt-task-name" style="padding-left:5px; flex-direction:column; align-items:flex-start;"><div style="display:flex; justify-content:space-between; width:100%;"><span>🔹 ${act.name}</span><div class="action-btns"><button class="btn-icon add" onclick="copyTaskToInputs('${proj.name.replace(/'/g, "\\'")}', '${act.name.replace(/'/g, "\\'")}')">➕</button><button class="btn-icon" onclick="editActivity(${pIdx}, ${aIdx})">✏️</button><button class="btn-icon" onclick="deleteActivity(${pIdx}, ${aIdx})">🗑️</button></div></div></div><div class="gantt-bar-container">`;
+                htmlLabels.forEach(obj => { html += `<div class="gantt-bg-cell ${obj.s?'is-shutdown-bg':''}"></div>`; });
+                act.teams.forEach((t) => {
+                    const tIdx = t.originalTIdx;
+                    let div = scale==='day'?1:scale==='week'?7:scale==='month'?30:365;
+                    let lp = (((new Date(t.start)-minDate)/86400000)/div)*(100/htmlLabels.length);
+                    let ws = (t.days/div)*(100/htmlLabels.length);
+                    let h = 100/act.teams.length;
+                    let dotClass = t.priority === 'high' ? 'dot-high' : (t.priority === 'med' ? 'dot-med' : 'dot-low');
+                    html += `<div class="gantt-bar" oncontextmenu="showBarContextMenu(${pIdx}, ${aIdx}, ${tIdx}, event)" style="left:${lp}%; width:${ws}%; height:${h-4}%; top:${h*act.teams.indexOf(t)}%; background:${getPastelColor(t.typeId)};"><span class="floating-label"><span class="priority-dot ${dotClass}"></span>${t.name}</span></div>`;
                 });
-                let matrixRows = "";
-                for(let type in summaryMap) { matrixRows += `<tr><td>${type}</td><td>${Array.from(summaryMap[type]).join(", ")}</td></tr>`; }
-
-                html += `<div class="gantt-row">
-                    <div class="gantt-task-name" style="padding-left:5px; flex-direction:column; align-items:flex-start;">
-                        <div style="display:flex; justify-content:space-between; width:100%;">
-                            <span>🔹 ${act.name}</span>
-                            <div class="action-btns">
-                                <button class="btn-icon add" onclick="copyTaskToInputs('${proj.name.replace(/'/g, "\\'")}', '${act.name.replace(/'/g, "\\'")}')">➕</button>
-                                <button class="btn-icon" onclick="editActivity(${pIdx}, ${aIdx})">✏️</button>
-                                <button class="btn-icon" onclick="deleteActivity(${pIdx}, ${aIdx})">🗑️</button>
-                            </div>
-                        </div>
- 
-                    </div>
-                    <div class="gantt-bar-container">`;
-                    htmlLabels.forEach(obj => { html += `<div class="gantt-bg-cell ${obj.s?'is-shutdown-bg':''}"></div>`; });
-                    act.teams.forEach((t) => {
-                        const tIdx = t.originalTIdx; // Referencia REAL
-                        let div=scale==='day'?1:scale==='week'?7:scale==='month'?30:365;
-                        let lp=(((new Date(t.start)-minDate)/86400000)/div)*(100/htmlLabels.length);
-                        let ws=(t.days/div)*(100/htmlLabels.length);
-                        let h = 100/act.teams.length;
-                        let dotClass = t.priority === 'high' ? 'dot-high' : (t.priority === 'med' ? 'dot-med' : 'dot-low');
-                        html += `<div class="gantt-bar" oncontextmenu="showBarContextMenu(${pIdx}, ${aIdx}, ${tIdx}, event)" style="left:${lp}%; width:${ws}%; height:${h-4}%; top:${h*act.teams.indexOf(t)}%; background:${getPastelColor(t.typeId)};">
-                                    <span class="floating-label"><span class="priority-dot ${dotClass}"></span>${t.name}</span>
-                                 </div>`;
-                    });
-                    html += `</div></div>`;
+                html += `</div></div>`;
             });
         }
     });
 
     container.innerHTML = html + "</div>";
-    setTimeout(() => { syncFloatingLabels(); }, 150);
+    setTimeout(() => { if(typeof syncFloatingLabels === "function") syncFloatingLabels(); }, 150);
 }
    function renderAllStats() {
     const container = document.getElementById('statsMainContainer'); 
@@ -1967,19 +1985,22 @@ function renderGantt() {
     if (!window.huf_devices_config) return;
 
     window.huf_devices_config.forEach(dev => {
-        // occupancyCount almacenará cuántos equipos se usan por cada una de las 52 semanas
+        // occupancyCount almacenará la sumatoria de días ocupados
         let occupancyCount = new Array(52).fill(0); 
         const defaultTotalHims = dev.hims.length || 1;
 
-        // 1. CÁLCULO DE CARGA (Basado en tus proyectos actuales)
+        // 1. CÁLCULO DE CARGA
         toolingProjects.forEach(p => p.activities.forEach(act => act.teams.forEach(t => {
             if (t.typeId === dev.id) {
                 let cur = new Date(t.start);
                 for (let i = 0; i < t.days; i++) { 
                     if (cur.getFullYear() === selectedYear) { 
-                        let wn = getWeekNumber(cur) - 1; 
+                        let weekResult = getWeekNumber(cur);
+                        let wn = (typeof weekResult === 'object' ? weekResult.week : weekResult) - 1;
+                        
                         if (wn >= 0 && wn < 52) {
-                            occupancyCount[wn] += (1 / 7); 
+                            // Sumamos 1 día de ocupación por cada día de la tarea
+                            occupancyCount[wn] += 1; 
                         }
                     } 
                     cur.setDate(cur.getDate() + 1); 
@@ -1991,24 +2012,29 @@ function renderGantt() {
         row.className = 'device-stat-row';
         let pathD = "";
         
-        // 2. GENERACIÓN DE BARRAS SEMANALES CON PORCENTAJE SUPERIOR
-        let bars = occupancyCount.map((occ, idx) => {
+        // 2. GENERACIÓN DE BARRAS
+        let bars = occupancyCount.map((totalDaysOccupied, idx) => {
             const weekNum = idx + 1;
             
-            const currentMaxCap = (window.customCapacity[dev.id] && window.customCapacity[dev.id][weekNum] !== undefined)
+            const currentMaxEquips = (window.customCapacity[dev.id] && window.customCapacity[dev.id][weekNum] !== undefined)
                                   ? window.customCapacity[dev.id][weekNum]
                                   : defaultTotalHims;
 
-            let val = currentMaxCap > 0 ? (occ / currentMaxCap) * 100 : (occ > 0 ? 100 : 0);
+            // Promedio de equipos usados (días ocupados / 7 días de la semana)
+            let equipsUsedAverage = totalDaysOccupied / 7;
+
+            // Porcentaje de carga
+            let val = currentMaxEquips > 0 ? (equipsUsedAverage / currentMaxEquips) * 100 : (equipsUsedAverage > 0 ? 100 : 0);
+            
             let h = Math.min(val, 100); 
 
-            let barColor = val > 100 ? "var(--huf-red)" : getPastelColor(dev.id);
+            // --- CAMBIO AQUÍ: Rojo si es igual o mayor al 100% ---
+            let barColor = val >= 100 ? "var(--huf-red)" : getPastelColor(dev.id);
             
             pathD += (idx === 0 ? "M" : " L") + `${(idx / 51) * 1000} ${100 - h}`;
             
-            const labelTooltip = `CW${weekNum}: ${Math.round(val)}% (${occ.toFixed(1)} de ${currentMaxCap} Equipos)`;
+            const labelTooltip = `CW${weekNum}: ${Math.round(val)}% (${equipsUsedAverage.toFixed(1)} de ${currentMaxEquips} Equipos)`;
 
-            // Renderizado de la barra con el texto del porcentaje arriba
             return `
                 <div class="stats-week-col" style="display: flex; flex-direction: column; justify-content: flex-end; position: relative;">
                     <div style="
@@ -2018,7 +2044,7 @@ function renderGantt() {
                         text-align: center; 
                         font-size: 8px; 
                         font-weight: bold; 
-                        color: ${val > 100 ? 'var(--huf-red)' : '#555'};
+                        color: ${val >= 100 ? 'var(--huf-red)' : '#555'};
                         margin-bottom: 2px;
                         pointer-events: none;
                     ">
@@ -2026,7 +2052,7 @@ function renderGantt() {
                     </div>
 
                     <div class="bar-fill" 
-                         style="height:${h}%; background:${barColor}; width: 100%;" 
+                         style="height:${h}%; background:${barColor}; width: 100%; border-top: ${val >= 100 ? '1px solid darkred' : 'none'};" 
                          data-label="${labelTooltip}">
                     </div>
                     
@@ -2038,11 +2064,9 @@ function renderGantt() {
         row.innerHTML = `
             <div class="device-stat-title">
                 ${dev.name} (Year: ${selectedYear})
-                <span style="font-size:11px; color:#888; font-weight:normal; margin-left:10px;">
-                   
-                </span>
             </div>
-            <div class="chart-frame" style="padding-top: 20px;"> <div class="y-axis-title">Workload %</div>
+            <div class="chart-frame" style="padding-top: 20px;"> 
+                <div class="y-axis-title">Workload %</div>
                 <div class="y-axis-labels"><span>100%</span><span>75%</span><span>50%</span><span>25%</span><span>0%</span></div>
                 <div class="grid-lines">
                     <div class="grid-line" style="top:0%;"></div>
@@ -3219,6 +3243,7 @@ function saveCapacityData() {
 </script>
 </body>
 </html>
+
 
 
 
