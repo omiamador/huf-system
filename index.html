@@ -239,20 +239,20 @@
         .device-him-group div { flex: 1; }
         #availabilityInfo { position: absolute; top: 315px; left: 80px; width: 100%; text-align: center; font-size: 18px; font-weight: bold; color: var(--huf-black); height: 28px; pointer-events: none; }
 
-        .gantt-wrapper { overflow: auto; background: white; border: 1px solid #ddd; border-radius: 8px; max-height: 600px; position: relative; scroll-behavior: smooth; }
-        .gantt-grid { display: grid; grid-template-columns: 400px 1fr; min-width: fit-content; }
-        .gantt-header-title { background: #555; color: white; padding: 10px; font-weight: bold; position: sticky; left: 0; top: 0; z-index: 110; border-right: 2px solid #ddd; display: flex; align-items: center; }
+.gantt-wrapper { overflow: auto; background: rgb(175, 11, 11); border: 1px solid #ddd; border-radius: 8px; max-height: 1000px; position: relative; scroll-behavior: smooth; }
+ .gantt-grid { display: grid; grid-template-columns: 600px 1fr; min-width: fit-content; }
+.gantt-header-title { background: var(--huf-red); color: white; padding: 10px; font-weight: bold; position: sticky; left: 0; top: 0; z-index: 110; border-right: 2px solid #ddd; display: flex; align-items: center; }
         
-        .gantt-header-time { display: flex; flex-direction: column; position: sticky; top: 0; z-index: 100; }
-        .gantt-upper-header { display: flex; height: 30px; background: #bbb; color: #333; font-size: 11px; font-weight: bold; align-items: center; border-bottom: 1px solid #aaa; }
-        .gantt-upper-cell { flex-shrink: 0; text-align: center; border-right: 1px solid #aaa; overflow: hidden; white-space: nowrap; }
+ .gantt-header-time { display: flex; flex-direction: column; position: sticky; top: 0; z-index: 100; }
+ .gantt-upper-header { display: flex; height: 30px; background: var(--huf-red); color: #ffffff; font-size: 11px; font-weight: bold; align-items: center; border-bottom: 1px solid #aaa; }
+.gantt-upper-cell { flex-shrink: 0; text-align: center; border-right: 10px solid  var(--huf-dark); overflow: hidden; white-space: nowrap; }
         
-        .gantt-header-days { display: flex; background: var(--huf-dark); color: white; height: 70px; }
-        .gantt-day-cell { flex: 1 0 70px; min-width: 70px; border-right: 1px solid #aaa; display: flex; align-items: center; justify-content: center; position: relative; }
-        .gantt-day-cell.is-today { background-color: var(--today-blue) !important; color: white; }
-        .gantt-day-cell.is-shutdown { background-color: #ffcccc !important; color: #cc0000 !important; border-right: 1px solid #ff9999; }
+ .gantt-header-days { display: flex; background: var(--huf-red); color: white; height: 70px; }
+ .gantt-day-cell { flex: 1 0 70px; min-width: 70px; border-right: 1px solid #aaa; display: flex; align-items: center; justify-content: center; position: relative; }
+ .gantt-day-cell.is-today { background-color: var(--huf-dark) !important; color: white; }
+.gantt-day-cell.is-shutdown { background-color: #ffcccc !important; color: #cc0000 !important; border-right: 1px solid #ff0000; }
         
-        .vertical-text { writing-mode: vertical-rl; transform: rotate(180deg); white-space: nowrap; font-size: 11px; font-weight: bold; }
+ .vertical-text { writing-mode: vertical-rl; transform: rotate(-90deg); white-space: nowrap; font-size: 14px; font-weight: bold;letter-spacing: 1px; }
         .gantt-row { display: contents; }
         .gantt-task-name { padding: 12px; border-bottom: 1px solid #eee; font-size: 13px; font-weight: bold; background: #ffffff !important; border-right: 2px solid #ddd; display: flex; justify-content: space-between; align-items: center; cursor: pointer; position: sticky; left: 0; z-index: 90; box-shadow: 2px 0 5px rgba(0,0,0,0.1); }
         .gantt-bar-container { position: relative; height: auto; min-height: 65px; border-bottom: 1px solid #eee; background: #fff; z-index: 10; display: flex; }
@@ -262,7 +262,7 @@
         
         .gantt-bar { position: absolute; border-radius: 6px; color: #333; font-size: 10px; display: flex; align-items: center; justify-content: flex-start; overflow: hidden; font-weight: bold; box-shadow: 1px 1px 3px rgba(0,0,0,0.1); transition: opacity 0.2s; user-select: none; border: 1px solid rgba(0,0,0,0.05); z-index: 20; cursor: pointer; }
         .gantt-bar:hover { opacity: 0.9; }
-
+ .gantt-bar-container { position: relative; height: auto; min-height: 80px; border-bottom: 1px solid #eee; background: #fff; z-index: 10; display: flex; }
         .floating-label { position: absolute; left: 0; padding: 0 8px; white-space: nowrap; display: inline-block; pointer-events: none; transition: transform 0.05s linear; }
 
         .action-btns {  display: flex; gap: 5px; }
@@ -289,7 +289,7 @@ width: 100%;         /* Para que se adapte al contenedor padre */
     white-space: nowrap; 
 }
         .him-matrix td { color: #333; }
-        .gantt-bar-container { position: relative; height: auto; min-height: 65px; border-bottom: 1px solid #eee; background: #fff; z-index: 10; display: flex; }
+       
 
         #customContextMenu { position: fixed; display: none; background: #fff; border: 1px solid #ccc; box-shadow: 2px 2px 10px rgba(0,0,0,0.2); z-index: 10000; border-radius: 6px; overflow: hidden; min-width: 120px; }
         .menu-item { padding: 10px 15px; cursor: pointer; font-size: 13px; font-weight: bold; color: #333; transition: 0.2s; }
@@ -808,7 +808,7 @@ onkeydown="manejarTeclado(event)" onclick="hideContextMenu()">
 <div id="mainCard" class="car card-login">
     <div class="logo-container">
         <img src="logo.png" alt="HUF Logo" onerror="this.style.display='none';">
-        <p class="logo-subtitle">Developed By Omar Amador 1.0</p>
+        <p class="logo-subtitle">Developed By Omar Amador 1.1</p>
     </div>
 
     <div id="viewLogin" class="view-layer active-view"class="card">
@@ -1600,85 +1600,92 @@ function revisarConflictoRealTime() {
 function addToolingRow() {
     const project = document.getElementById('toolProject').value.trim();
     const task = document.getElementById('toolTask').value.trim();
+    
+    // 1. Validar semanas
+    const weeksValue = parseInt(document.getElementById('toolDays').value);
+    if (isNaN(weeksValue) || weeksValue <= 0) {
+        return Swal.fire("Attention", "Please enter a valid number of weeks", "warning");
+    }
+
+    const days = weeksValue * 7; 
+    const startStr = document.getElementById('toolStart').value;
     const deviceTypeId = document.getElementById('deviceType').value;
     const him = document.getElementById('toolHIM').value;
 
-    // 1. Verificación de campos obligatorios básicos (Proyecto y Tarea)
-    if (!project || !task) {
-        return Swal.fire("Attention", "Project and Task names are required!", "warning");
+    // 2. Validar campos obligatorios
+    if (!project || !task || !startStr || !him) {
+        return Swal.fire("Attention", "Please fill all the fields!", "warning");
     }
 
-    // 2. LÓGICA PARA "EMPTY"
-    // Si el dispositivo o el HIM es "empty", guardamos sin requerir fechas ni días
-    const isEmpty = (deviceTypeId === "empty" || him === "empty");
+    // --- LÓGICA: SIEMPRE INICIAR EN LUNES ---
+    // Usamos replace para evitar desfase de zona horaria y forzamos el lunes
+    let tempDate = new Date(startStr.replace(/-/g, '\/'));
+    let dayOfWeek = tempDate.getDay(); // 0=Dom, 1=Lun...
+    let diff = tempDate.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
+    const start = new Date(tempDate.setDate(diff));
 
-    let days = 0;
-    let weeksValue = 0;
-    let start = null;
-
-    if (!isEmpty) {
-        // Validación normal solo si NO es empty
-        weeksValue = parseInt(document.getElementById('toolDays').value);
-        if (isNaN(weeksValue) || weeksValue <= 0) {
-            return Swal.fire("Attention", "Please enter a valid number of weeks", "warning");
+    // --- FUNCIÓN INTERNA PARA EJECUTAR LA INSERCIÓN ---
+    const ejecutarInsercion = () => {
+        let projObj = toolingProjects.find(p => p.name === project);
+        if (!projObj) {
+            projObj = { name: project, collapsed: false, activities: [] };
+            toolingProjects.push(projObj);
         }
 
-        days = weeksValue * 7;
-        const startStr = document.getElementById('toolStart').value;
-
-        if (!startStr || !him) {
-            return Swal.fire("Attention", "Please fill all fields or select 'Empty' in Device/HIM", "warning");
+        let actObj = projObj.activities.find(a => a.name === task);
+        if (!actObj) {
+            actObj = { name: task, teams: [] };
+            projObj.activities.push(actObj);
         }
 
-        start = new Date(startStr + "T00:00:00");
+        actObj.teams.push({ 
+            name: him, 
+            start: start, 
+            days: days, 
+            weeks: weeksValue, 
+            typeId: deviceTypeId 
+        });
+        
+        guardarCambios(); 
+        renderGantt();
+        
+        // Limpiar campos
+        document.getElementById('toolTask').value = "";
+        document.getElementById('toolDays').value = "";
+        document.getElementById('toolStart').value = ""; // Limpiar también fecha
+        document.getElementById('deviceType').style.background = "#fff";
+        document.getElementById('toolHIM').style.background = "#fff";
+        
+        Swal.fire("Task Added!", `Assigned starting Monday: ${start.toLocaleDateString()}`, "success");
+    };
 
-        // EJECUCIÓN DE LA VALIDACIÓN DE DISPONIBILIDAD
-        const check = validarDisponibilidad(him, start, days);
-        if (check.conflict) {
-            let msg = check.type === 'MAINTENANCE' 
-                ? `The equipment ${him} is in MAINTENANCE (${check.desc}).`
-                : `The equipment ${him} is busy in Project: ${check.project}, Activity: ${check.activity}.`;
-            
-            return Swal.fire('Conflict Detected', msg, 'warning');
-        }
-    }
-
-    // 3. Lógica de inserción en el objeto toolingProjects
-    let projObj = toolingProjects.find(p => p.name === project);
-    if (!projObj) {
-        projObj = { name: project, collapsed: false, activities: [] };
-        toolingProjects.push(projObj);
-    }
-
-    let actObj = projObj.activities.find(a => a.name === task);
-    if (!actObj) {
-        actObj = { name: task, teams: [] };
-        projObj.activities.push(actObj);
-    }
-
-    // 4. Guardamos los datos. 
-    // Si es empty, guardamos valores nulos/cero para que no afecten el Gantt
-    actObj.teams.push({ 
-        name: isEmpty ? "Empty Slot" : him, 
-        start: start, 
-        days: days, 
-        weeks: weeksValue, 
-        typeId: deviceTypeId 
-    });
+    // 3. EJECUCIÓN DE LA VALIDACIÓN CON OPCIÓN DE OVERBOOKING
+    const check = validarDisponibilidad(him, start, days);
     
-    // 5. Persistencia y Actualización
-    actualizarFechaModificacion(); // Registrar tiempo y hora del cambio
-    guardarCambios(); // Guardado permanente
-    renderGantt();
-    
-    // Limpiar campos
-    document.getElementById('toolTask').value = "";
-    document.getElementById('toolDays').value = "";
-    document.getElementById('toolStart').value = "";
-    document.getElementById('deviceType').style.background = "#fff";
-    document.getElementById('toolHIM').style.background = "#fff";
-    
-    Swal.fire(isEmpty ? "Empty Task Added!" : "Task Added!", "", "success");
+    if (check.conflict) {
+        let msg = check.type === 'MAINTENANCE' 
+            ? `The equipment ${him} is in MAINTENANCE (${check.desc}).`
+            : `The equipment ${him} is busy in Project: ${check.project}, Activity: ${check.activity}.`;
+        
+        // PREGUNTA DE CONFIRMACIÓN (OVERBOOKING)
+        Swal.fire({
+            title: 'Conflict Detected',
+            text: msg + " Do you want to add it anyway?",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#aa1c25',
+            cancelButtonColor: '#555',
+            confirmButtonText: 'Yes, Overbook',
+            cancelButtonText: 'Cancel'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                ejecutarInsercion();
+            }
+        });
+    } else {
+        // Si no hay conflicto, se agrega directamente
+        ejecutarInsercion();
+    }
 }
     function copyTaskToInputs(projectName, activityName) {
         document.getElementById('toolProject').value = projectName;
@@ -1850,7 +1857,7 @@ function renderGantt() {
         let currentMonth = -1; let count = 0;
         for(let i=0; i<Math.ceil((maxDate-minDate)/(86400000*7))+1; i++){ 
             let d=new Date(minDate); d.setDate(d.getDate()+(i*7)); 
-            htmlLabels.push({l:"CW"+getWeekNumber(d), t:today>=d && today<new Date(d.getTime()+(86400000*7)), s: isDateShutdown(d)});
+            htmlLabels.push({l:"CW-"+getWeekNumber(d), t:today>=d && today<new Date(d.getTime()+(86400000*7)), s: isDateShutdown(d)});
             let mn = d.getMonth();
             if (mn !== currentMonth) { if (currentMonth !== -1) upperLabels[upperLabels.length-1].span = count; upperLabels.push({ label: d.toLocaleString('en', { month: 'long' }).toUpperCase() + " " + d.getFullYear(), span: 1 }); currentMonth = mn; count = 1; } else { count++; }
         }
@@ -1866,7 +1873,7 @@ function renderGantt() {
         upperLabels[upperLabels.length-1].span = count;
     }
 
-    let html = `<div class="gantt-grid"><div class="gantt-header-title">PROJECT / ACTIVITY (HIMs)</div><div class="gantt-header-time">`;
+    let html = `<div class="gantt-grid"><div class="gantt-header-title">QM-T PROJECTS</div><div class="gantt-header-time">`;
     html += `<div class="gantt-upper-header">`;
     upperLabels.forEach(u => { let width = u.span * 70; html += `<div class="gantt-upper-cell" style="width:${width}px; flex-basis:${width}px;">${u.label}</div>`; });
     html += `</div><div class="gantt-header-days">`;
