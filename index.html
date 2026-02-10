@@ -808,7 +808,7 @@ onkeydown="manejarTeclado(event)" onclick="hideContextMenu()">
 <div id="mainCard" class="car card-login">
     <div class="logo-container">
         <img src="logo.png" alt="HUF Logo" onerror="this.style.display='none';">
-        <p class="logo-subtitle">Developed By Omar Amador 1.1</p>
+        <p class="logo-subtitle">Developed By Omar Amador 1.2</p>
     </div>
 
     <div id="viewLogin" class="view-layer active-view"class="card">
@@ -1034,7 +1034,9 @@ onkeydown="manejarTeclado(event)" onclick="hideContextMenu()">
 <div class="collapse-controls" style="display:flex; gap:15px; margin-bottom:15px; align-items:center; justify-content:space-between; flex-wrap:wrap; background:#f8f9fa; padding:10px; border-radius:8px;">
     
     <div style="display:flex; gap:8px;">
-        <span style="float: right font-size: 14px;">Projects loaded: <span id="projectCount1">0</span></span>
+      <div class="btn-tool info-badge" style="--bg-color: #2c3e50; --hover-color: #34495e; width: auto; padding: 0 15px; cursor: default;">
+    PROJECTS LOADED: <span id="projectCount1" style="margin-left: 5px; color: #f1c40f;">0</span>
+</div>
         <button class="btn-tool" style="--bg-color: #3498db; --hover-color: #2980b9;" onclick="toggleAllProjects(true)"> <span>➕</span> EXPAND ALL </button>
         <button class="btn-tool" style="--bg-color: #95a5a6; --hover-color: #7f8c8d;" onclick="toggleAllProjects(false)"> <span>➖</span> COLLAPSE ALL </button>
         <button class="btn-tool" style="--bg-color: #e67e22; --hover-color: #d35400;" onclick="centerToday()"> <span>🎯</span> CENTER TODAY</button>
@@ -2054,7 +2056,7 @@ function renderGantt() {
                 <div class="stats-week-wrapper" style="display: flex; align-items: flex-end; height: 100%;">
                     ${bars}
                 </div>
-                <div class="x-axis-title">Weeks de ${selectedYear}</div>
+                <div class="x-axis-title">${selectedYear} Weeks</div>
             </div>`;
         container.appendChild(row);
     });
@@ -3217,5 +3219,6 @@ function saveCapacityData() {
 </script>
 </body>
 </html>
+
 
 
