@@ -300,9 +300,9 @@ width: 100%;         /* Para que se adapte al contenedor padre */
         .device-stat-row { background: #fff; border: 1px solid #ddd; border-radius: 10px; padding: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         .device-stat-title { font-size: 14px; font-weight: bold; margin-bottom: 25px; color: #222; border-left: 4px solid var(--huf-red); padding-left: 8px; }
         .chart-frame { display: flex; height: 150px; position: relative; margin-left: 45px; margin-bottom: 35px; border-left: 1.5px solid #999; border-bottom: 1.5px solid #999; }
-        .y-axis-labels { position: absolute; left: -40px; height: 100%; display: flex; flex-direction: column; justify-content: space-between; font-size: 9px; color: #666; text-align: right; width: 35px; }
+        .y-axis-labels { position: absolute; left: -40px; height: 100%; display: flex; flex-direction: column; justify-content: space-between; font-size: 10px; color: #666; text-align: right; width: 35px; }
         .y-axis-title { position: absolute; left: -55px; top: 50%; transform: rotate(-90deg) translateY(-50%); font-size: 10px; font-weight: bold; color: #444; white-space: nowrap; }
-        .x-axis-title { position: absolute; bottom: -32px; left: 50%; transform: translateX(-50%); font-size: 10px; font-weight: bold; color: #444; }
+        .x-axis-title { position: absolute; bottom: -32px; left: 50%; transform: translateX(-50%); font-size: 12px; font-weight: bold; color: #444; }
         .grid-lines { position: absolute; width: 100%; height: 100%; pointer-events: none; }
         .grid-line { position: absolute; width: 100%; border-top: 1px dashed #eee; left: 0; }
         .stats-week-wrapper { display: flex; flex: 1; align-items: flex-end; gap: 1px; height: 100%; padding: 0 2px; position: relative; z-index: 5; }
@@ -310,7 +310,7 @@ width: 100%;         /* Para que se adapte al contenedor padre */
         .bar-fill { width: 100%; border-radius: 1px 1px 0 0; transition: height 0.3s; position: relative; cursor: pointer; opacity: 0.8; }
         .bar-fill:hover { opacity: 1; filter: brightness(0.8); z-index: 10; }
         .bar-fill:hover::after { content: attr(data-label); position: absolute; top: -25px; left: 50%; transform: translateX(-50%); background: #222; color: white; font-size: 9px; padding: 2px 5px; border-radius: 3px; z-index: 100; white-space: nowrap; pointer-events: none; }
-        .week-label-stat { font-size: 7px; color: #999; margin-top: 5px; text-align: center; position: absolute; bottom: -14px; width: 100%; }
+        .week-label-stat { font-size: 10px; color: #999; margin-top: 5px; text-align: center; position: absolute; bottom: -14px; width: 100%; }
         .trend-line-svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 6; }
         .trend-path { fill: none; stroke: var(--huf-red); stroke-width: 1.5; stroke-linejoin: round; stroke-linecap: round; }
 
@@ -808,7 +808,7 @@ onkeydown="manejarTeclado(event)" onclick="hideContextMenu()">
 <div id="mainCard" class="car card-login">
     <div class="logo-container">
         <img src="logo.png" alt="HUF Logo" onerror="this.style.display='none';">
-        <p class="logo-subtitle">Developed By Omar Amador 1.3</p>
+        <p class="logo-subtitle">Developed By Omar Amador 1.4</p>
     </div>
 
     <div id="viewLogin" class="view-layer active-view"class="card">
@@ -1796,200 +1796,386 @@ function addToolingRow() {
     }
 
 function renderGantt() {
+
     const container = document.getElementById('ganttContainer');
+
     if (!container) return;
 
+
+
     const scale = document.getElementById('viewScale').value;
+
     const searchTerm = document.getElementById('ganttSearch')?.value.toLowerCase() || "";
-    const today = new Date(); 
+
+    const today = new Date();
+
     today.setHours(0,0,0,0);
 
+
+
     // --- FUNCIÓN LOCAL PARA EVITAR CONFLICTOS CON TU FUNCIÓN GLOBAL ---
+
     const getWeekData = (date) => {
+
         let d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+
         let dayNum = d.getUTCDay() || 7;
+
         d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+
         let yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+
         let weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+
         return { week: weekNo, year: d.getUTCFullYear() };
+
     };
 
+
+
     // --- INDICADOR DE CONTEO ---
+
     const projectCountSpan = document.getElementById('projectCount1');
+
     if (projectCountSpan) {
+
         projectCountSpan.innerText = toolingProjects.length;
+
     }
 
+
+
     // --- FILTRO DE AÑO ---
+
     const filteredToolingProjects = toolingProjects.map((p, originalPIdx) => ({
+
         ...p,
+
         originalPIdx,
+
         activities: p.activities.map((a, originalAIdx) => ({
+
             ...a,
+
             originalAIdx,
+
             teams: a.teams.map((t, originalTIdx) => ({...t, originalTIdx}))
+
                    .filter(t => new Date(t.start).getFullYear() === selectedYear)
+
         })).filter(a => a.teams.length > 0)
+
     })).filter(p => p.activities.length > 0);
+
+
 
     const filteredMaintenance = maintenanceLogs.filter(m => new Date(m.start).getFullYear() === selectedYear);
 
-    if (filteredToolingProjects.length === 0 && filteredMaintenance.length === 0) { 
-        container.innerHTML = `<p style="text-align:center; padding:20px;">No projects or maintenance found for year ${selectedYear}.</p>`; 
-        return; 
+
+
+    if (filteredToolingProjects.length === 0 && filteredMaintenance.length === 0) {
+
+        container.innerHTML = `<p style="text-align:center; padding:20px;">No projects or maintenance found for year ${selectedYear}.</p>`;
+
+        return;
+
     }
+
+
 
     // --- CÁLCULO DE RANGOS ---
-    let allDates = [today]; 
-    filteredToolingProjects.forEach(p => p.activities.forEach(a => a.teams.forEach(t => { 
-        allDates.push(new Date(t.start)); 
-        let endD = new Date(t.start); endD.setDate(endD.getDate() + t.days); 
-        allDates.push(endD); 
+
+    let allDates = [today];
+
+    filteredToolingProjects.forEach(p => p.activities.forEach(a => a.teams.forEach(t => {
+
+        allDates.push(new Date(t.start));
+
+        let endD = new Date(t.start); endD.setDate(endD.getDate() + t.days);
+
+        allDates.push(endD);
+
     })));
+
     filteredMaintenance.forEach(m => { allDates.push(new Date(m.start)); allDates.push(new Date(m.end)); });
 
+
+
     let minDate = new Date(Math.min(...allDates)); minDate.setDate(minDate.getDate() - 15);
+
     let maxDate = new Date(Math.max(...allDates)); maxDate.setDate(maxDate.getDate() + 45);
 
-    let htmlLabels = []; 
-    let upperLabels = []; 
-    const isDateShutdown = (d) => shutdownLogs.some(s => { 
-        let sStart = new Date(s.start + "T00:00:00"); 
-        let sEnd = new Date(s.end + "T23:59:59"); 
-        return d >= sStart && d <= sEnd; 
+
+
+    let htmlLabels = [];
+
+    let upperLabels = [];
+
+    const isDateShutdown = (d) => shutdownLogs.some(s => {
+
+        let sStart = new Date(s.start + "T00:00:00");
+
+        let sEnd = new Date(s.end + "T23:59:59");
+
+        return d >= sStart && d <= sEnd;
+
     });
+
+
 
     // --- GENERACIÓN DE ESCALAS ---
-    if (scale === 'day') { 
-        let currentWeekStr = ""; 
+
+    if (scale === 'day') {
+
+        let currentWeekStr = "";
+
         let count = 0;
+
         let totalDays = Math.ceil((maxDate - minDate) / 86400000);
-        for(let i=0; i < totalDays; i++){ 
-            let d = new Date(minDate); d.setDate(d.getDate() + i); 
-            htmlLabels.push({l: d.getDate() + "/" + (d.getMonth() + 1), t: d.getTime() === today.getTime(), s: isDateShutdown(d)}); 
-            
+
+        for(let i=0; i < totalDays; i++){
+
+            let d = new Date(minDate); d.setDate(d.getDate() + i);
+
+            htmlLabels.push({l: d.getDate() + "/" + (d.getMonth() + 1), t: d.getTime() === today.getTime(), s: isDateShutdown(d)});
+
+           
+
             let wn = getWeekData(d);
+
             let weekKey = `CW ${wn.week} (${wn.year})`;
 
-            if (weekKey !== currentWeekStr) { 
-                if (currentWeekStr !== "") upperLabels[upperLabels.length-1].span = count; 
-                upperLabels.push({ label: weekKey, span: 1 }); 
-                currentWeekStr = weekKey; count = 1; 
+
+
+            if (weekKey !== currentWeekStr) {
+
+                if (currentWeekStr !== "") upperLabels[upperLabels.length-1].span = count;
+
+                upperLabels.push({ label: weekKey, span: 1 });
+
+                currentWeekStr = weekKey; count = 1;
+
             } else { count++; }
+
         }
+
         if(upperLabels.length > 0) upperLabels[upperLabels.length-1].span = count;
 
-    } else if (scale === 'week') { 
+
+
+    } else if (scale === 'week') {
+
         let currentMonth = -1; let count = 0;
+
         let totalWeeks = Math.ceil((maxDate - minDate) / (86400000 * 7)) + 1;
-        for(let i=0; i < totalWeeks; i++){ 
-            let d = new Date(minDate); d.setDate(d.getDate() + (i * 7)); 
+
+        for(let i=0; i < totalWeeks; i++){
+
+            let d = new Date(minDate); d.setDate(d.getDate() + (i * 7));
+
             let wn = getWeekData(d);
+
             htmlLabels.push({l: "CW-" + wn.week, t: today >= d && today < new Date(d.getTime() + (86400000 * 7)), s: isDateShutdown(d)});
+
             let mn = d.getMonth();
-            if (mn !== currentMonth) { 
-                if (currentMonth !== -1) upperLabels[upperLabels.length-1].span = count; 
-                upperLabels.push({ label: d.toLocaleString('en', { month: 'long' }).toUpperCase() + " " + d.getFullYear(), span: 1 }); 
-                currentMonth = mn; count = 1; 
+
+            if (mn !== currentMonth) {
+
+                if (currentMonth !== -1) upperLabels[upperLabels.length-1].span = count;
+
+                upperLabels.push({ label: d.toLocaleString('en', { month: 'long' }).toUpperCase() + " " + d.getFullYear(), span: 1 });
+
+                currentMonth = mn; count = 1;
+
             } else { count++; }
+
         }
+
         if(upperLabels.length > 0) upperLabels[upperLabels.length-1].span = count;
 
-    } else if (scale === 'month') { 
+
+
+    } else if (scale === 'month') {
+
         let currentYear = -1; let count = 0;
+
         let totalMonths = ((maxDate.getFullYear() - minDate.getFullYear()) * 12 + (maxDate.getMonth() - minDate.getMonth()) + 2);
-        for(let i=0; i < totalMonths; i++){ 
-            let d = new Date(minDate.getFullYear(), minDate.getMonth() + i, 1); 
-            htmlLabels.push({l: d.toLocaleString('en', {month: 'short'}) + " " + d.getFullYear().toString().substr(-2), t: today.getMonth() === d.getMonth() && today.getFullYear() === d.getFullYear(), s: false}); 
+
+        for(let i=0; i < totalMonths; i++){
+
+            let d = new Date(minDate.getFullYear(), minDate.getMonth() + i, 1);
+
+            htmlLabels.push({l: d.toLocaleString('en', {month: 'short'}) + " " + d.getFullYear().toString().substr(-2), t: today.getMonth() === d.getMonth() && today.getFullYear() === d.getFullYear(), s: false});
+
             let yn = d.getFullYear();
-            if (yn !== currentYear) { 
-                if (currentYear !== -1) upperLabels[upperLabels.length-1].span = count; 
-                upperLabels.push({ label: yn, span: 1 }); 
-                currentYear = yn; count = 1; 
+
+            if (yn !== currentYear) {
+
+                if (currentYear !== -1) upperLabels[upperLabels.length-1].span = count;
+
+                upperLabels.push({ label: yn, span: 1 });
+
+                currentYear = yn; count = 1;
+
             } else { count++; }
+
         }
+
         if(upperLabels.length > 0) upperLabels[upperLabels.length-1].span = count;
+
     }
+
+
 
     // --- CONSTRUCCIÓN DEL HTML ---
+
     let html = `<div class="gantt-grid"><div class="gantt-header-title">QM-T PROJECTS</div><div class="gantt-header-time">`;
+
     html += `<div class="gantt-upper-header">`;
-    upperLabels.forEach(u => { 
-        let width = u.span * 70; 
-        html += `<div class="gantt-upper-cell" style="width:${width}px; flex-basis:${width}px;">${u.label}</div>`; 
+
+    upperLabels.forEach(u => {
+
+        let width = u.span * 70;
+
+        html += `<div class="gantt-upper-cell" style="width:${width}px; flex-basis:${width}px;">${u.label}</div>`;
+
     });
+
     html += `</div><div class="gantt-header-days">`;
+
     htmlLabels.forEach(obj => html += `<div class="gantt-day-cell ${obj.t?'is-today':''} ${obj.s?'is-shutdown':''}"><div class="vertical-text">${obj.l}</div></div>`);
+
     html += `</div></div>`;
 
+
+
     // Mantenimiento
+
     if (filteredMaintenance.length > 0) {
+
         html += `<div class="gantt-row"><div class="gantt-task-name" style="background:var(--maint-purple) !important; color:white;" onclick="toggleMaintenanceSection()"><span>${maintenanceCollapsed?'➕':'➖'} 🛠 EQUIPMENT UNDER MAINTENANCE</span></div><div class="gantt-bar-container" style="background:#e2d1f0;"></div></div>`;
+
         if (!maintenanceCollapsed) {
+
             const maintByHim = {};
+
             filteredMaintenance.forEach(m => { if (!maintByHim[m.him]) maintByHim[m.him] = []; maintByHim[m.him].push(m); });
+
             for (const himName in maintByHim) {
+
                 html += `<div class="gantt-row"><div class="gantt-task-name" style="padding-left:25px; border-left: 5px solid var(--maint-purple);"><span>🔧 ${himName}</span></div><div class="gantt-bar-container">`;
+
                 htmlLabels.forEach(() => { html += `<div class="gantt-bg-cell"></div>`; });
+
                 maintByHim[himName].forEach(m => {
+
                     let mStart = new Date(m.start + "T00:00:00"); let mEnd = new Date(m.end + "T23:59:59");
+
                     let mDays = Math.max(1, Math.ceil((mEnd - mStart) / 86400000));
+
                     let div = scale==='day'?1:scale==='week'?7:scale==='month'?30:365;
+
                     let lp = (((mStart - minDate) / 86400000) / div) * (100 / htmlLabels.length);
+
                     let ws = (mDays / div) * (100 / htmlLabels.length);
+
                     html += `<div class="gantt-bar" style="left:${lp}%; width:${ws}%; height:80%; top:10%; background:var(--maint-purple); color:white; border: 1px solid #333;" title="${m.desc}"><span class="floating-label">⚠️ MAINT: ${m.desc}</span></div>`;
+
                 });
+
                 html += `</div></div>`;
+
             }
+
         }
+
     }
 
+
+
     // Proyectos
+
     filteredToolingProjects.forEach((proj) => {
+
         const pIdx = proj.originalPIdx;
+
         const matchesProj = proj.name.toLowerCase().includes(searchTerm);
+
         if(searchTerm && !matchesProj) return;
 
+
+
         html += `<div class="gantt-row"><div class="gantt-task-name" style="background:#555 !important; color:white;"><span onclick="toggleProject(${pIdx})">${proj.collapsed?'➕':'➖'} 📁 ${proj.name}</span><div class="action-btns"><button class="btn-icon add" onclick="copyTaskToInputs('${proj.name.replace(/'/g, "\\'")}', '')">➕</button><button class="btn-icon" onclick="editProject(${pIdx})">✏️</button><button class="btn-icon" onclick="deleteProject1(${pIdx})">🗑️</button></div></div><div class="gantt-bar-container" style="background:#666;"></div></div>`;
-        
+
+       
+
         if (!proj.collapsed) {
+
             proj.activities.forEach((act) => {
+
                 const aIdx = act.originalAIdx;
+
                 html += `<div class="gantt-row"><div class="gantt-task-name" style="padding-left:5px; flex-direction:column; align-items:flex-start;"><div style="display:flex; justify-content:space-between; width:100%;"><span>🔹 ${act.name}</span><div class="action-btns"><button class="btn-icon add" onclick="copyTaskToInputs('${proj.name.replace(/'/g, "\\'")}', '${act.name.replace(/'/g, "\\'")}')">➕</button><button class="btn-icon" onclick="editActivity(${pIdx}, ${aIdx})">✏️</button><button class="btn-icon" onclick="deleteActivity(${pIdx}, ${aIdx})">🗑️</button></div></div></div><div class="gantt-bar-container">`;
+
                 htmlLabels.forEach(obj => { html += `<div class="gantt-bg-cell ${obj.s?'is-shutdown-bg':''}"></div>`; });
+
                 act.teams.forEach((t) => {
+
                     const tIdx = t.originalTIdx;
+
                     let div = scale==='day'?1:scale==='week'?7:scale==='month'?30:365;
+
                     let lp = (((new Date(t.start)-minDate)/86400000)/div)*(100/htmlLabels.length);
+
                     let ws = (t.days/div)*(100/htmlLabels.length);
+
                     let h = 100/act.teams.length;
+
                     let dotClass = t.priority === 'high' ? 'dot-high' : (t.priority === 'med' ? 'dot-med' : 'dot-low');
+
                     html += `<div class="gantt-bar" oncontextmenu="showBarContextMenu(${pIdx}, ${aIdx}, ${tIdx}, event)" style="left:${lp}%; width:${ws}%; height:${h-4}%; top:${h*act.teams.indexOf(t)}%; background:${getPastelColor(t.typeId)};"><span class="floating-label"><span class="priority-dot ${dotClass}"></span>${t.name}</span></div>`;
+
                 });
+
                 html += `</div></div>`;
+
             });
+
         }
+
     });
 
+
+
     container.innerHTML = html + "</div>";
+
     setTimeout(() => { if(typeof syncFloatingLabels === "function") syncFloatingLabels(); }, 150);
+
 }
-   function renderAllStats() {
+
+function renderAllStats() {
     const container = document.getElementById('statsMainContainer'); 
     if (!window.customCapacity) {
         window.customCapacity = JSON.parse(localStorage.getItem('huf_custom_capacity')) || {};
     }
     if (!container) return;
-    container.innerHTML = "";
     
+    // --- CONFIGURACIÓN DE CONTENEDOR (2 COLUMNAS) ---
+    container.innerHTML = "";
+    container.style.display = "grid";
+    container.style.gridTemplateColumns = "repeat(2, minmax(0, 1fr))"; 
+    container.style.gap = "15px";
+    container.style.padding = "10px";
+    container.style.width = "100%";
+    container.style.boxSizing = "border-box";
+    container.style.overflowX = "hidden";
+
     if (!window.huf_devices_config) return;
 
     window.huf_devices_config.forEach(dev => {
-        // occupancyCount almacenará la sumatoria de días ocupados
         let occupancyCount = new Array(52).fill(0); 
         const defaultTotalHims = dev.hims.length || 1;
 
-        // 1. CÁLCULO DE CARGA
         toolingProjects.forEach(p => p.activities.forEach(act => act.teams.forEach(t => {
             if (t.typeId === dev.id) {
                 let cur = new Date(t.start);
@@ -1997,9 +2183,7 @@ function renderGantt() {
                     if (cur.getFullYear() === selectedYear) { 
                         let weekResult = getWeekNumber(cur);
                         let wn = (typeof weekResult === 'object' ? weekResult.week : weekResult) - 1;
-                        
                         if (wn >= 0 && wn < 52) {
-                            // Sumamos 1 día de ocupación por cada día de la tarea
                             occupancyCount[wn] += 1; 
                         }
                     } 
@@ -2010,77 +2194,92 @@ function renderGantt() {
 
         const row = document.createElement('div'); 
         row.className = 'device-stat-row';
+        row.style.width = "100%";
+        row.style.minWidth = "0"; 
+        row.style.boxSizing = "border-box";
+        row.style.display = "flex";
+        row.style.flexDirection = "column";
+
         let pathD = "";
         
-        // 2. GENERACIÓN DE BARRAS
         let bars = occupancyCount.map((totalDaysOccupied, idx) => {
             const weekNum = idx + 1;
-            
             const currentMaxEquips = (window.customCapacity[dev.id] && window.customCapacity[dev.id][weekNum] !== undefined)
-                                  ? window.customCapacity[dev.id][weekNum]
-                                  : defaultTotalHims;
+                                     ? window.customCapacity[dev.id][weekNum]
+                                     : defaultTotalHims;
 
-            // Promedio de equipos usados (días ocupados / 7 días de la semana)
             let equipsUsedAverage = totalDaysOccupied / 7;
-
-            // Porcentaje de carga
             let val = currentMaxEquips > 0 ? (equipsUsedAverage / currentMaxEquips) * 100 : (equipsUsedAverage > 0 ? 100 : 0);
             
+            // h controla la altura visual de la barra (máximo 100)
             let h = Math.min(val, 100); 
+            
+            // displayVal es lo que se escribe en el texto (máximo 100 según pides)
+            let displayVal = Math.min(Math.round(val), 100);
 
-            // --- CAMBIO AQUÍ: Rojo si es igual o mayor al 100% ---
-            let barColor = val >= 100 ? "var(--huf-red)" : getPastelColor(dev.id);
+            let isOverloaded = val >= 100;
+            let barColor = isOverloaded ? "var(--huf-red)" : getPastelColor(dev.id);
+            let textColor = isOverloaded ? "#ffffff" : "#000000";
             
-            pathD += (idx === 0 ? "M" : " L") + `${(idx / 51) * 1000} ${100 - h}`;
+            let centerX = ((idx + 0.5) / 52) * 1000;
+            pathD += (idx === 0 ? "M" : " L") + `${centerX} ${100 - h}`;
             
+            // El tooltip sigue mostrando el valor real para auditoría
             const labelTooltip = `CW${weekNum}: ${Math.round(val)}% (${equipsUsedAverage.toFixed(1)} de ${currentMaxEquips} Equipos)`;
 
             return `
-                <div class="stats-week-col" style="display: flex; flex-direction: column; justify-content: flex-end; position: relative;">
-                    <div style="
-                        position: absolute; 
-                        bottom: ${h}%; 
-                        width: 100%; 
-                        text-align: center; 
-                        font-size: 8px; 
-                        font-weight: bold; 
-                        color: ${val >= 100 ? 'var(--huf-red)' : '#555'};
-                        margin-bottom: 2px;
-                        pointer-events: none;
-                    ">
-                        ${val > 0 ? Math.round(val) + '%' : ''}
-                    </div>
-
+                <div class="stats-week-col" 
+                     title="${labelTooltip}" 
+                     style="display: flex; flex-direction: column; justify-content: flex-end; position: relative; flex: 1; min-width: 0; height: 100%; z-index: 25;">
                     <div class="bar-fill" 
-                         style="height:${h}%; background:${barColor}; width: 100%; border-top: ${val >= 100 ? '1px solid darkred' : 'none'};" 
-                         data-label="${labelTooltip}">
+                         style="
+                            height:${h}%; 
+                            background:${barColor}; 
+                            width: 100%; 
+                            border-top: ${isOverloaded ? '1px solid darkred' : 'none'};
+                            display: flex;
+                            align-items: center; 
+                            justify-content: center;
+                            position: relative;
+                         ">
+                        ${val > 25 ? `
+                        <span style="
+                            transform: rotate(-90deg); 
+                            font-size: 12px; 
+                            font-weight: italic; 
+                            color: ${textColor};
+                            pointer-events: none;
+                        ">
+                            ${displayVal}%
+                        </span>
+                        ` : ''}
                     </div>
-                    
-                    <div class="week-label-stat">${weekNum}</div>
+                    <div class="week-label-stat" style="font-size: 6px; margin-top: 2px; text-align: center; color: #666;">${weekNum}</div>
                 </div>`;
         }).join("");
 
-        // 3. RENDERIZADO FINAL
         row.innerHTML = `
-            <div class="device-stat-title">
-                ${dev.name} (Year: ${selectedYear})
+            <div class="device-stat-title" style="font-size: 13px; font-weight: bold; margin-bottom: 5px;">
+                ${dev.name} (${selectedYear})
             </div>
-            <div class="chart-frame" style="padding-top: 20px;"> 
-                <div class="y-axis-title">Workload %</div>
-                <div class="y-axis-labels"><span>100%</span><span>75%</span><span>50%</span><span>25%</span><span>0%</span></div>
-                <div class="grid-lines">
-                    <div class="grid-line" style="top:0%;"></div>
-                    <div class="grid-line" style="top:25%;"></div>
-                    <div class="grid-line" style="top:50%;"></div>
-                    <div class="grid-line" style="top:75%;"></div>
+            <div class="chart-frame" style="padding: 5px 0 0 35px; position: relative; height: 220px; min-width: 0; display: flex; flex-direction: column;"> 
+                
+                <div class="y-axis-labels" style="position: absolute; left: 0; top: 5px; height: calc(100% - 30px); display: flex; flex-direction: column; justify-content: space-between; font-size: 8px; color: #999; width: 25px; text-align: right;">
+                    <span>100%</span><span>75%</span><span>50%</span><span>25%</span><span>0%</span>
                 </div>
-                <svg class="trend-line-svg" preserveAspectRatio="none" viewBox="0 0 1000 100" style="z-index: 5;">
-                    <path class="trend-path" d="${pathD}" fill="none" stroke="rgba(0,0,0,0.1)" stroke-width="2"></path>
-                </svg>
-                <div class="stats-week-wrapper" style="display: flex; align-items: flex-end; height: 100%;">
-                    ${bars}
+
+                <div class="stats-plot-area" style="position: relative; flex-grow: 1; width: 100%; min-width: 0; border-left: 1px solid #eee; border-bottom: 1px solid #eee;">
+                    <svg class="trend-line-svg" preserveAspectRatio="none" viewBox="0 0 1000 100" 
+                         style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 30; pointer-events: none;">
+                        <path class="trend-path" d="${pathD}" fill="none" stroke="rgba(0,0,0,0.4)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></path>
+                    </svg>
+
+                    <div class="stats-week-wrapper" style="display: flex; align-items: flex-end; height: 100%; width: 100%; gap: 1px; position: absolute; top: 0; left: 0;">
+                        ${bars}
+                    </div>
                 </div>
-                <div class="x-axis-title">${selectedYear} Weeks</div>
+                
+                <div class="x-axis-title" style="font-size: 9px; text-align: center; margin-top: 5px; color: #aaa;">${selectedYear} WEEKS</div>
             </div>`;
         container.appendChild(row);
     });
