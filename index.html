@@ -14,6 +14,8 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 
 
     <script src="devices.js"></script>
@@ -32,7 +34,7 @@
             --priority-low1: #2a28a7;
             --huf-blue: #4164a5;
             --light-bg: #f0f2f5;
-            --border: #ddd;
+            --border: #ffffff;
         
   
  
@@ -64,7 +66,7 @@
     --loc-spare: #555;
             
         }
-        body { font-family: 'Segoe UI', sans-serif; background: #f4f4f4; margin: 0; padding: 10px; overflow-x: hidden; }
+        body { font-family: 'Segoe UI', sans-serif; background: #ffffff; margin: 0; padding: 10px; overflow-x: hidden; }
         .card { max-width: 98%; margin: auto; background: #ffffff; padding: 12px; border-radius: 12px; border-top: 8px solid var(--huf-red); box-shadow: 0 4px 15px rgba(0,0,0,0.1); position: relative; min-height: 550px; transition: max-width 0.4s ease; }
         .card-login { max-width: 30%; margin: auto; background: #ffffff; padding: 12px; border-radius: 12px; border-top: 8px solid var(--huf-red); box-shadow: 0 4px 15px rgba(0,0,0,0.1); position: relative; min-height: 550px; transition: max-width 0.4s ease; }
         
@@ -323,7 +325,7 @@ width: 100%;         /* Para que se adapte al contenedor padre */
 
         .btn-send { background: var(--huf-red); color: white; width: 100%; padding: 15px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 18px; margin-top: 20px; }
         .btn-logout { position: absolute; top: 10px; right: 10px; background: #666; color: white; border: none; padding: 5px 12px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; }
-        .btn-back { position: relative; top: -128px; left: 10px; background: #eee; color: #333; border: 1px solid #ccc; padding: 5px 12px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; }
+        .btn-back { position: relative; top: -140px; left: 10px; background: #eee; color: #333; border: 1px solid #ccc; padding: 5px 12px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; }
         .btn-back2 { position: relative; top: -128px; left: 10px; background: #eee; color: #333; border: 1px solid #ccc; padding: 5px 12px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; }
         
         #backupStatusBar { position: fixed; bottom: 0; right: 0; background: rgba(0,0,0,0.8); color: #fff; font-size: 10px; padding: 4px 12px; border-top-left-radius: 12px; z-index: 9999; border-top: 1px solid var(--huf-red); }
@@ -497,7 +499,7 @@ tr.row-brazil td.sticky-col.c8 { background-color: var(--loc-brazil) !important;
 
     .logo-container img {
         max-height: 100px;
-        margin-top: 15px;
+        margin-top: 35px;
     }
 
     .logo-subtitle {
@@ -613,7 +615,7 @@ tr.row-brazil td.sticky-col.c8 { background-color: var(--loc-brazil) !important;
             --hover-color: #555;
 
             width: 150px;
-            height: 30px;
+            height: 35px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
@@ -626,7 +628,7 @@ tr.row-brazil td.sticky-col.c8 { background-color: var(--loc-brazil) !important;
             text-transform: uppercase;
             letter-spacing: 0.5px;
             
-            border: 1px solid rgba(0,0,0,0.2);
+            border: 2px solid rgba(0,0,0,0.2);
             border-radius: 6px;
             cursor: pointer;
             transition: all 0.2s ease;
@@ -808,7 +810,7 @@ onkeydown="manejarTeclado(event)" onclick="hideContextMenu()">
 <div id="mainCard" class="car card-login">
     <div class="logo-container">
         <img src="logo.png" alt="HUF Logo" onerror="this.style.display='none';">
-        <p class="logo-subtitle">Developed By Omar Amador 1.4</p>
+        <p class="logo-subtitle">Developed By Omar Amador 1.5</p>
     </div>
 
     <div id="viewLogin" class="view-layer active-view"class="card">
@@ -836,9 +838,10 @@ onkeydown="manejarTeclado(event)" onclick="hideContextMenu()">
 
 <div id="viewStats" class="view-layer">
     <button class="btn-back" onclick="showModule('viewTooling')">⬅ BACK</button>
-    <button class="btn-tool" style="background:var(--huf-red); margin-left:100px;" onclick="goToCapacityEditor()">⚙️ EDIT CAPACITY</button>
+
     
-    <h2>Usage Stats by Device Type</h2>
+    <h2>HUF MX -FORECAST DEVICES TYPE</h2>
+        <button class="btn-tool" style="background:var(--huf-red); margin-left:00px;" onclick="goToCapacityEditor()">⚙️ EDIT CAPACITY</button>
     <div id="statsMainContainer" class="stats-view-container"></div>
 </div>
 
@@ -854,50 +857,57 @@ onkeydown="manejarTeclado(event)" onclick="hideContextMenu()">
             <div style="flex:1;"><label style="display: block; text-align: center; font-size: 13px ">Shutdown Start Date</label><input type="date" id="shutStart" ondblclick="this.showPicker()"></div>
             <div style="flex:1;"><label style="display: block; text-align: center; font-size: 13px ">Shutdown End Date</label><input type="date" id="shutEnd" ondblclick="this.showPicker()"></div>
             <button onclick="analizarShutdown()" style="background:var(--huf-red); color:white; border:none; padding:10px 20px; border-radius:6px; cursor:pointer; font-weight:bold; height:38px;">🔍 ANALYZE</button>
-            <button onclick="setShutdown()" style="background:var(--success-green); color:white; border:none; padding:10px 20px; border-radius:6px; cursor:pointer; font-weight:bold; height:38px;">💾 SCHEDULE</button>
-            <button onclick="exportarImpactoCSV('shutdown')" style="background:#4164a5; color:white; border:none; padding:10px 20px; border-radius:6px; cursor:pointer; font-weight:bold; height:38px;">📥 EXPORT CSV</button>
+            <button onclick="setShutdown()" style="background:var(--huf-dark); color:white; border:none; padding:10px 20px; border-radius:6px; cursor:pointer; font-weight:bold; height:38px;">💾 SCHEDULE</button>
+            <button onclick="exportarImpactoPDF('shutdown')" style="background:#4164a5; color:white; border:none; padding:10px 20px; border-radius:6px; cursor:pointer; font-weight:bold; height:38px;">📥 EXPORT PDF</button>
         </div>
 
-
-
-
-        <div id="shutdownResults"style="margin-top: 30px;">
-            <div style="margin-bottom: 40px;">
-                        <h3 style="font-size: 13px; color: #34495e; text-transform: uppercase; border-left: 4px solid #e30613; padding-left: 10px; margin-bottom: 15px;">Live Impact Analysis</h3>
-            <div style="background: var(--huf-red); border-radius: 8px; overflow: hidden; border: 1px solid #eee;">
-
-
-                      <table class="shutdown-impact-table" style="width: 100%; border-collapse: collapse; font-size: 13px;">
-                    <thead>
-                        <tr style="background: #f8f9fa; border-bottom: 2px solid #dee2e6;">
-                            <th style="padding: 12px; text-align: left;">Project</th>
-                            <th style="padding: 12px; text-align: left;">Activity</th>
-                            <th style="padding: 12px; text-align: left;">HIM (Equipment)</th>
-                            <th style="padding: 12px; text-align: left;">Impact Status</th>
-                        </tr>
-                    </thead>
+   <div style="position: relative; margin: 2% auto; width: 100%; max-width: 4500px; background-color: #f9f9f9; padding: 20px; border-radius: 12px; box-shadow: 0 5px 30px rgba(0,0,0,0.5); box-sizing: border-box;">
+        
+        <span onclick="cerrarModal()" style="position: absolute; right: 20px; top: 15px; font-size: 30px; font-weight: bold; cursor: pointer; color: #333;">&times;</span>
+        
+        <h3 style="font-size: 13px; color: #34495e; text-transform: uppercase; border-left: 4px solid #e30613; padding-left: 10px; margin-bottom: 15px; font-family: sans-serif;">Live Impact Analysis Report</h3>
+        
+        <div style="background: white; border-radius: 8px; border: 1px solid #ccc; max-height: 70vh; overflow-y: auto; overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; table-layout: fixed; min-width: 1000px;">
+                <thead>
+<tr style="color: white; font-family: sans-serif; font-size: 13px;">
+    <th style="background: var(--huf-red); padding: 12px; text-align: left; width: 25%; border: 1px solid rgba(255,255,255,0.1);">PROJECT</th>
+    <th style="background: var(--huf-red); padding: 12px; text-align: left; width: 30%; border: 1px solid rgba(255,255,255,0.1);">ACTIVITY</th>
+    <th style="background: var(--huf-red); padding: 12px; text-align: left; width: 25%; border: 1px solid rgba(255,255,255,0.1);">HIM (EQUIPMENT)</th>
+    <th style="background: var(--huf-red); padding: 12px; text-align: left; width: 20%; border: 1px solid rgba(255,255,255,0.1);">STATUS</th>
+</tr>
+                </thead>
                 <tbody id="shutdownTableBody">
-                   <tr><td colspan="4" style="text-align:center; padding: 20px; color: #999;">Select dates and press analyze to see projected conflicts</td></tr>
-                </tbody>
+                    </tbody>
             </table>
-  </div>
-                       <h3 style="font-size: 13px; color: #34495e; text-transform: uppercase; border-left: 4px solid #e30613; padding-left: 10px; margin-bottom: 15px;"> Impact Analysis</h3>
-            <div style="background: var(--huf-red); border-radius: 8px; overflow: hidden; border: 1px solid #eee;">
-                <table class="shutdown-impact-table" style="width: 100%; border-collapse: collapse; font-size: 13px;">
-                <thead style="background: #666;">
-                    <tr>
-                        <th>Start</th>
-                        <th>End</th>
-                        <th>Description</th>
-                        <th>Action</th>
+        </div>
+        
+    </div>
+
+
+   <div style="position: relative; margin: 2% auto; width: 100%; max-width: 4500px; background-color: #f9f9f9; padding: 20px; border-radius: 12px; box-shadow: 0 5px 30px rgba(0,0,0,0.5); box-sizing: border-box;">
+        
+        <span onclick="cerrarModal()" style="position: absolute; right: 20px; top: 15px; font-size: 30px; font-weight: bold; cursor: pointer; color: #333;">&times;</span>
+        
+        <h3 style="font-size: 13px; color: #34495e; text-transform: uppercase; border-left: 4px solid #e30613; padding-left: 10px; margin-bottom: 15px; font-family: sans-serif;">SHUT DOWNS BOOKED</h3>
+        
+        <div style="background: white; border-radius: 8px; border: 1px solid #ccc; max-height: 70vh; overflow-y: auto; overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; table-layout: fixed; min-width: 1000px;">
+                <thead>
+<tr>
+    <th style="background: var(--huf-red); padding: 12px; text-align: left; width: 25%; border: 1px solid rgba(255,255,255,0.1);">START</th>
+    <th style="background: var(--huf-red); padding: 12px; text-align: left; width: 30%; border: 1px solid rgba(255,255,255,0.1);">END</th>
+    <th style="background: var(--huf-red); padding: 12px; text-align: left; width: 25%; border: 1px solid rgba(255,255,255,0.1);">DESCRIPTION</th>
+    <th style="background: var(--huf-red); padding: 12px; text-align: left; width: 20%; border: 1px solid rgba(255,255,255,0.1);">ACTION</th>
                     </tr>
                 </thead>
                 <tbody id="historyTableBody"></tbody>
             </table>
-      
+        </div>
+        
     </div>
-      </div>
-       </div>
+
+
 </div>
 
 
@@ -940,54 +950,60 @@ onkeydown="manejarTeclado(event)" onclick="hideContextMenu()">
     
             <button onclick="analizarMantenimiento()" style="background:var(--huf-red); color:white; border:none; padding:10px 20px; border-radius:6px; cursor:pointer; font-weight:bold; height:38px;">🔍 ANALYZE
             </button>
-            <button onclick="setMaintenance()" style="background:var(--success-green); color:white; border:none; padding:10px 20px; border-radius:6px; cursor:pointer; font-weight:bold; height:38px;">💾 SCHEDULE
+            <button onclick="setMaintenance()" style="background:var(--huf-dark); color:white; border:none; padding:10px 20px; border-radius:6px; cursor:pointer; font-weight:bold; height:38px;">💾 SCHEDULE
             </button>
-            <button onclick="exportarImpactoCSV('maintenance')"  style="background:#4164a5; color:white; border:none; padding:10px 20px; border-radius:6px; cursor:pointer; font-weight:bold; height:38px;">📥 EXPORT CSV</button>
+            <button onclick="exportarImpactoPDF('maintenance')"  style="background:#4164a5; color:white; border:none; padding:10px 20px; border-radius:6px; cursor:pointer; font-weight:bold; height:38px;">📥 EXPORT PDF</button>
       
     </div>
-
-    <div id="maintResults" style="margin-top: 30px;">
+   <div style="position: relative; margin: 2% auto; width: 100%; max-width: 4500px; background-color: #f9f9f9; padding: 20px; border-radius: 12px; box-shadow: 0 5px 30px rgba(0,0,0,0.5); box-sizing: border-box;">
         
-        <div style="margin-bottom: 40px;">
-            <h3 style="font-size: 13px; color: #34495e; text-transform: uppercase; border-left: 4px solid #e30613; padding-left: 10px; margin-bottom: 15px;">Live Impact Analysis</h3>
-            <div style="background: var(--huf-red); border-radius: 8px; overflow: hidden; border: 1px solid #eee;">
-         
-                <table class="shutdown-impact-table" style="width: 100%; border-collapse: collapse; font-size: 13px;">
-                    <thead>
-                        <tr style="background: #f8f9fa; border-bottom: 2px solid #dee2e6;">
-                            <th style="padding: 12px; text-align: left;">Project</th>
-                            <th style="padding: 12px; text-align: left;">Activity</th>
-                            <th style="padding: 12px; text-align: left;">HIM (Equipment)</th>
-                            <th style="padding: 12px; text-align: left;">Impact Status</th>
-                        </tr>
-                    </thead>
-                    <tbody id="maintTableBody">
-                        <tr><td colspan="4" style="text-align:center; padding: 20px; color: #999;">Select dates and press analyze to see projected conflicts</td></tr>
+        <span onclick="cerrarModal()" style="position: absolute; right: 20px; top: 15px; font-size: 30px; font-weight: bold; cursor: pointer; color: #333;">&times;</span>
+        
+        <h3 style="font-size: 13px; color: #34495e; text-transform: uppercase; border-left: 4px solid #e30613; padding-left: 10px; margin-bottom: 15px; font-family: sans-serif;">Live Impact Analysis Report</h3>
+        
+        <div style="background: white; border-radius: 8px; border: 1px solid #ccc; max-height: 70vh; overflow-y: auto; overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; table-layout: fixed; min-width: 1000px;">
+                <thead>
+<tr style="color: white; font-family: sans-serif; font-size: 13px;">
+    <th style="background: var(--huf-red); padding: 12px; text-align: left; width: 25%; border: 1px solid rgba(255,255,255,0.1);">PROJECT</th>
+    <th style="background: var(--huf-red); padding: 12px; text-align: left; width: 30%; border: 1px solid rgba(255,255,255,0.1);">ACTIVITY</th>
+    <th style="background: var(--huf-red); padding: 12px; text-align: left; width: 25%; border: 1px solid rgba(255,255,255,0.1);">HIM (EQUIPMENT)</th>
+    <th style="background: var(--huf-red); padding: 12px; text-align: left; width: 20%; border: 1px solid rgba(255,255,255,0.1);">STATUS</th>
+</tr>
+                </thead>
+                <tbody id="maintTableBody">
                     </tbody>
-                </table>
-            </div>
+            </table>
         </div>
-
-        <div>
-            <h3 style="font-size: 13px; color: #34495e; text-transform: uppercase; border-left: 4px solid #e30613; padding-left: 10px; margin-bottom: 15px;"> Impact Analysis</h3>
-            <div style="background: var(--huf-red); border-radius: 8px; overflow: hidden; border: 1px solid #eee;">
-                <table class="shutdown-impact-table" style="width: 100%; border-collapse: collapse; font-size: 13px;">
-                    <thead>
-                        <tr style="background: #2569ac; border-bottom: 2px solid #dee2e6;">
-                            <th style="padding: 12px; text-align: left;">Device Type</th>
-                            <th style="padding: 12px; text-align: left;">HIM</th>
-                            <th style="padding: 12px; text-align: left;">Start</th>
-                            <th style="padding: 12px; text-align: left;">End</th>
-                            <th style="padding: 12px; text-align: left;">Description</th>
-                            <th style="padding: 12px; text-align: left;">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody id="maintHistoryTableBody">
-                        </tbody>
-                </table>
-            </div>
-        </div>
+        
     </div>
+       <div style="position: relative; margin: 2% auto; width: 100%; max-width: 4500px; background-color: #f9f9f9; padding: 20px; border-radius: 12px; box-shadow: 0 5px 30px rgba(0,0,0,0.5); box-sizing: border-box;">
+        
+        <span onclick="cerrarModal()" style="position: absolute; right: 20px; top: 15px; font-size: 30px; font-weight: bold; cursor: pointer; color: #333;">&times;</span>
+        
+        <h3 style="font-size: 13px; color: #34495e; text-transform: uppercase; border-left: 4px solid #e30613; padding-left: 10px; margin-bottom: 15px; font-family: sans-serif;">MAINTENANCE BOOKED</h3>
+        
+        <div style="background: white; border-radius: 8px; border: 1px solid #ccc; max-height: 70vh; overflow-y: auto; overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; table-layout: fixed; min-width: 1000px;">
+                <thead>
+<thead>
+    <tr style="color: white; font-family: sans-serif; font-size: 13px;">
+        <th style="background: var(--huf-red); padding: 12px; text-align: left; border-bottom: 2px solid rgba(255,255,255,0.2);">Device Type</th>
+        <th style="background: var(--huf-red); padding: 12px; text-align: left; border-bottom: 2px solid rgba(255,255,255,0.2);">HIM</th>
+        <th style="background: var(--huf-red); padding: 12px; text-align: left; border-bottom: 2px solid rgba(255,255,255,0.2);">Start</th>
+        <th style="background: var(--huf-red); padding: 12px; text-align: left; border-bottom: 2px solid rgba(255,255,255,0.2);">End</th>
+        <th style="background: var(--huf-red); padding: 12px; text-align: left; border-bottom: 2px solid rgba(255,255,255,0.2);">Description</th>
+        <th style="background: var(--huf-red); padding: 12px; text-align: left; border-bottom: 2px solid rgba(255,255,255,0.2);">Action</th>
+    </tr>
+</thead>
+                <tbody id="maintHistoryTableBody">
+                    </tbody>
+            </table>
+        </div>
+        
+    </div>
+
+
 </div>
 
 <div id="viewTooling" class="view-layer">
@@ -1019,14 +1035,7 @@ onkeydown="manejarTeclado(event)" onclick="hideContextMenu()">
 
 
 
-            <div style="flex:0.5;"><label style="display: block; text-align: center; font-size: 16px ">Scale</label>
-                <select id="viewScale" onchange="renderGantt()">
-                    <option value="week">By Week</option>
-                    <option value="day">By Day</option>
-                    <option value="month">By Month</option>
-                    <option value="year">By Year</option>
-                </select>
-            </div>
+
            
             <button onclick="addToolingRow()" style="background: var(--huf-red); color: white; border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; height: 38px;">ADD TASK</button>
         </div>
@@ -1034,25 +1043,34 @@ onkeydown="manejarTeclado(event)" onclick="hideContextMenu()">
 <div class="collapse-controls" style="display:flex; gap:15px; margin-bottom:15px; align-items:center; justify-content:space-between; flex-wrap:wrap; background:#f8f9fa; padding:10px; border-radius:8px;">
     
     <div style="display:flex; gap:8px;">
-      <div class="btn-tool info-badge" style="--bg-color: #2c3e50; --hover-color: #34495e; width: auto; padding: 0 15px; cursor: default;">
-    PROJECTS LOADED: <span id="projectCount1" style="margin-left: 5px; color: #f1c40f;">0</span>
+<div class="btn-tool" style="--bg-color: #2c3e50; --hover-color: #34495e; width: auto; padding: 0 15px; cursor: default; max-height: 30px; display: flex; align-items: center; justify-content: center;">
+    PROJECTS LOADED: <span id="projectCount1" style="font-size: 18px;margin-left: 5px; color: #0cda16;">0</span>
 </div>
         <button class="btn-tool" style="--bg-color: #3498db; --hover-color: #2980b9;" onclick="toggleAllProjects(true)"> <span>➕</span> EXPAND ALL </button>
         <button class="btn-tool" style="--bg-color: #95a5a6; --hover-color: #7f8c8d;" onclick="toggleAllProjects(false)"> <span>➖</span> COLLAPSE ALL </button>
         <button class="btn-tool" style="--bg-color: #e67e22; --hover-color: #d35400;" onclick="centerToday()"> <span>🎯</span> CENTER TODAY</button>
-    </div>
+ 
 
-    <div style="display:flex; gap:8px;">
+    
         <button class="btn-tool" style="--bg-color: #2c3e50; --hover-color: #34495e;" onclick="showModule('viewStats')"> <span>📊</span> WORKLOAD </button>
         <button class="btn-tool" style="--bg-color: #1a539e; --hover-color: #2980b9;" onclick="showModule('viewMaintenance')"> <span>🔧</span> MAINTENANCE </button>
         <button class="btn-tool" style="--bg-color: #9c9e1a; --hover-color: #8c8e16;" onclick="showModule('viewShutdown')"> <span>🚧</span> SHUTDOWN </button>
-        <button class="btn-tool" style="--bg-color: #27ae60; --hover-color: #2ecc71;" onclick="document.getElementById('csvEquipmentInput').click()"> 
-    <span>📥</span> IMPORT CSV 
-</button>
-<input type="file" id="csvEquipmentInput" accept=".csv" style="display:none" onchange="importEquipmentCSV(event)">
 
-<div style="display:flex; gap:8px;">
-    <label for="yearSelector" style="font-weight: bold;">Year:</label>
+
+
+
+
+        <!-- <button class="btn-tool" style="--bg-color: #27ae60; --hover-color: #2ecc71;" onclick="document.getElementById('csvEquipmentInput').click()"> 
+    <span>📥</span> IMPORT CSV 
+</button> -->
+<!-- <input type="file" id="csvEquipmentInput" accept=".csv" style="display:none" onchange="importEquipmentCSV(event)"> -->
+
+
+
+
+ <span style=>🔍</span>
+        <input type="text" id="ganttSearch" placeholder="Search project or HIM..." oninput="renderGantt()" style="border:none; outline:none; font-size:13px; width:180px;">
+            <label for="yearSelector" style="font-weight: bold;"></label>
     <select id="yearSelector" onchange="selectedYear = parseInt(this.value); renderGantt(); updateCharts();" style="padding: 5px; border-radius: 4px;">
         <option value="2024">2024</option>
         <option value="2025">2025</option>
@@ -1060,14 +1078,15 @@ onkeydown="manejarTeclado(event)" onclick="hideContextMenu()">
         <option value="2027">2027</option>
         <option value="2028">2028</option>
     </select>
-</div>
-
-    </div>
-
-    <div class="search-box" style="display:flex; align-items:center; background:white; border:1px solid #ccc; padding:5px 10px; border-radius:20px; margin-left:auto;">
-        <span style="margin-right:8px;">🔍</span>
-        <input type="text" id="ganttSearch" placeholder="Search project or HIM..." oninput="renderGantt()" style="border:none; outline:none; font-size:13px; width:180px;">
-    </div>
+                <select id="viewScale" onchange="renderGantt()">
+                    <option value="week">By Week</option>
+                    <option value="day">By Day</option>
+                    <option value="month">By Month</option>
+                    <option value="year">By Year</option>
+                </select>
+    
+   </div>
+         
 </div>
         <div class="gantt-wrapper" id="ganttScrollParent" onscroll="syncFloatingLabels()">
             <div id="ganttContainer"></div>
@@ -1134,12 +1153,12 @@ onkeydown="manejarTeclado(event)" onclick="hideContextMenu()">
 <div id="capacity-view" class="view-layer">
     <div class="header-tooling"></div>
     <button class="btn-back" onclick="showModule('viewStats')">⬅ BACK</button>
-    <h2 id="toolingTopTitle">EDIT EQUIPMENT CAPACITY</h2>
+   
 
     <div class="app-container">
         <div class="top-row" style="justify-content: center; display: flex; gap: 20px; align-items: flex-end; background: #f9f9f9; padding: 15px; border-radius: 8px;">
             <div class="form-group" style="max-width: 250px; width: 100%;">
-                <label style="display: block; text-align: center; font-size: 14px; font-weight: bold;">Device Type</label>
+                <label style="display: block; text-align: center; font-size: 14px; font-weight: bold;">Device</label>
                 <select id="capDeviceSelect" onchange="loadCapacityGrid()" style="width: 100%;"></select>
             </div>
             <div class="form-group" style="max-width: 120px; width: 100%;">
@@ -1148,16 +1167,16 @@ onkeydown="manejarTeclado(event)" onclick="hideContextMenu()">
             </div>
             <div style="border-left: 2px solid #ddd; padding-left: 20px; display: flex; align-items: flex-end; gap: 10px;">
                 <div class="form-group" style="margin-bottom:0;">
-                    <label style="display: block; font-size: 12px; color: #666;">Set to all:</label>
-                    <input type="number" id="quickCapValue" value="1" style="width: 60px; height: 35px; text-align: center; border: 1px solid #ccc; border-radius: 4px;">
+                   
+                    <input type="number" id="quickCapValue" value="0" style="width: 60px; height: 35px; text-align: center; border: 1px solid #ccc; border-radius: 4px;">
                 </div>
-                <button onclick="applyValueToAllWeeks()" class="btn-send" style="background: #b30b0b; height: 35px; padding: 0 15px; font-size: 12px;">
+                <button onclick="applyValueToAllWeeks()" class="btn-send" style="background: var(--huf-red); height: 35px; padding: 0 15px; font-size: 12px;">
                     <i class="fas fa-copy"></i> APPLY TO ALL
                 </button>
             </div>
         </div>
 
-        <div id="capMonthsGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; margin-top: 20px; align-items: start;"></div>
+        <div id="capMonthsGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px; margin-top: 20px; align-items: start;"></div>
         
         <button class="btn-send" onclick="saveCapacityData()" style="display: block; margin: 30px auto; background: var(--huf-red); padding: 15px 40px; font-size: 18px;">
             UPDATE CAPACITY PLAN
@@ -1701,7 +1720,7 @@ function addToolingRow() {
         }).then((result) => { if (result.isConfirmed) { toolingProjects.splice(pIdx, 1); guardarCambios(); } });
     }
 
-    function editProject(pIdx) { 
+    function editProject1(pIdx, aIdx) { 
         Swal.fire({ title: 'Edit Project Name', input: 'text', inputValue: toolingProjects[pIdx].name, showCancelButton: true, confirmButtonColor: '#e30613'
         }).then((result) => { if (result.isConfirmed && result.value) { toolingProjects[pIdx].name = result.value; guardarCambios(); } });
     }
@@ -2105,7 +2124,7 @@ function renderGantt() {
 
 
 
-        html += `<div class="gantt-row"><div class="gantt-task-name" style="background:#555 !important; color:white;"><span onclick="toggleProject(${pIdx})">${proj.collapsed?'➕':'➖'} 📁 ${proj.name}</span><div class="action-btns"><button class="btn-icon add" onclick="copyTaskToInputs('${proj.name.replace(/'/g, "\\'")}', '')">➕</button><button class="btn-icon" onclick="editProject(${pIdx})">✏️</button><button class="btn-icon" onclick="deleteProject1(${pIdx})">🗑️</button></div></div><div class="gantt-bar-container" style="background:#666;"></div></div>`;
+        html += `<div class="gantt-row"><div class="gantt-task-name" style="background:#555 !important; color:white;"><span onclick="toggleProject(${pIdx})">${proj.collapsed?'➕':'➖'} 📁 ${proj.name}</span><div class="action-btns"><button class="btn-icon add" onclick="copyTaskToInputs('${proj.name.replace(/'/g, "\\'")}', '')">➕</button><button class="btn-icon" onclick="editProject1(${pIdx})">✏️</button><button class="btn-icon" onclick="deleteProject1(${pIdx})">🗑️</button></div></div><div class="gantt-bar-container" style="background:#666;"></div></div>`;
 
        
 
@@ -2342,26 +2361,78 @@ function renderAllStats() {
         });
     }
 
-    function analizarMantenimiento() {
-        const startStr = document.getElementById('maintStart').value;
-        const endStr = document.getElementById('maintEnd').value;
-        if (!startStr || !endStr) return Swal.fire('Error', 'Please select both dates', 'error');
-        const mStart = new Date(startStr + "T00:00:00");
-        const mEnd = new Date(endStr + "T23:59:59");
-        if (mEnd < mStart) return Swal.fire('Error', 'End date must be after start date', 'error');
-        const tbody = document.getElementById('maintTableBody');
-        tbody.innerHTML = ""; let impacts = [];
-        toolingProjects.forEach(proj => {
-            proj.activities.forEach(act => {
-                act.teams.forEach(t => {
-                    const tStart = new Date(t.start); const tEnd = new Date(t.start); tEnd.setDate(tEnd.getDate() + t.days);
-                    if (tStart <= mEnd && tEnd >= mStart) { impacts.push({ proj: proj.name, act: act.name, him: t.name }); }
+function analizarMantenimiento() {
+    // 1. Obtener valores de los inputs
+    var startStr = document.getElementById('maintStart').value;
+    var endStr = document.getElementById('maintEnd').value;
+    var selectedHIM = document.getElementById('maintHIM').value; // <--- CAPTURAMOS EL SELECCIONADO
+
+    if (!startStr || !endStr) {
+        alert('Please select dates');
+        return;
+    }
+
+    if (!selectedHIM) {
+        alert('Please select a HIM (Equipment)');
+        return;
+    }
+
+    var mStart = new Date(startStr + 'T00:00:00');
+    var mEnd = new Date(endStr + 'T23:59:59');
+
+    var impacts = [];
+    if (typeof toolingProjects !== 'undefined') {
+        toolingProjects.forEach(function(proj) {
+            proj.activities.forEach(function(act) {
+                act.teams.forEach(function(t) {
+                    // FILTRO: Solo si el nombre del equipo coincide con el seleccionado
+                    if (t.name === selectedHIM) { 
+                        var tStart = new Date(t.start);
+                        var tEnd = new Date(t.start);
+                        tEnd.setDate(tEnd.getDate() + (t.days || 0));
+                        
+                        // Verificar colisión de fechas
+                        if (tStart <= mEnd && tEnd >= mStart) {
+                            impacts.push({ p: proj.name, a: act.name, h: t.name });
+                        }
+                    }
                 });
             });
         });
-        if (impacts.length === 0) { tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:var(--success-green); font-weight:bold;">✅ No impacts found.</td></tr>`; } 
-        else { impacts.forEach(imp => { const row = document.createElement('tr'); row.innerHTML = `<td>${imp.proj}</td><td>${imp.act}</td><td>${imp.him}</td><td class="impact-high" style="color:var(--maint-purple);">🔧 MAINT. IMPACT</td>`; tbody.appendChild(row); }); }
     }
+
+    // 2. Dibujar la tabla
+    var tbody = document.getElementById('maintTableBody');
+    tbody.innerHTML = ''; 
+
+    if (impacts.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:40px; color:green; font-weight:bold; font-family:sans-serif;">✅ NO IMPACTS DETECTED FOR THIS HIM</td></tr>';
+    } else {
+        impacts.forEach(function(i) {
+            var row = tbody.insertRow();
+            
+            var c1 = row.insertCell(0);
+            c1.innerHTML = i.p;
+            c1.style.cssText = 'padding:10px; border:1px solid #eee; font-size:12px; word-break:break-word;';
+
+            var c2 = row.insertCell(1);
+            c2.innerHTML = i.a;
+            c2.style.cssText = 'padding:10px; border:1px solid #eee; font-size:12px; word-break:break-word;';
+
+            var c3 = row.insertCell(2);
+            c3.innerHTML = i.h;
+            c3.style.cssText = 'padding:10px; border:1px solid #eee; font-size:12px; word-break:break-word;';
+
+            var c4 = row.insertCell(3);
+            c4.innerHTML = '🔧 MAINT. IMPACT';
+            c4.style.cssText = 'padding:10px; border:1px solid #eee; font-size:11px; color:#e30613; font-weight:bold; text-align:center;';
+        });
+    }
+
+    // Abrir el modal si lo estás usando
+    var modal = document.getElementById('modalImpacto');
+    if(modal) modal.style.display = 'block';
+}
 
     function setMaintenance() {
         const typeId = document.getElementById('maintDeviceType').value;
@@ -2385,7 +2456,7 @@ function renderAllStats() {
         maintenanceLogs.forEach((log, idx) => {
             const row = document.createElement('tr');
             row.innerHTML = `<td style="text-align: left;">${log.typeName || 'Unknown'}</td><td><b>${log.him}</b></td><td>${log.start}</td><td>${log.end}</td><td>${log.desc}</td><td style="text-align: left;">
-    <button onclick="deleteMaintenance('${idx}')" style="color:red; cursor:pointer; background:none; border:none; padding-left: 0;">🗑️</button>
+    <button onclick="deleteMaintenance('${idx}')" style="color:red; cursor:pointer; background:none; border:none; padding-left: 120;align-items: center">🗑️</button>
 </td>`;
             tbody.appendChild(row);
         });
@@ -3439,9 +3510,66 @@ function saveCapacityData() {
             Swal.fire('Error', 'No se pudo guardar en Firebase: ' + error.message, 'error');
         });
 }
+function exportarImpactoPDF(type) {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        
+        // VARIABLE DE COLOR EDITABLE (RGB)
+        // Cambia estos números para cambiar el color principal del reporte
+        const reportColor = [170, 28, 37]; 
+
+        const tableId = type === 'shutdown' ? "#shutdownTableBody tr" : "#maintTableBody tr";
+        let tableRows = document.querySelectorAll(tableId);
+        
+        if(tableRows.length === 0) {
+            return Swal.fire('Wait', 'No analysis results to export', 'info');
+        }
+
+        // Obtener fecha y hora completa (HH:MM:SS)
+        const now = new Date();
+        const timeString = now.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        const dateString = now.toLocaleDateString('es-ES');
+        const selectedYear = document.getElementById('yearSelector').value;
+
+        // 2. Configurar encabezado del PDF
+        doc.setFontSize(18);
+        doc.setTextColor(reportColor[0], reportColor[1], reportColor[2]);
+        doc.text(`HUF Mantt. Impact Report: ${type.toUpperCase()}`, 14, 20);
+        
+        doc.setFontSize(11);
+        doc.setTextColor(100); // Gris para subtexto
+        doc.text(`Year: ${selectedYear} | Date: ${dateString} | Time: ${timeString}`, 14, 30);
+
+        // 3. Extraer datos para AutoTable (Solo 3 columnas)
+        let data = [];
+        tableRows.forEach(tr => {
+            let cols = tr.querySelectorAll("td");
+            if(cols.length >= 3) {
+                data.push([cols[0].innerText, cols[1].innerText, cols[2].innerText]);
+            }
+        });
+
+        // 4. Generar la tabla automática con el color editable
+        doc.autoTable({
+            startY: 40,
+            head: [["Project", "Activity", "HIM"]],
+            body: data,
+            theme: 'grid',
+            headStyles: { 
+                fillColor: reportColor, // Usando la variable editable
+                textColor: [255, 255, 255] 
+            },
+            styles: { fontSize: 10 }
+        });
+
+        // 5. Descargar con nombre de archivo detallado
+        const fileTime = timeString.replace(/:/g, '-');
+        doc.save(`HUF_${type.toUpperCase()}_${selectedYear}_${fileTime}.pdf`);
+    }
 </script>
 </body>
 </html>
+
 
 
 
