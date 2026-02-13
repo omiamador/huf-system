@@ -24,24 +24,45 @@
         :root { 
             --huf-red: #aa1c25; 
             --huf-dark: #555; 
-            --today-blue: #007bff; 
+            --today-blue: #00ff4c; 
             --success-green: #28a745; 
             --warning-orange: #ffc107; 
             --maint-purple: #6f42c1;
             --priority-high: #ff4d4d;
             --priority-med: #ffc107;
             --priority-low: #28a745;
-            --priority-low1: #2a28a7;
+            --priority-low1: #28a759;
             --huf-blue: #4164a5;
             --light-bg: #f0f2f5;
-            --border: #ffffff;
-        
+            --border: #555;
+--SE: #89a5f5;        /* Azul Lavanda */
+    --SM: #74c7ff;        /* Azul Cielo */
+
+    /* CÁLIDOS / ROJOS */
+    --TS: #ffadad;        /* Rosa Coral (Sustituye al salmón) */
+    --SS: #ffb4d9;        /* Rosa Chicle claro */
+
+    /* PÚRPURAS / VIOLETAS */
+    --LOCK: #d8b4d6;      /* Lila */
+    --BRACKET: #c5a3ff;   /* Violeta claro */
+    --JAILOR: #a388ee;    /* Violeta vibrante */
+
+    /* VERDES */
+    --SOMA: #bdf3c1;      /* Verde Menta */
+    --CS: #98e4a5;        /* Verde Pasto claro */
+    --CC: #dcedc1;        /* Verde Lima pálido */
+
+    /* CIAN / TURQUESA */
+    --VIBRATION: #9cf3f0; /* Turquesa pálido */
+
+
+           
   
  
     --huf-border: #ccc; 
     --huf-bg: #ececec; 
     --huf-orange: #ff9800; 
-    --huf-green: #28a745; 
+    --huf-green: #ffffff; 
 
     --status-execution: #a0c4ff;
     --status-acceptance: #ffd60a;
@@ -57,7 +78,7 @@
     --RFC: #f3ef0ccb; 
     --Customer: #0c70f3c9; 
 
-    --loc-mexico: #006847;
+    --loc-mexico: #37997a;
     --loc-brazil: #7b2cbf; 
     --loc-usa: #002868;
     --loc-germany: #ffce00;
@@ -99,7 +120,7 @@
 
 #capacity-table-container input:focus {
     outline: none;
-    border-color: var(--huf-red) !important;
+    border-color: var(--huf-dark) !important;
     background: #fff8f8;
     box-shadow: 0 0 5px rgba(170, 28, 37, 0.2);
 }
@@ -116,7 +137,7 @@
 .search-container select, 
 .search-container input {
     padding: 10px 14px;
-    border: 1px solid var(--border);
+    border: 2px solid var(--border);
     border-radius: 8px;
     outline: none;
     font-size: 14px;
@@ -138,7 +159,7 @@
     gap: 8px;
     padding: 10px 16px;
     background: #f8fafc;
-    border: 1px solid var(--border);
+    border: 2px solid var(--border);
     border-radius: 8px;
     color: #64748b;
     cursor: pointer;
@@ -251,7 +272,7 @@
         
  .gantt-header-days { display: flex; background: var(--huf-red); color: white; height: 70px; }
  .gantt-day-cell { flex: 1 0 70px; min-width: 70px; border-right: 1px solid #aaa; display: flex; align-items: center; justify-content: center; position: relative; }
- .gantt-day-cell.is-today { background-color: var(--huf-dark) !important; color: white; }
+ .gantt-day-cell.is-today { background-color: var(--huf-orange) !important; color: white; }
 .gantt-day-cell.is-shutdown { background-color: #ffcccc !important; color: #cc0000 !important; border-right: 1px solid #ff0000; }
         
  .vertical-text { writing-mode: vertical-rl; transform: rotate(-90deg); white-space: nowrap; font-size: 14px; font-weight: bold;letter-spacing: 1px; }
@@ -391,8 +412,10 @@ select, input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radiu
 
     #logTableBody td {
         padding: 8px 5px;
-        border: 1px solid #000000;
+       border: 2px solid var(--border);
         text-align: center;
+         font-size: 14px;
+         font-family: italic;
     }
 
     /* Zebra Striping */
@@ -401,7 +424,7 @@ select, input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radiu
     }
 
     #logTableBody tr:hover {
-        background-color: #1254be;
+        background-color: #f3a4a4;
     }
 table { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 1600px; table-layout: fixed; }
 thead th { background-color: var(--huf-dark); color: white; padding: 12px 2px; position: sticky; top: 0; z-index: 10; text-transform: uppercase; border: 1px solid #444; }
@@ -412,8 +435,8 @@ tbody td { padding: 8px 4px; border-bottom: 1px solid #eee; text-align: center; 
 .filter-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0px; }
 .filter-grid-list { display: flex; flex-direction: column; }
 .filter-item { background: rgb(255, 255, 255); padding: 5px; cursor: pointer; font-size: 10px; font-weight: bold; text-align: left; border-bottom: 1px solid #000000; color: #000; border-right: 1px solid #000000; }
-.filter-item.active { background: var(--huf-red); color: white; }
-.filter-item.full-header { grid-column: span 2; background: var(--huf-red);color: #ffffff; text-align: center; border-bottom: 1px solid var(--huf-dark); position: sticky; top: 0; z-index: 5; }
+.filter-item.active { background: var(--huf-dark); color: white; }
+.filter-item.full-header { grid-column: span 2; background: var(--huf-dark);color: #ffffff; text-align: center; border-bottom: 1px solid var(--huf-dark); position: sticky; top: 0; z-index: 5; }
 .filter-input-text { width: 100%; padding: 8px; border: 1px solid var(--huf-dark); height: 80px; box-sizing: border-box; font-size: 11px; font-weight: bold; resize: none; }
 
 
@@ -425,11 +448,11 @@ th:nth-child(5), td:nth-child(5) { width: 180px; }
 th:nth-child(6), td:nth-child(6) { width: 130px; } 
 th:nth-child(7), td:nth-child(7) { width: 120px; }  
 th:nth-child(8), td:nth-child(8) { width: 120px; } 
-th:nth-child(75), td:nth-child(75) { width: 53px; } 
+th:nth-child(75), td:nth-child(75) { width: 10px; } 
 
 tr.row-brazil td { background-color: var(--loc-brazil) !important; color: white !important; }
 .loc-tag { font-weight: bold; padding: 4px 0; border-radius: 4px; display: block; color: white; }
-.loc-Mexico { background-color: var(--loc-mexico); }
+
 .loc-Brazil { background-color: var(--loc-brazil); }
 .loc-USA { background-color: var(--loc-usa); }
 .loc-Germany { background-color: var(--loc-germany); color: black !important; }
@@ -438,7 +461,7 @@ tr.row-brazil td { background-color: var(--loc-brazil) !important; color: white 
 .loc-Spare { background-color: var(--loc-spare); }
 
 .cell-checked { background-color: var(--huf-orange) !important; color: white !important; }
-.cell-has-hours { background-color: var(--huf-green) !important; color: white !important; }
+.cell-has-hours { background-color: var(--huf-green) !important; color: rgb(0, 0, 0) !important; }
 .prio-tag { font-weight: bold; padding: 3px 8px; border-radius: 3px; font-size: 10px; text-transform: uppercase; display: inline-block; }
 .prio-NonProductive { background-color: var(--NonProductive); color: white; }
 .prio-Productive { background-color: var(--Productive); color: #1a1a1a; }
@@ -461,7 +484,7 @@ tr.row-evaluation td.sticky-col:nth-child(-n+7) { background-color: var(--status
 
     /* 2. La Columna 8 (Separador) - Prioridad de País */
 tr td.sticky-col.c8 { padding: 0 !important; width: 15px !important; }
-tr.row-mexico td.sticky-col.c8 { background-color: var(--loc-mexico) !important; }
+tr.row-mexico td.sticky-col.c8 { background-color: var(--loc-mexico) !important;color: white;  }
 tr.row-brazil td.sticky-col.c8 { background-color: var(--loc-brazil) !important; }
 
 
@@ -476,14 +499,13 @@ tr.row-brazil td.sticky-col.c8 { background-color: var(--loc-brazil) !important;
     .c8 { left: 660px; width: 15px; padding: 0 !important; }
 
 /* Asegurar visibilidad de los Tags de locación */
-.loc-Mexico { background-color: var(--loc-mexico); color: white; }
-.loc-Brazil { background-color: var(--loc-brazil); color: white; }
+
 #import-loader { display: none; background: #fff; padding: 10px 20px; border: 2px solid var(--huf-red); border-radius: 5px; position: fixed; top: 20px; right: 20px; z-index: 1000; box-shadow: 0 4px 10px rgba(0,0,0,0.2); font-weight: bold; }
 
 
 
     :root {
-        --primary-color: #0056b3; /* Azul corporativo */
+        --primary-color: #2e4f72; /* Azul corporativo */
         --bg-gradient: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
         --card-bg: #ffffff;
         --text-dark: #2d3436;
@@ -681,7 +703,7 @@ tr.row-brazil td.sticky-col.c8 { background-color: var(--loc-brazil) !important;
             overflow-x: auto;
             max-width: 100%;
             height: 70vh; /* Altura ajustable */
-            border: px solid var(--border);
+            border: 2px solid var(--border);
             background: white;
             position: sticky;
             top: 0;
@@ -711,7 +733,7 @@ tr.row-brazil td.sticky-col.c8 { background-color: var(--loc-brazil) !important;
 thead tr th.sticky-col {
     z-index: 300 !important; /* El nivel más alto de todos */
     top: 0;
-    background: var(--huf-red) !important;
+    background: var(--huf-dark) !important;
     position: sticky;
     height: 40px; /* Mantenemos consistencia */
 }
@@ -720,14 +742,16 @@ thead tr th.sticky-col {
     position: sticky;
     top: 154px;   /* Justo donde termina la fila de arriba */
     z-index: 50;  /* Menor que las columnas fijas para que se esconda al scrollear lateralmente */
-    background: var(--huf-red) !important;
+    background: var(--huf-dark) !important;
+     border: 2px solid var(--border);
 }
 
 /* 4. Las celdas vacías de los meses (Las 8 primeras de la segunda fila) */
 #dynamicHeaderMonths th.sticky-col {
     z-index: 160 !important; /* Mayor que el cuerpo (150) pero menor que los filtros (300) */
     top: 154px;
-    background: var(--huf-red)!important; /* O el color de fondo de tu tabla */
+    background: var(--huf-dark)!important; /* O el color de fondo de tu tabla */
+
 }
 
 /* Modifica tu regla actual para fijar el alto del contenedor */
@@ -754,7 +778,7 @@ thead tr th.sticky-col {
     padding: 5px;
     box-sizing: border-box;
     font-family: inherit;
-    font-size: 12px;
+    font-size: 14px;
     /* ELIMINADO: position: sticky y top: 0 */
 }
         /* POSICIONAMIENTO EXACTO DE LAS 8 COLUMNAS */
@@ -783,7 +807,7 @@ thead tr th.sticky-col {
 /* Resaltado opcional para el mes/año actual */
 .current-month-highlight {
     background: #fde3e6 !important;
-    color: #0d47a1;
+    color: #013583;
     font-weight: bold;
     border: 1px solid #0d47a1 !important;
 }
@@ -810,7 +834,7 @@ onkeydown="manejarTeclado(event)" onclick="hideContextMenu()">
 <div id="mainCard" class="car card-login">
     <div class="logo-container">
         <img src="logo.png" alt="HUF Logo" onerror="this.style.display='none';">
-        <p class="logo-subtitle">Developed By Omar Amador 1.5</p>
+        <p class="logo-subtitle">Developed By Omar Amador 1.6</p>
     </div>
 
     <div id="viewLogin" class="view-layer active-view"class="card">
@@ -1081,8 +1105,7 @@ onkeydown="manejarTeclado(event)" onclick="hideContextMenu()">
                 <select id="viewScale" onchange="renderGantt()">
                     <option value="week">By Week</option>
                     <option value="day">By Day</option>
-                    <option value="month">By Month</option>
-                    <option value="year">By Year</option>
+                 
                 </select>
     
    </div>
@@ -1129,6 +1152,7 @@ onkeydown="manejarTeclado(event)" onclick="hideContextMenu()">
                 <div class="action-bar">
             <button class="summary-trigger-btn" onclick="showModule('summary-view')"><i class="fa-solid fa-table-list"></i> OPEN PROJECT SUMMARY</button>
             <button class="summary-trigger-btn" onclick="showModule('capacity-view')"><i class="fa-solid fa-gears"></i> EDIT CAPACITY</button>
+             <button class="btn-tool" style="background:var(--huf-red); margin-left:00px;" onclick="goToCapacityEditor()">⚙️ EDIT CAPACITY</button>
       
             <div class="form-group" style="margin-left:auto; min-width: 200px;"><label>DASHBOARD START YEAR</label><select id="dashboardStartYear" onchange="saveDashboardYearPreference()"></select></div>
         </div>
@@ -1183,6 +1207,10 @@ onkeydown="manejarTeclado(event)" onclick="hideContextMenu()">
         </button> 
     </div>
 </div>
+
+
+<!-- 
+Aqui empieza el project summary -->
         
 <div id="summary-view" class="view-layer">
     <button class="btn-back" onclick="showModule('main-app')">⬅ BACK</button>
@@ -1191,11 +1219,13 @@ onkeydown="manejarTeclado(event)" onclick="hideContextMenu()">
     <span class="btn-icon">🧹</span> 
     <span class="btn-text">CLEAR FILTERS</span>
 </button>
-                     <button class="huf-btn" onclick="document.getElementById('csvInput').click()" style="background: #28a745;">IMPORT CSV</button> 
+                     <button class="btn-text" onclick="document.getElementById('csvInput').click()" style="background: #28a745;">IMPORT CSV</button> 
                      <input type="file" id="csvInput" accept=".csv" style="display:none" onchange="importCSV(event)">
                     
-                     <button class="huf-btn" onclick="deleteAllProjects()" style="background: #dc3545;">DELETE ALL</button> 
-                     <span style="float: right font-size: 14px;">Projects loaded: <span id="projectCount">0</span></span>
+                     <button class="btn-text" onclick="deleteAllProjects()" style="background: #dc3545;">DELETE ALL</button> 
+                 <div class="btn-tool" style="--bg-color: #2c3e50; --hover-color: #34495e; width: auto; padding: 0 15px; cursor: default; max-height: 30px; display: flex; align-items: center; justify-content: center;">
+    PROJECTS LOADED: <span id="projectCount" style="font-size: 18px;margin-left: 5px; color: #0cda16;">0</span>
+</div>
                    
     <div class="table-section" id="scrollContainer">
         <table> 
@@ -1203,18 +1233,18 @@ onkeydown="manejarTeclado(event)" onclick="hideContextMenu()">
 <tr class="filter-row">
     <th class="sticky-col c1"><textarea id="fName" onkeyup="updateUI()" placeholder="Project..."></textarea></th>
     <th class="sticky-col c2"><textarea id="fNum" onkeyup="updateUI()" placeholder="N°..."></textarea></th>
-    <th class="sticky-col c3"><div id="fYearBox" onclick="toggleFilterMenu('year')">Year</div></th>
-    <th class="sticky-col c4"><div id="fStatusBox" onclick="toggleFilterMenu('status')">Status</div></th>
+    <th class="sticky-col c3"><div id="fYearBox"div></th>
+    <th class="sticky-col c4"><div id="fStatusBox"div></th>
     <th class="sticky-col c5"><textarea id="fComm" onkeyup="updateUI()" placeholder="Comm..."></textarea></th>
     <th class="sticky-col c6"><textarea id="fPO" onkeyup="updateUI()" placeholder="PO..."></textarea></th>
-    <th class="sticky-col c7"><div id="fTypeBox" onclick="toggleFilterMenu('priority')">Type</div></th>
-    <th class="sticky-col c8"><div id="fLocBox" onclick="toggleFilterMenu('location')">Location</div></th>
+    <th class="sticky-col c7"><div id="fTypeBox"div></th></th>
+    <th class="sticky-col c8"><div id="fLocBox"div></th></th>
     
-    <th id="headerHoursColspan" colspan="67" style="background: var(--huf-dark); color: white; text-align: center;">
+    <th id="headerHoursColspan" colspan="67" style="background: var(--huf-red); color: white; text-align: center;">
         
     </th>
 </tr>
-                <tr id="dynamicHeaderMonths" style="background: #eee; font-size: 11px;">
+                <tr id="dynamicHeaderMonths" style="background: #4d0c0c; font-size: 11px;">
                     </tr>
             </thead>
             <tbody id="logTableBody">
@@ -1536,16 +1566,16 @@ db.ref('toolingProjects').on('value', (snapshot) => {
     const options = { year: 'numeric', month: 'short', day: 'numeric' };
 
     // 4. Mostrar el mensaje con prioridad de estado
-    if (estaEnMantenimientoAhora) {
-        infoDiv.innerText = `⚠️ UNDER MAINTENANCE: ${him} until ${ultimaFechaMantenimiento.toLocaleDateString(undefined, options)}`;
-        infoDiv.style.color = "#ff9800"; // Naranja
-    } else if (fechaLibreFinal > today) {
-        infoDiv.innerText = `Equipment ${him} free from: ${fechaLibreFinal.toLocaleDateString(undefined, options)}`;
-        infoDiv.style.color = "var(--huf-red)"; 
-    } else {
-        infoDiv.innerText = "";
-        infoDiv.style.color = "var(--success-green)";
-    }
+    // if (estaEnMantenimientoAhora) {
+    //     infoDiv.innerText = `⚠️ UNDER MAINTENANCE: ${him} until ${ultimaFechaMantenimiento.toLocaleDateString(undefined, options)}`;
+    //     infoDiv.style.color = "#ff9800"; // Naranja
+    // } else if (fechaLibreFinal > today) {
+    //     infoDiv.innerText = `Equipment ${him} free from: ${fechaLibreFinal.toLocaleDateString(undefined, options)}`;
+    //     infoDiv.style.color = "var(--huf-red)"; 
+    // } else {
+    //     infoDiv.innerText = "";
+    //     infoDiv.style.color = "var(--success-green)";
+    // }
 }
 
   
@@ -1793,7 +1823,7 @@ function addToolingRow() {
     function toggleMaintenanceSection() { maintenanceCollapsed = !maintenanceCollapsed; renderGantt(); }
     
     function centerToday() { const wrapper = document.getElementById('ganttScrollParent'); const todayCell = document.querySelector('.gantt-day-cell.is-today'); if (wrapper && todayCell) wrapper.scrollLeft = todayCell.offsetLeft - (wrapper.offsetWidth / 2); }
-    function getPastelColor(typeId) { return `hsl(${(parseInt(typeId) || 0) * 137.5 % 360}, 70%, 75%)`; }
+    // function getPastelColor(typeId) { return `hsl(${(parseInt(typeId) || 0) * 137.5 % 360}, 70%, 75%)`; }
     function getWeekNumber(d) { d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())); d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay()||7)); return Math.ceil((((d - new Date(Date.UTC(d.getUTCFullYear(),0,1))) / 86400000) + 1)/7); }
 
     function syncFloatingLabels() {
@@ -1813,363 +1843,246 @@ function addToolingRow() {
             lbl.style.transform = `translateX(${offset}px)`;
         });
     }
+/**
+ * COLORES ESPECÍFICOS POR TIPO
+ * Aquí puedes cambiar los colores manualmente.
+ */
+function getPastelColor(typeId) {
+    if (!typeId) return '#bdc3c7';
+    const typeColors = {
+        '1': 'var(--SE)',
+        '2': 'var(--SM)',
+        '3': 'var(--TS)',
+        '4': 'var(--LOCK)',
+        '5': 'var(--SOMA)',
+        '6': 'var(--BRACKET)',
+        '7': 'var(--JAILOR)',
+        '8': 'var(--CC)',
+        '9': 'var(--VIBRATION)',
+        '10': 'var(--CS)',
+        '11': 'var(--SS)',
+    };
+    const color = typeColors[typeId.toString()];
+    return color ? color : '#dfe6e9';
+}
+let ganttStatusFilter = 'active'; // Estado inicial
+
+function setGanttStatusFilter(status) {
+    ganttStatusFilter = status;
+    renderGantt(); 
+}
 
 function renderGantt() {
-
     const container = document.getElementById('ganttContainer');
-
     if (!container) return;
 
-
-
     const scale = document.getElementById('viewScale').value;
-
     const searchTerm = document.getElementById('ganttSearch')?.value.toLowerCase() || "";
-
     const today = new Date();
-
-    today.setHours(0,0,0,0);
-
-
-
-    // --- FUNCIÓN LOCAL PARA EVITAR CONFLICTOS CON TU FUNCIÓN GLOBAL ---
+    today.setHours(0, 0, 0, 0);
 
     const getWeekData = (date) => {
-
         let d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-
         let dayNum = d.getUTCDay() || 7;
-
         d.setUTCDate(d.getUTCDate() + 4 - dayNum);
-
         let yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-
         let weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
-
         return { week: weekNo, year: d.getUTCFullYear() };
-
     };
 
+    // --- FILTRADO POR AÑO Y BÚSQUEDA ---
+    const filteredToolingProjects = toolingProjects.map((p, originalPIdx) => {
+        const matchingActivities = p.activities.map((a, originalAIdx) => {
+            const matchingTeams = a.teams.map((t, originalTIdx) => ({ ...t, originalTIdx }))
+                .filter(t => {
+                    const startDate = new Date(t.start);
+                    const weekInfo = getWeekData(startDate);
+                    const cwString = `cw-${String(weekInfo.week).padStart(2, '0')}`;
+                    const matchesSearch = p.name.toLowerCase().includes(searchTerm) || 
+                                          t.name.toLowerCase().includes(searchTerm) || 
+                                          cwString.includes(searchTerm);
+                    const matchesYear = startDate.getFullYear() === selectedYear;
+                    return matchesSearch && matchesYear;
+                });
+            return { ...a, originalAIdx, teams: matchingTeams };
+        }).filter(a => a.teams.length > 0);
+        return { ...p, originalPIdx, activities: matchingActivities };
+    }).filter(p => p.activities.length > 0);
 
+    const filteredMaintenance = maintenanceLogs.filter(m => {
+        const matchesMaint = m.him.toLowerCase().includes(searchTerm) || m.desc.toLowerCase().includes(searchTerm);
+        return matchesMaint && new Date(m.start).getFullYear() === selectedYear;
+    });
 
-    // --- INDICADOR DE CONTEO ---
+    // --- CLASIFICACIÓN Y CONTEO (Aquí se gestionan los contadores) ---
+    let activeCount = 0;
+    let doneCount = 0;
+    const categorizedProjects = filteredToolingProjects.map(p => {
+        let lastDate = new Date(0);
+        p.activities.forEach(a => a.teams.forEach(t => {
+            let endD = new Date(t.start); endD.setDate(endD.getDate() + t.days);
+            if (endD > lastDate) lastDate = endD;
+        }));
+        const isDone = lastDate < today;
+        if (isDone) doneCount++; else activeCount++;
+        return { ...p, isDone };
+    });
 
-    const projectCountSpan = document.getElementById('projectCount1');
+    const projectsToDisplay = categorizedProjects.filter(p => 
+        ganttStatusFilter === 'done' ? p.isDone : !p.isDone
+    );
 
-    if (projectCountSpan) {
-
-        projectCountSpan.innerText = toolingProjects.length;
-
-    }
-
-
-
-    // --- FILTRO DE AÑO ---
-
-    const filteredToolingProjects = toolingProjects.map((p, originalPIdx) => ({
-
-        ...p,
-
-        originalPIdx,
-
-        activities: p.activities.map((a, originalAIdx) => ({
-
-            ...a,
-
-            originalAIdx,
-
-            teams: a.teams.map((t, originalTIdx) => ({...t, originalTIdx}))
-
-                   .filter(t => new Date(t.start).getFullYear() === selectedYear)
-
-        })).filter(a => a.teams.length > 0)
-
-    })).filter(p => p.activities.length > 0);
-
-
-
-    const filteredMaintenance = maintenanceLogs.filter(m => new Date(m.start).getFullYear() === selectedYear);
-
-
-
-    if (filteredToolingProjects.length === 0 && filteredMaintenance.length === 0) {
-
-        container.innerHTML = `<p style="text-align:center; padding:20px;">No projects or maintenance found for year ${selectedYear}.</p>`;
-
-        return;
-
-    }
-
-
-
-    // --- CÁLCULO DE RANGOS ---
-
+    // --- RANGOS DE FECHA ---
     let allDates = [today];
-
-    filteredToolingProjects.forEach(p => p.activities.forEach(a => a.teams.forEach(t => {
-
+    categorizedProjects.forEach(p => p.activities.forEach(a => a.teams.forEach(t => {
         allDates.push(new Date(t.start));
-
         let endD = new Date(t.start); endD.setDate(endD.getDate() + t.days);
-
         allDates.push(endD);
-
     })));
-
     filteredMaintenance.forEach(m => { allDates.push(new Date(m.start)); allDates.push(new Date(m.end)); });
 
-
-
-    let minDate = new Date(Math.min(...allDates)); minDate.setDate(minDate.getDate() - 15);
-
-    let maxDate = new Date(Math.max(...allDates)); maxDate.setDate(maxDate.getDate() + 45);
-
-
+    let minDate = new Date(Math.min(...allDates)); minDate.setDate(minDate.getDate() - 7);
+    let maxDate = new Date(Math.max(...allDates)); maxDate.setDate(maxDate.getDate() + 14);
 
     let htmlLabels = [];
-
     let upperLabels = [];
-
     const isDateShutdown = (d) => shutdownLogs.some(s => {
-
-        let sStart = new Date(s.start + "T00:00:00");
-
-        let sEnd = new Date(s.end + "T23:59:59");
-
-        return d >= sStart && d <= sEnd;
-
+        let sS = new Date(s.start + "T00:00:00"); let sE = new Date(s.end + "T23:59:59");
+        return d >= sS && d <= sE;
     });
 
-
-
-    // --- GENERACIÓN DE ESCALAS ---
-
+    // --- GENERAR ESCALAS ---
     if (scale === 'day') {
-
-        let currentWeekStr = "";
-
-        let count = 0;
-
+        let currentWeekStr = ""; let count = 0;
         let totalDays = Math.ceil((maxDate - minDate) / 86400000);
-
-        for(let i=0; i < totalDays; i++){
-
+        for (let i = 0; i < totalDays; i++) {
             let d = new Date(minDate); d.setDate(d.getDate() + i);
-
-            htmlLabels.push({l: d.getDate() + "/" + (d.getMonth() + 1), t: d.getTime() === today.getTime(), s: isDateShutdown(d)});
-
-           
-
-            let wn = getWeekData(d);
-
-            let weekKey = `CW ${wn.week} (${wn.year})`;
-
-
-
+            htmlLabels.push({ l: d.getDate() + "/" + (d.getMonth() + 1), t: d.toDateString() === today.toDateString(), s: isDateShutdown(d) });
+            let wn = getWeekData(d); let weekKey = `CW ${wn.week}`;
             if (weekKey !== currentWeekStr) {
-
-                if (currentWeekStr !== "") upperLabels[upperLabels.length-1].span = count;
-
+                if (currentWeekStr !== "") upperLabels[upperLabels.length - 1].span = count;
                 upperLabels.push({ label: weekKey, span: 1 });
-
                 currentWeekStr = weekKey; count = 1;
-
             } else { count++; }
-
         }
-
-        if(upperLabels.length > 0) upperLabels[upperLabels.length-1].span = count;
-
-
-
-    } else if (scale === 'week') {
-
+        if (upperLabels.length > 0) upperLabels[upperLabels.length - 1].span = count;
+    } else {
         let currentMonth = -1; let count = 0;
-
         let totalWeeks = Math.ceil((maxDate - minDate) / (86400000 * 7)) + 1;
-
-        for(let i=0; i < totalWeeks; i++){
-
+        for (let i = 0; i < totalWeeks; i++) {
             let d = new Date(minDate); d.setDate(d.getDate() + (i * 7));
-
             let wn = getWeekData(d);
-
-            htmlLabels.push({l: "CW-" + wn.week, t: today >= d && today < new Date(d.getTime() + (86400000 * 7)), s: isDateShutdown(d)});
-
+            htmlLabels.push({ l: "CW-" + String(wn.week).padStart(2, '0'), t: today >= d && today < new Date(d.getTime() + 604800000), s: isDateShutdown(d) });
             let mn = d.getMonth();
-
             if (mn !== currentMonth) {
-
-                if (currentMonth !== -1) upperLabels[upperLabels.length-1].span = count;
-
-                upperLabels.push({ label: d.toLocaleString('en', { month: 'long' }).toUpperCase() + " " + d.getFullYear(), span: 1 });
-
+                if (currentMonth !== -1) upperLabels[upperLabels.length - 1].span = count;
+                upperLabels.push({ label: d.toLocaleString('en', { month: 'short' }).toUpperCase(), span: 1 });
                 currentMonth = mn; count = 1;
-
             } else { count++; }
-
         }
-
-        if(upperLabels.length > 0) upperLabels[upperLabels.length-1].span = count;
-
-
-
-    } else if (scale === 'month') {
-
-        let currentYear = -1; let count = 0;
-
-        let totalMonths = ((maxDate.getFullYear() - minDate.getFullYear()) * 12 + (maxDate.getMonth() - minDate.getMonth()) + 2);
-
-        for(let i=0; i < totalMonths; i++){
-
-            let d = new Date(minDate.getFullYear(), minDate.getMonth() + i, 1);
-
-            htmlLabels.push({l: d.toLocaleString('en', {month: 'short'}) + " " + d.getFullYear().toString().substr(-2), t: today.getMonth() === d.getMonth() && today.getFullYear() === d.getFullYear(), s: false});
-
-            let yn = d.getFullYear();
-
-            if (yn !== currentYear) {
-
-                if (currentYear !== -1) upperLabels[upperLabels.length-1].span = count;
-
-                upperLabels.push({ label: yn, span: 1 });
-
-                currentYear = yn; count = 1;
-
-            } else { count++; }
-
-        }
-
-        if(upperLabels.length > 0) upperLabels[upperLabels.length-1].span = count;
-
+        if (upperLabels.length > 0) upperLabels[upperLabels.length - 1].span = count;
     }
 
-
-
-    // --- CONSTRUCCIÓN DEL HTML ---
-
-    let html = `<div class="gantt-grid"><div class="gantt-header-title">QM-T PROJECTS</div><div class="gantt-header-time">`;
-
-    html += `<div class="gantt-upper-header">`;
-
+    // --- CONSTRUCCIÓN HTML ---
+    if (document.getElementById('projectCount1')) {
+    document.getElementById('projectCount1').innerText = activeCount + doneCount;
+}
+    let html = `<div class="gantt-grid">
+        <div class="gantt-header-title" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 10px; background: var(--huf-red);">
+            <div style="font-weight: bold; font-size: 14px; color: white; letter-spacing: 1px;">QM-T PROJECTS</div>
+            <div style="display: flex; background: #34495e; border-radius: 20px; padding: 3px; width: 95%;">
+                <button onclick="setGanttStatusFilter('active')" style="flex: 1; border: none; border-radius: 17px; padding: 5px; cursor: pointer; font-size: 11px; font-weight: bold; transition: 0.3s; ${ganttStatusFilter === 'active' ? 'background: #f1c40f; color: black;' : 'background: transparent; color: white;'}">RUNNING (${activeCount})</button>
+                <button onclick="setGanttStatusFilter('done')" style="flex: 1; border: none; border-radius: 17px; padding: 5px; cursor: pointer; font-size: 11px; font-weight: bold; transition: 0.3s; ${ganttStatusFilter === 'done' ? 'background: #27ae60; color: black;' : 'background: transparent; color: white;'}">COMPLETED (${doneCount})</button>
+            </div>
+        </div>
+        <div class="gantt-header-time">
+            <div class="gantt-upper-header">`;
+    
     upperLabels.forEach(u => {
-
         let width = u.span * 70;
-
-        html += `<div class="gantt-upper-cell" style="width:${width}px; flex-basis:${width}px;">${u.label}</div>`;
-
+        html += `<div class="gantt-upper-cell" style="width:${width}px; min-width:${width}px; flex: 0 0 ${width}px; border-right: 1px solid #444;">${u.label}</div>`;
     });
-
+    
     html += `</div><div class="gantt-header-days">`;
-
-    htmlLabels.forEach(obj => html += `<div class="gantt-day-cell ${obj.t?'is-today':''} ${obj.s?'is-shutdown':''}"><div class="vertical-text">${obj.l}</div></div>`);
-
+    htmlLabels.forEach(obj => {
+        html += `<div class="gantt-day-cell ${obj.t ? 'is-today' : ''} ${obj.s ? 'is-shutdown' : ''}"><div class="vertical-text">${obj.l}</div></div>`;
+    });
     html += `</div></div>`;
 
-
-
-    // Mantenimiento
-
+    // --- BLOQUE MANTENIMIENTO ---
     if (filteredMaintenance.length > 0) {
-
-        html += `<div class="gantt-row"><div class="gantt-task-name" style="background:var(--maint-purple) !important; color:white;" onclick="toggleMaintenanceSection()"><span>${maintenanceCollapsed?'➕':'➖'} 🛠 EQUIPMENT UNDER MAINTENANCE</span></div><div class="gantt-bar-container" style="background:#e2d1f0;"></div></div>`;
-
+        html += `<div class="gantt-row"><div class="gantt-task-name" style="background:var(--maint-purple) !important; color:white;" onclick="toggleMaintenanceSection()"><span>${maintenanceCollapsed ? '➕' : '➖'} 🛠 MAINT.</span></div><div class="gantt-bar-container" style="background:#e2d1f0;"></div></div>`;
         if (!maintenanceCollapsed) {
-
             const maintByHim = {};
-
             filteredMaintenance.forEach(m => { if (!maintByHim[m.him]) maintByHim[m.him] = []; maintByHim[m.him].push(m); });
-
             for (const himName in maintByHim) {
-
-                html += `<div class="gantt-row"><div class="gantt-task-name" style="padding-left:25px; border-left: 5px solid var(--maint-purple);"><span>🔧 ${himName}</span></div><div class="gantt-bar-container">`;
-
+                html += `<div class="gantt-row"><div class="gantt-task-name" style="padding-left:25px; border-left: 15px solid var(--maint-purple);"><span>🔧 ${himName}</span></div><div class="gantt-bar-container">`;
                 htmlLabels.forEach(() => { html += `<div class="gantt-bg-cell"></div>`; });
-
                 maintByHim[himName].forEach(m => {
-
-                    let mStart = new Date(m.start + "T00:00:00"); let mEnd = new Date(m.end + "T23:59:59");
-
-                    let mDays = Math.max(1, Math.ceil((mEnd - mStart) / 86400000));
-
-                    let div = scale==='day'?1:scale==='week'?7:scale==='month'?30:365;
-
+                    let mStart = new Date(m.start + "T00:00:00");
+                    let mDays = Math.max(1, Math.ceil((new Date(m.end + "T23:59:59") - mStart) / 86400000));
+                    let div = scale === 'day' ? 1 : 7;
                     let lp = (((mStart - minDate) / 86400000) / div) * (100 / htmlLabels.length);
-
                     let ws = (mDays / div) * (100 / htmlLabels.length);
-
-                    html += `<div class="gantt-bar" style="left:${lp}%; width:${ws}%; height:80%; top:10%; background:var(--maint-purple); color:white; border: 1px solid #333;" title="${m.desc}"><span class="floating-label">⚠️ MAINT: ${m.desc}</span></div>`;
-
+                    html += `<div class="gantt-bar" style="left:${lp}%; width:${ws}%; height:80%; top:10%; background:var(--maint-purple); color:white; border: 1px solid #333;"><span class="floating-label">⚠️ ${m.desc}</span></div>`;
                 });
-
                 html += `</div></div>`;
-
             }
-
         }
-
     }
 
-
-
-    // Proyectos
-
-    filteredToolingProjects.forEach((proj) => {
-
+    // --- PROYECTOS (ROJO HUF CON BORDE DE ESTADO AJUSTADO) ---
+    projectsToDisplay.forEach(proj => {
         const pIdx = proj.originalPIdx;
-
-        const matchesProj = proj.name.toLowerCase().includes(searchTerm);
-
-        if(searchTerm && !matchesProj) return;
-
-
-
-        html += `<div class="gantt-row"><div class="gantt-task-name" style="background:#555 !important; color:white;"><span onclick="toggleProject(${pIdx})">${proj.collapsed?'➕':'➖'} 📁 ${proj.name}</span><div class="action-btns"><button class="btn-icon add" onclick="copyTaskToInputs('${proj.name.replace(/'/g, "\\'")}', '')">➕</button><button class="btn-icon" onclick="editProject1(${pIdx})">✏️</button><button class="btn-icon" onclick="deleteProject1(${pIdx})">🗑️</button></div></div><div class="gantt-bar-container" style="background:#666;"></div></div>`;
-
-       
+        const accentColor = proj.isDone ? "#27ae60" : "#f1c40f";
+        
+        html += `<div class="gantt-row">
+            <div class="gantt-task-name" style="background: var(--huf-dark)!important; color: white; border-left: 15px solid ${accentColor}; padding-left: 10px;">
+                <span onclick="toggleProject(${pIdx})" style="cursor:pointer; font-weight:bold; font-size: 13px;">
+                    ${proj.collapsed ? '➕' : '➖'} ${proj.name}
+                </span>
+                <div class="action-btns">
+                    <button class="btn-icon add" onclick="copyTaskToInputs('${proj.name.replace(/'/g, "\\'")}', '')">➕</button>
+                    <button class="btn-icon" style="color:white;" onclick="editProject1(${pIdx})">✏️</button>
+                    <button class="btn-icon" style="color:white;" onclick="deleteProject1(${pIdx})">🗑️</button>
+                </div>
+            </div>
+            <div class="gantt-bar-container" style="background:var(--huf-dark);"></div>
+        </div>`;
 
         if (!proj.collapsed) {
-
-            proj.activities.forEach((act) => {
-
+            proj.activities.forEach(act => {
                 const aIdx = act.originalAIdx;
-
-                html += `<div class="gantt-row"><div class="gantt-task-name" style="padding-left:5px; flex-direction:column; align-items:flex-start;"><div style="display:flex; justify-content:space-between; width:100%;"><span>🔹 ${act.name}</span><div class="action-btns"><button class="btn-icon add" onclick="copyTaskToInputs('${proj.name.replace(/'/g, "\\'")}', '${act.name.replace(/'/g, "\\'")}')">➕</button><button class="btn-icon" onclick="editActivity(${pIdx}, ${aIdx})">✏️</button><button class="btn-icon" onclick="deleteActivity(${pIdx}, ${aIdx})">🗑️</button></div></div></div><div class="gantt-bar-container">`;
-
-                htmlLabels.forEach(obj => { html += `<div class="gantt-bg-cell ${obj.s?'is-shutdown-bg':''}"></div>`; });
-
-                act.teams.forEach((t) => {
-
-                    const tIdx = t.originalTIdx;
-
-                    let div = scale==='day'?1:scale==='week'?7:scale==='month'?30:365;
-
-                    let lp = (((new Date(t.start)-minDate)/86400000)/div)*(100/htmlLabels.length);
-
-                    let ws = (t.days/div)*(100/htmlLabels.length);
-
-                    let h = 100/act.teams.length;
-
-                    let dotClass = t.priority === 'high' ? 'dot-high' : (t.priority === 'med' ? 'dot-med' : 'dot-low');
-
-                    html += `<div class="gantt-bar" oncontextmenu="showBarContextMenu(${pIdx}, ${aIdx}, ${tIdx}, event)" style="left:${lp}%; width:${ws}%; height:${h-4}%; top:${h*act.teams.indexOf(t)}%; background:${getPastelColor(t.typeId)};"><span class="floating-label"><span class="priority-dot ${dotClass}"></span>${t.name}</span></div>`;
-
+                html += `<div class="gantt-row">
+                    <div class="gantt-task-name" style="padding-left:15px; background:white; border-left: 15px solid transparent;">
+                        <div style="display:flex; justify-content:space-between; width:100%;">
+                            <span style="font-size: 12px;">🔹 ${act.name}</span>
+                            <div class="action-btns">
+                                <button class="btn-icon add" onclick="copyTaskToInputs('${proj.name.replace(/'/g, "\\'")}', '${act.name.replace(/'/g, "\\'")}')">➕</button>
+                                <button class="btn-icon" onclick="editActivity(${pIdx}, ${aIdx})">✏️</button>
+                                <button class="btn-icon" onclick="deleteActivity(${pIdx}, ${aIdx})">🗑️</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="gantt-bar-container">`;
+                htmlLabels.forEach(obj => { html += `<div class="gantt-bg-cell ${obj.s ? 'is-shutdown-bg' : ''}"></div>`; });
+                act.teams.forEach(t => {
+                    let div = scale === 'day' ? 1 : 7;
+                    let lp = (((new Date(t.start) - minDate) / 86400000) / div) * (100 / htmlLabels.length);
+                    let ws = (t.days / div) * (100 / htmlLabels.length);
+                    let h = 100 / act.teams.length;
+                    html += `<div class="gantt-bar" oncontextmenu="showBarContextMenu(${pIdx}, ${aIdx}, ${t.originalTIdx}, event)" 
+                             style="left:${lp}%; width:${ws}%; height:${h - 4}%; top:${h * act.teams.indexOf(t)}%; background:${getPastelColor(t.typeId)};">
+                        <span class="floating-label">${t.name}</span>
+                    </div>`;
                 });
-
                 html += `</div></div>`;
-
             });
-
         }
-
     });
 
-
-
     container.innerHTML = html + "</div>";
-
-    setTimeout(() => { if(typeof syncFloatingLabels === "function") syncFloatingLabels(); }, 150);
-
+    setTimeout(() => { if (typeof syncFloatingLabels === "function") syncFloatingLabels(); }, 150);
 }
 
 function renderAllStats() {
@@ -2514,7 +2427,6 @@ function analizarMantenimiento() {
         buildG('fYearBox', years, 'years', true);
         buildG('fTypeBox', types, 'types', false);
     }
-
     function buildG(containerId, items, key, isGrid) {
         const box = document.getElementById(containerId);
         let html = `<div class="${isGrid ? 'filter-grid-2' : 'filter-grid-list'}">`;
@@ -2693,7 +2605,7 @@ function updateUI() {
                 <td class="sticky-col c5">${p.comments || ""}</td>
                 <td class="sticky-col c6">${p.po || ""}</td>
                 <td class="sticky-col c7">${p.priority}</td>
-                <td class="sticky-col c8">${locVal}</td>`;
+                <td class="sticky-col c8">${p.location}</td>`;
             
             let yearlyTotals = {}; 
             let grandTotal = 0;
@@ -2781,13 +2693,7 @@ function updateUI() {
         });
     }
 }
-function toggleFilterMenu(filterType) {
-    // Aquí debería abrirse tu modal o lista de checkboxes
-    // Ejemplo simplificado de lo que debe pasar cuando el usuario selecciona una opción:
-    // 1. Agregas el valor al arreglo: selF.priorities.push("RFC Project");
-    // 2. LLAMAS A UPDATEUI para que la tabla se refresque:
-    updateUI(); 
-}
+
 function saveData() {
     const name = document.getElementById('projectName').value.trim(); 
     const number = document.getElementById('projectNumber').value.trim(); 
@@ -2877,12 +2783,39 @@ function saveData() {
         });
     }
 }
+// Función para calcular el desplazamiento de meses basado en el año seleccionado
 function getYearOffset(selectedYear) {
     const currentYear = new Date().getFullYear();
-    const startYear = currentYear - 2; // El año 1 de los 60 meses
+    const startYear = currentYear - 2; // El año inicial de la escala de 60 meses
     const diff = selectedYear - startYear;
     return diff * 12; 
 }
+
+// Función para refrescar los 12 inputs de meses según el año actual del formulario
+function refreshMonthlyInputs() {
+    if (editId === null) return;
+    
+    const p = projectLogs.find(x => x.id === editId);
+    if (!p) return;
+
+    const selectedYear = parseInt(document.getElementById('projectYear').value);
+    const offset = getYearOffset(selectedYear);
+    const inputs = document.querySelectorAll('.month-input');
+    const checks = document.querySelectorAll('.month-check');
+
+    for (let i = 0; i < 12; i++) {
+        // Actualizar horas
+        if (inputs[i]) {
+            inputs[i].value = (p.monthlyHours && p.monthlyHours[offset + i]) ? p.monthlyHours[offset + i] : 0;
+        }
+        // Actualizar checkboxes
+        if (checks[i]) {
+            checks[i].checked = (p.selectedMonths && p.selectedMonths[offset + i]) || false;
+        }
+    }
+}
+
+// Función principal de edición modificada para incluir el listener
 function editProject(id) {
     const p = projectLogs.find(x => x.id === id); 
     if (!p) return;
@@ -2897,31 +2830,16 @@ function editProject(id) {
     document.getElementById('projectPO').value = p.po || ""; 
     document.getElementById('priority').value = p.priority;
 
-    // Lógica de la "Lupa": Extraer 12 meses de los 60
-    const offset = getYearOffset(parseInt(p.year));
-    const inputs = document.querySelectorAll('.month-input');
-    
-    // Solo llenamos 12 inputs con la parte correspondiente del array de 60
-    for (let i = 0; i < 12; i++) {
-        if (inputs[i]) {
-            // Buscamos en el array global p.monthlyHours[offset + i]
-            inputs[i].value = (p.monthlyHours && p.monthlyHours[offset + i]) ? p.monthlyHours[offset + i] : 0;
-        }
-    }
-
-    // Manejo de checkboxes (si aplica para los 12 meses visibles)
-    const checks = document.querySelectorAll('.month-check');
-    if (p.selectedMonths && checks.length > 0) {
-        for (let i = 0; i < 12; i++) {
-            if (checks[i]) {
-                checks[i].checked = p.selectedMonths[offset + i] || false;
-            }
-        }
-    }
-
     editId = id; 
-    document.getElementById('btnSave').innerText = "UPDATddE"; showModule('main-app');
-    
+
+    // Ejecutar el llenado inicial de meses
+    refreshMonthlyInputs();
+
+    // IMPORTANTE: Escuchar cambios en el selector de año para actualizar las horas en tiempo real
+    document.getElementById('projectYear').onchange = refreshMonthlyInputs;
+
+    document.getElementById('btnSave').innerText = "UPDATE"; 
+    showModule('main-app');
 }
     
     function showCapacityEditor() { 
