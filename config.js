@@ -1,6 +1,7 @@
 window.usuarios_password = [
     { user: "oamador", pass: "1234", nombre: "Omar Amador" },
     { user: "alara", pass: "chtm", nombre: "Angela Lara" },
+	 { user: "oramirez", pass: "Ramirez#12", nombre: "Omar Ramirez" },
     { user: "lmorales", pass: "luis123", nombre: "Luis Morales" }
 ];
 
@@ -42,4 +43,5 @@ window.dispositivos_config = {
     "3": ["HIM 3.1", "HIM 3.2", "HIM 3.3"],
     "4": ["HIM 4.1", "HIM 4.2", "HIM 4.3", "HIM 4.4"],
     "5": ["HIM 5.1"]
+
 };
