@@ -78,12 +78,14 @@
     --RFC: #f3ef0ccb; 
     --Customer: #0c70f3c9; 
 
-    --loc-mexico: #37997a;
+    --loc-mexico1: #37997a;
+      --loc-mexico: #27ae60;
+    
     --loc-brazil: #7b2cbf; 
     --loc-usa: #002868;
     --loc-germany: #ffce00;
     --loc-china: #de2910;
-    --loc-india: #ff9933;
+    --loc-india: #f1c40f;
     --loc-spare: #555;
             
         }
@@ -813,7 +815,52 @@ thead tr th.sticky-col {
 }
         
 
+/* Contenedor del Switch */
+.switch-fc {
+    position: relative;
+    display: inline-block;
+    width: 32px;
+    height: 18px;
+}
 
+/* Ocultar checkbox original */
+.switch-fc input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+/* El Slider (fondo) */
+.slider-fc {
+    position: absolute;
+    cursor: pointer;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: #555;
+    transition: .3s;
+    border-radius: 20px;
+}
+
+/* El círculo blanco */
+.slider-fc:before {
+    position: absolute;
+    content: "";
+    height: 12px;
+    width: 12px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: .3s;
+    border-radius: 50%;
+}
+
+/* Color cuando está activo (Forecast) */
+input:checked + .slider-fc {
+    background-color: #f1c40f; /* Amarillo vibrante */
+}
+
+input:checked + .slider-fc:before {
+    transform: translateX(14px);
+}
     </style>
 
     
@@ -834,7 +881,7 @@ onkeydown="manejarTeclado(event)" onclick="hideContextMenu()">
 <div id="mainCard" class="car card-login">
     <div class="logo-container">
         <img src="logo.png" alt="HUF Logo" onerror="this.style.display='none';">
-        <p class="logo-subtitle">Developed By Omar Amador 1.6</p>
+        <p class="logo-subtitle">Developed By Omar Amador 1.7</p>
     </div>
 
     <div id="viewLogin" class="view-layer active-view"class="card">
@@ -1872,6 +1919,52 @@ function setGanttStatusFilter(status) {
     renderGantt(); 
 }
 
+function toggleTBD(pIdx) {
+    const proj = toolingProjects[pIdx];
+    const seraFC = !proj.isTBD; // El estado al que va a cambiar
+
+    // Personalizamos el mensaje según si se activa o se desactiva
+    const titulo = seraFC ? 'Move to Forecast' : 'Return to Active';
+    const mensaje = seraFC 
+        ? `Are you sure you want to send "${proj.name}" to FC?` 
+        : `Are you sure you want to remove "${proj.name}" from FC and return it to the active list?`;
+
+    Swal.fire({
+        title: titulo,
+        text: mensaje,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: seraFC ? '#aa1c25' : '#27ae60', // Rojo si va a FC, Verde si regresa
+        cancelButtonColor: '#555',
+        confirmButtonText: 'Yes, confirm',
+        cancelButtonText: 'Cancel'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Si el usuario confirma, ejecutamos el cambio y guardamos en Firebase
+            ejecutarCambioTBD(pIdx);
+        } else {
+            // Si cancela, redibujamos para que el checkbox regrese a su estado visual real
+            renderGantt();
+        }
+    });
+}
+
+// Esta función aplica el cambio y sincroniza con Firebase Realtime Database
+function ejecutarCambioTBD(pIdx) {
+    // 1. Cambiamos el valor en el array local
+    toolingProjects[pIdx].isTBD = !toolingProjects[pIdx].isTBD;
+    
+    // 2. Persistencia en Firebase:
+    // Al llamar a guardarCambios(), se sube todo el array actualizado a Realtime Database
+    if (typeof guardarCambios === "function") {
+        guardarCambios();
+    } else {
+        console.error("No se encontró la función guardarCambios() para Firebase.");
+    }
+    
+    // 3. Refrescamos el Gantt para mover el proyecto de pestaña
+    renderGantt();
+}
 function renderGantt() {
     const container = document.getElementById('ganttContainer');
     if (!container) return;
@@ -1914,25 +2007,35 @@ function renderGantt() {
         return matchesMaint && new Date(m.start).getFullYear() === selectedYear;
     });
 
-    // --- CLASIFICACIÓN Y CONTEO (Aquí se gestionan los contadores) ---
+    // --- CLASIFICACIÓN Y CONTEO (SOPORTE FIREBASE) ---
     let activeCount = 0;
     let doneCount = 0;
+    let tbdCount = 0;
+
     const categorizedProjects = filteredToolingProjects.map(p => {
         let lastDate = new Date(0);
         p.activities.forEach(a => a.teams.forEach(t => {
             let endD = new Date(t.start); endD.setDate(endD.getDate() + t.days);
             if (endD > lastDate) lastDate = endD;
         }));
+        
         const isDone = lastDate < today;
-        if (isDone) doneCount++; else activeCount++;
-        return { ...p, isDone };
+        const isTBD = p.isTBD || false; // Si Firebase no tiene el campo, por defecto es false
+
+        if (isTBD) tbdCount++;
+        else if (isDone) doneCount++; 
+        else activeCount++;
+
+        return { ...p, isDone, isTBD };
     });
 
-    const projectsToDisplay = categorizedProjects.filter(p => 
-        ganttStatusFilter === 'done' ? p.isDone : !p.isDone
-    );
+    const projectsToDisplay = categorizedProjects.filter(p => {
+        if (ganttStatusFilter === 'tbd') return p.isTBD;
+        if (ganttStatusFilter === 'done') return p.isDone && !p.isTBD;
+        return !p.isDone && !p.isTBD;
+    });
 
-    // --- RANGOS DE FECHA ---
+    // --- RANGOS DE FECHA Y ESCALAS ---
     let allDates = [today];
     categorizedProjects.forEach(p => p.activities.forEach(a => a.teams.forEach(t => {
         allDates.push(new Date(t.start));
@@ -1951,7 +2054,6 @@ function renderGantt() {
         return d >= sS && d <= sE;
     });
 
-    // --- GENERAR ESCALAS ---
     if (scale === 'day') {
         let currentWeekStr = ""; let count = 0;
         let totalDays = Math.ceil((maxDate - minDate) / 86400000);
@@ -1983,16 +2085,19 @@ function renderGantt() {
         if (upperLabels.length > 0) upperLabels[upperLabels.length - 1].span = count;
     }
 
-    // --- CONSTRUCCIÓN HTML ---
+    // --- ACTUALIZAR CONTADOR SUPERIOR ---
     if (document.getElementById('projectCount1')) {
-    document.getElementById('projectCount1').innerText = activeCount + doneCount;
-}
+        document.getElementById('projectCount1').innerText = activeCount + doneCount + tbdCount;
+    }
+
+    // --- CONSTRUCCIÓN HTML ---
     let html = `<div class="gantt-grid">
         <div class="gantt-header-title" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 10px; background: var(--huf-red);">
             <div style="font-weight: bold; font-size: 14px; color: white; letter-spacing: 1px;">QM-T PROJECTS</div>
             <div style="display: flex; background: #34495e; border-radius: 20px; padding: 3px; width: 95%;">
-                <button onclick="setGanttStatusFilter('active')" style="flex: 1; border: none; border-radius: 17px; padding: 5px; cursor: pointer; font-size: 11px; font-weight: bold; transition: 0.3s; ${ganttStatusFilter === 'active' ? 'background: #f1c40f; color: black;' : 'background: transparent; color: white;'}">RUNNING (${activeCount})</button>
-                <button onclick="setGanttStatusFilter('done')" style="flex: 1; border: none; border-radius: 17px; padding: 5px; cursor: pointer; font-size: 11px; font-weight: bold; transition: 0.3s; ${ganttStatusFilter === 'done' ? 'background: #27ae60; color: black;' : 'background: transparent; color: white;'}">COMPLETED (${doneCount})</button>
+                <button onclick="setGanttStatusFilter('active')" style="flex: 1; border: none; border-radius: 17px; padding: 5px; cursor: pointer; font-size: 10px; font-weight: bold; transition: 0.3s; ${ganttStatusFilter === 'active' ? 'background: #f1c40f; color: black;' : 'background: transparent; color: white;'}">RUNNING (${activeCount})</button>
+                <button onclick="setGanttStatusFilter('done')" style="flex: 1; border: none; border-radius: 17px; padding: 5px; cursor: pointer; font-size: 10px; font-weight: bold; transition: 0.3s; ${ganttStatusFilter === 'done' ? 'background: #27ae60; color: white;' : 'background: transparent; color: white;'}">COMPLETED (${doneCount})</button>
+                <button onclick="setGanttStatusFilter('tbd')" style="flex: 1; border: none; border-radius: 17px; padding: 5px; cursor: pointer; font-size: 10px; font-weight: bold; transition: 0.3s; ${ganttStatusFilter === 'tbd' ? 'background: var(--TS); color: black;' : 'background: transparent; color: white;'}">FORECAST (${tbdCount})</button>
             </div>
         </div>
         <div class="gantt-header-time">
@@ -2009,47 +2114,33 @@ function renderGantt() {
     });
     html += `</div></div>`;
 
-    // --- BLOQUE MANTENIMIENTO ---
-    if (filteredMaintenance.length > 0) {
-        html += `<div class="gantt-row"><div class="gantt-task-name" style="background:var(--maint-purple) !important; color:white;" onclick="toggleMaintenanceSection()"><span>${maintenanceCollapsed ? '➕' : '➖'} 🛠 MAINT.</span></div><div class="gantt-bar-container" style="background:#e2d1f0;"></div></div>`;
-        if (!maintenanceCollapsed) {
-            const maintByHim = {};
-            filteredMaintenance.forEach(m => { if (!maintByHim[m.him]) maintByHim[m.him] = []; maintByHim[m.him].push(m); });
-            for (const himName in maintByHim) {
-                html += `<div class="gantt-row"><div class="gantt-task-name" style="padding-left:25px; border-left: 15px solid var(--maint-purple);"><span>🔧 ${himName}</span></div><div class="gantt-bar-container">`;
-                htmlLabels.forEach(() => { html += `<div class="gantt-bg-cell"></div>`; });
-                maintByHim[himName].forEach(m => {
-                    let mStart = new Date(m.start + "T00:00:00");
-                    let mDays = Math.max(1, Math.ceil((new Date(m.end + "T23:59:59") - mStart) / 86400000));
-                    let div = scale === 'day' ? 1 : 7;
-                    let lp = (((mStart - minDate) / 86400000) / div) * (100 / htmlLabels.length);
-                    let ws = (mDays / div) * (100 / htmlLabels.length);
-                    html += `<div class="gantt-bar" style="left:${lp}%; width:${ws}%; height:80%; top:10%; background:var(--maint-purple); color:white; border: 1px solid #333;"><span class="floating-label">⚠️ ${m.desc}</span></div>`;
-                });
-                html += `</div></div>`;
-            }
-        }
-    }
-
-    // --- PROYECTOS (ROJO HUF CON BORDE DE ESTADO AJUSTADO) ---
+// --- PROYECTOS ---
     projectsToDisplay.forEach(proj => {
         const pIdx = proj.originalPIdx;
-        const accentColor = proj.isDone ? "#27ae60" : "#f1c40f";
+        let accentColor = proj.isTBD ? "var(--TS)" : (proj.isDone ? "var(--loc-mexico)" : "var(--loc-india)");
         
         html += `<div class="gantt-row">
-            <div class="gantt-task-name" style="background: var(--huf-dark)!important; color: white; border-left: 15px solid ${accentColor}; padding-left: 10px;">
+            <div class="gantt-task-name" style="background: var(--huf-dark)!important; color: white; border-left: 15px solid ${accentColor}; padding-left: 10px; display: flex; justify-content: space-between; align-items: center;">
                 <span onclick="toggleProject(${pIdx})" style="cursor:pointer; font-weight:bold; font-size: 13px;">
                     ${proj.collapsed ? '➕' : '➖'} ${proj.name}
                 </span>
-                <div class="action-btns">
-                    <button class="btn-icon add" onclick="copyTaskToInputs('${proj.name.replace(/'/g, "\\'")}', '')">➕</button>
-                    <button class="btn-icon" style="color:white;" onclick="editProject1(${pIdx})">✏️</button>
-                    <button class="btn-icon" style="color:white;" onclick="deleteProject1(${pIdx})">🗑️</button>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div style="font-size: 10px; color: #ccc; display: flex; align-items: center; gap: 6px; background: rgba(0,0,0,0.3); padding: 2px 8px; border-radius: 10px;">
+                        <span style="font-weight: bold; letter-spacing: 0.5px;">FC</span>
+                        <label class="switch-fc">
+                            <input type="checkbox" ${proj.isTBD ? 'checked' : ''} onchange="toggleTBD(${pIdx})">
+                            <span class="slider-fc"></span>
+                        </label>
+                    </div>
+                    <div class="action-btns">
+                        <button class="btn-icon add" onclick="copyTaskToInputs('${proj.name.replace(/'/g, "\\'")}', '')">➕</button>
+                        <button class="btn-icon" style="color:white;" onclick="editProject1(${pIdx})">✏️</button>
+                        <button class="btn-icon" style="color:white;" onclick="deleteProject1(${pIdx})">🗑️</button>
+                    </div>
                 </div>
             </div>
             <div class="gantt-bar-container" style="background:var(--huf-dark);"></div>
         </div>`;
-
         if (!proj.collapsed) {
             proj.activities.forEach(act => {
                 const aIdx = act.originalAIdx;
@@ -2071,8 +2162,9 @@ function renderGantt() {
                     let lp = (((new Date(t.start) - minDate) / 86400000) / div) * (100 / htmlLabels.length);
                     let ws = (t.days / div) * (100 / htmlLabels.length);
                     let h = 100 / act.teams.length;
+                    let barOpacity = proj.isTBD ? "0.6" : "1";
                     html += `<div class="gantt-bar" oncontextmenu="showBarContextMenu(${pIdx}, ${aIdx}, ${t.originalTIdx}, event)" 
-                             style="left:${lp}%; width:${ws}%; height:${h - 4}%; top:${h * act.teams.indexOf(t)}%; background:${getPastelColor(t.typeId)};">
+                             style="left:${lp}%; width:${ws}%; height:${h - 4}%; top:${h * act.teams.indexOf(t)}%; background:${getPastelColor(t.typeId)}; opacity:${barOpacity};">
                         <span class="floating-label">${t.name}</span>
                     </div>`;
                 });
@@ -3484,6 +3576,28 @@ function exportarImpactoPDF(type) {
         const fileTime = timeString.replace(/:/g, '-');
         doc.save(`HUF_${type.toUpperCase()}_${selectedYear}_${fileTime}.pdf`);
     }
+    // Variable para rastrear si el estado global actual es expandido o colapsado
+let allExpanded = true; 
+
+document.addEventListener('keydown', function(event) {
+    // Verifica si la tecla presionada es 'E' y si Ctrl está activo
+    if (event.ctrlKey && (event.key === 'e' || event.key === 'E')) {
+        event.preventDefault(); // Evita funciones por defecto del navegador
+        
+        // Cambiamos el estado global
+        allExpanded = !allExpanded;
+
+        // Recorremos todos los proyectos y aplicamos el nuevo estado
+        toolingProjects.forEach(proj => {
+            proj.collapsed = !allExpanded;
+        });
+
+        // Refrescamos el Gantt para mostrar los cambios
+        renderGantt();
+        
+        console.log(allExpanded ? "Proyectos expandidos" : "Proyectos colapsados");
+    }
+});
 </script>
 </body>
 </html>
