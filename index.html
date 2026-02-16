@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <title>HUF System Hub</title>
 
-
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
   <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
@@ -24,6 +24,7 @@
         :root { 
             --huf-red: #aa1c25; 
             --huf-dark: #555; 
+           --huf-dark1: #d8d8d8; 
             --today-blue: #00ff4c; 
             --success-green: #28a745; 
             --warning-orange: #ffc107; 
@@ -269,12 +270,12 @@
 .gantt-header-title { background: var(--huf-red); color: white; padding: 10px; font-weight: bold; position: sticky; left: 0; top: 0; z-index: 110; border-right: 2px solid #ddd; display: flex; align-items: center; }
         
  .gantt-header-time { display: flex; flex-direction: column; position: sticky; top: 0; z-index: 100; }
- .gantt-upper-header { display: flex; height: 30px; background: var(--huf-red); color: #ffffff; font-size: 11px; font-weight: bold; align-items: center; border-bottom: 1px solid #aaa; }
+ .gantt-upper-header { display: flex; height: 30px; background: var(--huf-dark1); color: #000000; font-size: 11px; font-weight: bold; align-items: center; border-bottom: 1px solid #aaa; }
 .gantt-upper-cell { flex-shrink: 0; text-align: center; border-right: 10px solid  var(--huf-dark); overflow: hidden; white-space: nowrap; }
         
- .gantt-header-days { display: flex; background: var(--huf-red); color: white; height: 70px; }
+ .gantt-header-days { display: flex; background: var(--huf-dark); color: white; height: 70px; }
  .gantt-day-cell { flex: 1 0 70px; min-width: 70px; border-right: 1px solid #aaa; display: flex; align-items: center; justify-content: center; position: relative; }
- .gantt-day-cell.is-today { background-color: var(--huf-orange) !important; color: white; }
+ .gantt-day-cell.is-today { background-color: var(--loc-mexico) !important; color: white; }
 .gantt-day-cell.is-shutdown { background-color: #ffcccc !important; color: #cc0000 !important; border-right: 1px solid #ff0000; }
         
  .vertical-text { writing-mode: vertical-rl; transform: rotate(-90deg); white-space: nowrap; font-size: 14px; font-weight: bold;letter-spacing: 1px; }
@@ -874,14 +875,14 @@ input:checked + .slider-fc:before {
 onkeydown="manejarTeclado(event)" onclick="hideContextMenu()">
 
 <div id="customContextMenu">
-    <div class="menu-item" id="menuEditBtn">✏️ Edit Weeks</div>
-    <div class="menu-item delete" id="menuDeleteBtn" style="border-top: 1px solid #eee; color: red;">🗑️ DELETE</div>
+    <div class="menu-item" id="menuEditBtn"><i class="fa-solid fa-pen-to-square"></i> Edit Weeks</div>
+    <div class="menu-item delete" id="menuDeleteBtn" style="border-top: 1px solid #eee; color: red;"><i class="fa-solid fa-trash-can"></i> DELETE</div>
 </div>
 
 <div id="mainCard" class="car card-login">
     <div class="logo-container">
         <img src="logo.png" alt="HUF Logo" onerror="this.style.display='none';">
-        <p class="logo-subtitle">Developed By Omar Amador 1.7</p>
+        <p class="logo-subtitle">Developed By Omar Amador 1.8</p>
     </div>
 
     <div id="viewLogin" class="view-layer active-view"class="card">
@@ -927,9 +928,9 @@ onkeydown="manejarTeclado(event)" onclick="hideContextMenu()">
     <div class="tooling-input-bar">
             <div style="flex:1;"><label style="display: block; text-align: center; font-size: 13px ">Shutdown Start Date</label><input type="date" id="shutStart" ondblclick="this.showPicker()"></div>
             <div style="flex:1;"><label style="display: block; text-align: center; font-size: 13px ">Shutdown End Date</label><input type="date" id="shutEnd" ondblclick="this.showPicker()"></div>
-            <button onclick="analizarShutdown()" style="background:var(--huf-red); color:white; border:none; padding:10px 20px; border-radius:6px; cursor:pointer; font-weight:bold; height:38px;">🔍 ANALYZE</button>
-            <button onclick="setShutdown()" style="background:var(--huf-dark); color:white; border:none; padding:10px 20px; border-radius:6px; cursor:pointer; font-weight:bold; height:38px;">💾 SCHEDULE</button>
-            <button onclick="exportarImpactoPDF('shutdown')" style="background:#4164a5; color:white; border:none; padding:10px 20px; border-radius:6px; cursor:pointer; font-weight:bold; height:38px;">📥 EXPORT PDF</button>
+            <button onclick="analizarShutdown()" style="background:var(--huf-red); color:white; border:none; padding:10px 20px; border-radius:6px; cursor:pointer; font-weight:bold; height:38px;"><i class="fa-solid fa-magnifying-glass"></i> ANALYZE</button>
+            <button onclick="setShutdown()" style="background:var(--huf-dark); color:white; border:none; padding:10px 20px; border-radius:6px; cursor:pointer; font-weight:bold; height:38px;"><i class="fa-solid fa-timeline"></i> SCHEDULE</button>
+            <button onclick="exportarImpactoPDF('shutdown')" style="background:#4164a5; color:white; border:none; padding:10px 20px; border-radius:6px; cursor:pointer; font-weight:bold; height:38px;"><i class="fa-solid fa-file-export"></i> EXPORT PDF</button>
         </div>
 
    <div style="position: relative; margin: 2% auto; width: 100%; max-width: 4500px; background-color: #f9f9f9; padding: 20px; border-radius: 12px; box-shadow: 0 5px 30px rgba(0,0,0,0.5); box-sizing: border-box;">
@@ -1019,11 +1020,11 @@ onkeydown="manejarTeclado(event)" onclick="hideContextMenu()">
         </div>
         
     
-            <button onclick="analizarMantenimiento()" style="background:var(--huf-red); color:white; border:none; padding:10px 20px; border-radius:6px; cursor:pointer; font-weight:bold; height:38px;">🔍 ANALYZE
+            <button onclick="analizarMantenimiento()" style="background:var(--huf-red); color:white; border:none; padding:10px 20px; border-radius:6px; cursor:pointer; font-weight:bold; height:38px;"><i class="fa-solid fa-magnifying-glass"></i> ANALYZE
             </button>
-            <button onclick="setMaintenance()" style="background:var(--huf-dark); color:white; border:none; padding:10px 20px; border-radius:6px; cursor:pointer; font-weight:bold; height:38px;">💾 SCHEDULE
+            <button onclick="setMaintenance()" style="background:var(--huf-dark); color:white; border:none; padding:10px 20px; border-radius:6px; cursor:pointer; font-weight:bold; height:38px;"><i class="fa-solid fa-timeline"></i>  SCHEDULE
             </button>
-            <button onclick="exportarImpactoPDF('maintenance')"  style="background:#4164a5; color:white; border:none; padding:10px 20px; border-radius:6px; cursor:pointer; font-weight:bold; height:38px;">📥 EXPORT PDF</button>
+            <button onclick="exportarImpactoPDF('maintenance')"  style="background:#4164a5; color:white; border:none; padding:10px 20px; border-radius:6px; cursor:pointer; font-weight:bold; height:38px;"><i class="fa-solid fa-file-export"></i> EXPORT PDF</button>
       
     </div>
    <div style="position: relative; margin: 2% auto; width: 100%; max-width: 4500px; background-color: #f9f9f9; padding: 20px; border-radius: 12px; box-shadow: 0 5px 30px rgba(0,0,0,0.5); box-sizing: border-box;">
@@ -1115,17 +1116,17 @@ onkeydown="manejarTeclado(event)" onclick="hideContextMenu()">
     
     <div style="display:flex; gap:8px;">
 <div class="btn-tool" style="--bg-color: #2c3e50; --hover-color: #34495e; width: auto; padding: 0 15px; cursor: default; max-height: 30px; display: flex; align-items: center; justify-content: center;">
-    PROJECTS LOADED: <span id="projectCount1" style="font-size: 18px;margin-left: 5px; color: #0cda16;">0</span>
+    LOADED: <span id="projectCount1" style="font-size: 18px;margin-left: 5px; color: #0cda16;">0</span>
 </div>
-        <button class="btn-tool" style="--bg-color: #3498db; --hover-color: #2980b9;" onclick="toggleAllProjects(true)"> <span>➕</span> EXPAND ALL </button>
-        <button class="btn-tool" style="--bg-color: #95a5a6; --hover-color: #7f8c8d;" onclick="toggleAllProjects(false)"> <span>➖</span> COLLAPSE ALL </button>
-        <button class="btn-tool" style="--bg-color: #e67e22; --hover-color: #d35400;" onclick="centerToday()"> <span>🎯</span> CENTER TODAY</button>
+         <button class="btn-tool" style="--bg-color: #2c3e50; --hover-color: #34495e;" onclick="toggleAllProjects(true)"> <span><i class="fa-solid fa-folder-tree"></i></span> EXPAND </button>
+        <button class="btn-tool" style="--bg-color: #2c3e50; --hover-color: #34495e;" onclick="toggleAllProjects(false)"> <span><i class="fa-solid fa-square-minus"></i></span> COLLAPSE </button>
+         <button class="btn-tool" style="--bg-color: #2c3e50; --hover-color: #34495e;" onclick="centerToday()"> <span><i class="fa-solid fa-calendar-day"></i></span> TODAY</button>
  
 
     
-        <button class="btn-tool" style="--bg-color: #2c3e50; --hover-color: #34495e;" onclick="showModule('viewStats')"> <span>📊</span> WORKLOAD </button>
-        <button class="btn-tool" style="--bg-color: #1a539e; --hover-color: #2980b9;" onclick="showModule('viewMaintenance')"> <span>🔧</span> MAINTENANCE </button>
-        <button class="btn-tool" style="--bg-color: #9c9e1a; --hover-color: #8c8e16;" onclick="showModule('viewShutdown')"> <span>🚧</span> SHUTDOWN </button>
+        <button class="btn-tool" style="--bg-color: #2c3e50; --hover-color: #34495e;" onclick="showModule('viewStats')"> <span><i class="fa-solid fa-chart-simple"></i></span> WORKLOAD </button>
+        <button class="btn-tool" style="--bg-color: #2c3e50; --hover-color: #34495e;" onclick="showModule('viewMaintenance')"> <span><i class="fa-solid fa-screwdriver-wrench"></i></span> MAINTENANCE </button>
+        <button class="btn-tool" style="--bg-color: #2c3e50; --hover-color: #34495e;" onclick="showModule('viewShutdown')"> <span><i class="fa-solid fa-person-digging"></i></span> SHUTDOWN </button>
 
 
 
@@ -1139,7 +1140,7 @@ onkeydown="manejarTeclado(event)" onclick="hideContextMenu()">
 
 
 
- <span style=>🔍</span>
+ <span style=><i class="fa-solid fa-magnifying-glass-chart"></i></span>
         <input type="text" id="ganttSearch" placeholder="Search project or HIM..." oninput="renderGantt()" style="border:none; outline:none; font-size:13px; width:180px;">
             <label for="yearSelector" style="font-weight: bold;"></label>
     <select id="yearSelector" onchange="selectedYear = parseInt(this.value); renderGantt(); updateCharts();" style="padding: 5px; border-radius: 4px;">
@@ -2092,7 +2093,7 @@ function renderGantt() {
 
     // --- CONSTRUCCIÓN HTML ---
     let html = `<div class="gantt-grid">
-        <div class="gantt-header-title" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 10px; background: var(--huf-red);">
+        <div class="gantt-header-title" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 10px; background: var(--huf-dark);">
             <div style="font-weight: bold; font-size: 14px; color: white; letter-spacing: 1px;">QM-T PROJECTS</div>
             <div style="display: flex; background: #34495e; border-radius: 20px; padding: 3px; width: 95%;">
                 <button onclick="setGanttStatusFilter('active')" style="flex: 1; border: none; border-radius: 17px; padding: 5px; cursor: pointer; font-size: 10px; font-weight: bold; transition: 0.3s; ${ganttStatusFilter === 'active' ? 'background: #f1c40f; color: black;' : 'background: transparent; color: white;'}">RUNNING (${activeCount})</button>
@@ -2120,12 +2121,12 @@ function renderGantt() {
         let accentColor = proj.isTBD ? "var(--TS)" : (proj.isDone ? "var(--loc-mexico)" : "var(--loc-india)");
         
         html += `<div class="gantt-row">
-            <div class="gantt-task-name" style="background: var(--huf-dark)!important; color: white; border-left: 15px solid ${accentColor}; padding-left: 10px; display: flex; justify-content: space-between; align-items: center;">
+            <div class="gantt-task-name" style="background: var(--huf-dark1)!important; color: black; border-left: 15px solid ${accentColor}; padding-left: 10px; display: flex; justify-content: space-between; align-items: center;">
                 <span onclick="toggleProject(${pIdx})" style="cursor:pointer; font-weight:bold; font-size: 13px;">
-                    ${proj.collapsed ? '➕' : '➖'} ${proj.name}
+                    ${proj.collapsed ? '<i class="fa-solid fa-folder-tree"></i>' : '<i class="fa-solid fa-square-minus"></i></i>'} ${proj.name}
                 </span>
                 <div style="display: flex; align-items: center; gap: 10px;">
-                    <div style="font-size: 10px; color: #ccc; display: flex; align-items: center; gap: 6px; background: rgba(0,0,0,0.3); padding: 2px 8px; border-radius: 10px;">
+                    <div style="font-size: 10px; color: black; display: flex; align-items: center; gap: 6px; background: rgba(0,0,0,0.0); padding: 2px 8px; border-radius: 10px;">
                         <span style="font-weight: bold; letter-spacing: 0.5px;">FC</span>
                         <label class="switch-fc">
                             <input type="checkbox" ${proj.isTBD ? 'checked' : ''} onchange="toggleTBD(${pIdx})">
@@ -2133,25 +2134,25 @@ function renderGantt() {
                         </label>
                     </div>
                     <div class="action-btns">
-                        <button class="btn-icon add" onclick="copyTaskToInputs('${proj.name.replace(/'/g, "\\'")}', '')">➕</button>
-                        <button class="btn-icon" style="color:white;" onclick="editProject1(${pIdx})">✏️</button>
-                        <button class="btn-icon" style="color:white;" onclick="deleteProject1(${pIdx})">🗑️</button>
+                        <button class="btn-icon add" onclick="copyTaskToInputs('${proj.name.replace(/'/g, "\\'")}', '')"><i class="fa-solid fa-plus"></i></button>
+                        <button class="btn-icon" style="color:white;" onclick="editProject1(${pIdx})"><i class="fa-solid fa-pen-to-square"></i></button>
+                        <button class="btn-icon" style="color:white;" onclick="deleteProject1(${pIdx})"><i class="fa-solid fa-trash-can"></i></button>
                     </div>
                 </div>
             </div>
-            <div class="gantt-bar-container" style="background:var(--huf-dark);"></div>
+            <div class="gantt-bar-container" style="background:var(--huf-dark1);"></div>
         </div>`;
         if (!proj.collapsed) {
             proj.activities.forEach(act => {
                 const aIdx = act.originalAIdx;
                 html += `<div class="gantt-row">
-                    <div class="gantt-task-name" style="padding-left:15px; background:white; border-left: 15px solid transparent;">
+                    <div class="gantt-task-name" style="padding-left:15px; background:; border-left: 15px solid transparent;">
                         <div style="display:flex; justify-content:space-between; width:100%;">
-                            <span style="font-size: 12px;">🔹 ${act.name}</span>
+                            <span style="font-size: 14px;"><i class="fa-solid fa-gem"></i> ${act.name}</span>
                             <div class="action-btns">
-                                <button class="btn-icon add" onclick="copyTaskToInputs('${proj.name.replace(/'/g, "\\'")}', '${act.name.replace(/'/g, "\\'")}')">➕</button>
-                                <button class="btn-icon" onclick="editActivity(${pIdx}, ${aIdx})">✏️</button>
-                                <button class="btn-icon" onclick="deleteActivity(${pIdx}, ${aIdx})">🗑️</button>
+                                <button class="btn-icon add" onclick="copyTaskToInputs('${proj.name.replace(/'/g, "\\'")}', '${act.name.replace(/'/g, "\\'")}')"><i class="fa-solid fa-plus"></i></button>
+                               <button class="btn-icon" onclick="editActivity(${pIdx}, ${aIdx})"><i class="fa-solid fa-pen-to-square"></i></button>
+                                <button class="btn-icon" onclick="deleteActivity(${pIdx}, ${aIdx})"><i class="fa-solid fa-trash-can"></i></button>
                             </div>
                         </div>
                     </div>
@@ -2348,7 +2349,7 @@ function renderAllStats() {
         tbody.innerHTML = "";
         shutdownLogs.forEach((log, idx) => {
             const row = document.createElement('tr');
-            row.innerHTML = `<td>${log.start}</td><td>${log.end}</td><td>${log.desc}</td><td><button onclick="deleteShutdown('${idx}')" style="color:red; cursor:pointer; background:none; border:none;">🗑️</button></td>`;
+            row.innerHTML = `<td>${log.start}</td><td>${log.end}</td><td>${log.desc}</td><td><button onclick="deleteShutdown('${idx}')" style="color:red; cursor:pointer; background:none; border:none;"><i class="fa-solid fa-trash-can"></i></button></td>`;
             tbody.appendChild(row);
         });
         if(shutdownLogs.length === 0) tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#999;">No saved shutdowns.</td></tr>`;
@@ -2461,7 +2462,7 @@ function analizarMantenimiento() {
         maintenanceLogs.forEach((log, idx) => {
             const row = document.createElement('tr');
             row.innerHTML = `<td style="text-align: left;">${log.typeName || 'Unknown'}</td><td><b>${log.him}</b></td><td>${log.start}</td><td>${log.end}</td><td>${log.desc}</td><td style="text-align: left;">
-    <button onclick="deleteMaintenance('${idx}')" style="color:red; cursor:pointer; background:none; border:none; padding-left: 120;align-items: center">🗑️</button>
+    <button onclick="deleteMaintenance('${idx}')" style="color:red; cursor:pointer; background:none; border:none; padding-left: 120;align-items: center"><i class="fa-solid fa-trash-can"></i></button>
 </td>`;
             tbody.appendChild(row);
         });
