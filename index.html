@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <title>HUF System Hub</title>
-
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
@@ -875,14 +876,15 @@ input:checked + .slider-fc:before {
 onkeydown="manejarTeclado(event)" onclick="hideContextMenu()">
 
 <div id="customContextMenu">
-    <div class="menu-item" id="menuEditBtn"><i class="fa-solid fa-pen-to-square"></i> Edit Weeks</div>
+     <div class="menu-item" id="menuEditBtn"><i class="fa-solid fa-pen-to-square"></i> Edit Bar</div>
+ 
     <div class="menu-item delete" id="menuDeleteBtn" style="border-top: 1px solid #eee; color: red;"><i class="fa-solid fa-trash-can"></i> DELETE</div>
 </div>
 
 <div id="mainCard" class="car card-login">
     <div class="logo-container">
         <img src="logo.png" alt="HUF Logo" onerror="this.style.display='none';">
-        <p class="logo-subtitle">Developed By Omar Amador 1.8</p>
+        <p class="logo-subtitle">Developed By Omar Amador 1.10</p>
     </div>
 
     <div id="viewLogin" class="view-layer active-view"class="card">
@@ -1127,15 +1129,13 @@ onkeydown="manejarTeclado(event)" onclick="hideContextMenu()">
         <button class="btn-tool" style="--bg-color: #2c3e50; --hover-color: #34495e;" onclick="showModule('viewStats')"> <span><i class="fa-solid fa-chart-simple"></i></span> WORKLOAD </button>
         <button class="btn-tool" style="--bg-color: #2c3e50; --hover-color: #34495e;" onclick="showModule('viewMaintenance')"> <span><i class="fa-solid fa-screwdriver-wrench"></i></span> MAINTENANCE </button>
         <button class="btn-tool" style="--bg-color: #2c3e50; --hover-color: #34495e;" onclick="showModule('viewShutdown')"> <span><i class="fa-solid fa-person-digging"></i></span> SHUTDOWN </button>
-
-
-
-
+        <button class="btn-tool" style="--bg-color: #2c3e50; --hover-color: #34495e;" onclick="exportFullReport()"> <span><i class="fa-solid fa-file-pdf"></i></span> GEN.PDF </button>
+     
 
         <!-- <button class="btn-tool" style="--bg-color: #27ae60; --hover-color: #2ecc71;" onclick="document.getElementById('csvEquipmentInput').click()"> 
     <span>📥</span> IMPORT CSV 
-</button> -->
-<!-- <input type="file" id="csvEquipmentInput" accept=".csv" style="display:none" onchange="importEquipmentCSV(event)"> -->
+</button>
+ <input type="file" id="csvEquipmentInput" accept=".csv" style="display:none" onchange="importEquipmentCSV(event)"> -->
 
 
 
@@ -1256,9 +1256,8 @@ onkeydown="manejarTeclado(event)" onclick="hideContextMenu()">
     </div>
 </div>
 
+ 
 
-<!-- 
-Aqui empieza el project summary -->
         
 <div id="summary-view" class="view-layer">
     <button class="btn-back" onclick="showModule('main-app')">⬅ BACK</button>
@@ -1302,7 +1301,10 @@ Aqui empieza el project summary -->
 </div>
 </div>
 
-
+<div id="historyReportContent" style="display: none; padding: 20px; font-family: Arial, sans-serif;">
+    <h1 style="color: #2c3e50; border-bottom: 2px solid #2c3e50;">QM-T Project History Report</h1>
+    <div id="historyItems"></div>
+</div>
 
 
 
@@ -1415,17 +1417,35 @@ db.ref('toolingProjects').on('value', (snapshot) => {
         renderGantt(); 
     });
 
-    function guardarCambios() {
-        const dataParaGuardar = toolingProjects.map(proj => ({
-            ...proj,
-            activities: proj.activities.map(act => ({
-                ...act,
-                teams: act.teams.map(t => ({ ...t, start: t.start.toISOString() }))
-            }))
-        }));
-        db.ref('toolingProjects').set(dataParaGuardar);
-    }
+function guardarCambios() {
+    const dataParaGuardar = toolingProjects.map(proj => ({
+        ...proj,
+        activities: proj.activities.map(act => ({
+            ...act,
+            // Validamos si start ya es string o si es objeto Date
+            teams: act.teams.map(t => {
+                let fechaIso;
+                try {
+                    fechaIso = (typeof t.start === 'string') ? t.start : t.start.toISOString();
+                } catch (e) {
+                    fechaIso = t.start; // Fallback por si ya es string
+                }
+                return { ...t, start: fechaIso };
+            })
+        }))
+    }));
 
+    // El .set de Firebase devuelve una Promesa. Usamos .then para refrescar
+    db.ref('toolingProjects').set(dataParaGuardar)
+        .then(() => {
+            console.log("Database Sync: OK");
+            renderGantt(); // <--- ACTUALIZA EL DIAGRAMA AL TERMINAR
+            if (typeof renderAllStats === 'function') renderAllStats();
+        })
+        .catch(err => {
+            console.error("Firebase Error:", err);
+        });
+}
     function popularDeviceTypes() {
         const devSelect = document.getElementById('deviceType');
         const maintSelect = document.getElementById('maintDeviceType');
@@ -1823,18 +1843,33 @@ function addToolingRow() {
         }).then((result) => { if (result.isConfirmed && result.value) { toolingProjects[pIdx].activities[aIdx].name = result.value; guardarCambios(); } });
     }
 
-function deleteIndividualBar(pIdx, aIdx, tIdx) { 
-    Swal.fire({ 
-        title: 'Delete this equipment allocation?',
-        icon: 'warning', 
-        showCancelButton: true, 
-        confirmButtonColor: '#e30613'
+function deleteIndividualBar(pIdx, aIdx, tIdx) {
+    const project = toolingProjects[pIdx];
+    const team = project.activities[aIdx].teams[tIdx];
+
+    Swal.fire({
+        title: 'Delete this allocation?',
+        text: `HIM: ${team.name} will be removed from this activity.`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#e30613',
+        confirmButtonText: 'Yes, delete'
     }).then((result) => {
         if (result.isConfirmed) {
-            toolingProjects[pIdx].activities[aIdx].teams.splice(tIdx, 1);
-            // Ya no se borra la actividad automáticamente si queda vacía
+            // Guardar en el historial quién lo borró antes de eliminarlo
+            if (!project.history) project.history = [];
+            project.history.push({
+                date: new Date().toLocaleString(),
+                user: typeof userSession !== 'undefined' ? userSession : "Omar Amador",
+                text: `DELETED: Allocation for ${team.name} in activity ${project.activities[aIdx].name}`
+            });
+
+            // Borrar solo la barra (el equipo)
+            project.activities[aIdx].teams.splice(tIdx, 1);
+
             guardarCambios();
             renderGantt();
+            Swal.fire('Deleted!', 'The allocation has been removed.', 'success');
         }
     });
 }
@@ -1869,17 +1904,20 @@ function showBarContextMenu(pIdx, aIdx, tIdx, event) {
     event.stopPropagation();
 
     const menu = document.getElementById('customContextMenu');
-    
-    // Cambiamos a fixed para que la posición sea relativa a la pantalla
     menu.style.position = 'fixed'; 
     menu.style.display = 'block'; 
-    
-    // Usamos clientX/Y que son más precisos en contenedores con scroll
     menu.style.left = event.clientX + 'px'; 
     menu.style.top = event.clientY + 'px';
 
-    document.getElementById('menuEditBtn').onclick = () => { hideContextMenu(); editBarDays(pIdx, aIdx, tIdx); };
-    document.getElementById('menuDeleteBtn').onclick = () => { hideContextMenu(); deleteIndividualBar(pIdx, aIdx, tIdx); };
+    // Configuramos los botones del menú
+    document.getElementById('menuEditBtn').onclick = () => { 
+        hideContextMenu(); 
+        editBarFull(pIdx, aIdx, tIdx); // Nueva función que edita todo
+    };
+    document.getElementById('menuDeleteBtn').onclick = () => { 
+        hideContextMenu(); 
+        deleteIndividualBar(pIdx, aIdx, tIdx); 
+    };
 }
 
     function hideContextMenu() { document.getElementById('customContextMenu').style.display = 'none'; }
@@ -1998,6 +2036,7 @@ function renderGantt() {
     const scale = document.getElementById('viewScale').value;
     const searchTerm = document.getElementById('ganttSearch')?.value.toLowerCase() || "";
     const today = new Date();
+    const currentYear = today.getFullYear(); // Año real hoy
     today.setHours(0, 0, 0, 0);
 
     const getWeekData = (date) => {
@@ -2009,7 +2048,7 @@ function renderGantt() {
         return { week: weekNo, year: d.getUTCFullYear() };
     };
 
-    // --- FILTRADO POR AÑO Y BÚSQUEDA ---
+    // --- FILTRADO POR AÑO, BÚSQUEDA Y ORDEN ALFABÉTICO ---
     const filteredToolingProjects = toolingProjects.map((p, originalPIdx) => {
         const matchingActivities = p.activities.map((a, originalAIdx) => {
             const matchingTeams = a.teams.map((t, originalTIdx) => ({ ...t, originalTIdx }))
@@ -2026,19 +2065,28 @@ function renderGantt() {
             return { ...a, originalAIdx, teams: matchingTeams };
         }).filter(a => a.teams.length > 0);
 
-        // QUITAMOS EL .filter final para permitir proyectos vacíos
         return { ...p, originalPIdx, activities: matchingActivities };
     }).filter(p => {
-        // El proyecto se muestra si coincide con la búsqueda, tenga o no actividades
-        return p.name.toLowerCase().includes(searchTerm) || p.activities.length > 0;
-    });
+        const hasActivitiesThisYear = p.activities.length > 0;
+        const isYearCurrent = selectedYear === currentYear;
+        const matchesSearch = p.name.toLowerCase().includes(searchTerm);
+
+        // LOGICA DE VISIBILIDAD:
+        // Si no es el año actual, solo mostramos si tiene actividades.
+        // Si es el año actual, mostramos todo (para ver los proyectos vacíos).
+        if (!isYearCurrent) {
+            return hasActivitiesThisYear && matchesSearch;
+        }
+        return matchesSearch || hasActivitiesThisYear;
+    })
+    .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }));
 
     const filteredMaintenance = maintenanceLogs.filter(m => {
         const matchesMaint = m.him.toLowerCase().includes(searchTerm) || m.desc.toLowerCase().includes(searchTerm);
         return matchesMaint && new Date(m.start).getFullYear() === selectedYear;
     });
 
-    // --- CLASIFICACIÓN Y CONTEO MANUAL ---
+    // --- CLASIFICACIÓN Y CONTEO ---
     let activeCount = 0;
     let doneCount = 0;
     let tbdCount = 0;
@@ -2143,27 +2191,50 @@ function renderGantt() {
 
     projectsToDisplay.forEach(proj => {
         const pIdx = proj.originalPIdx;
-        let accentColor = proj.status === 'tbd' ? "var(--TS)" : (proj.status === 'done' ? "var(--loc-mexico)" : "var(--loc-india)");
+        const hasNoActivitiesThisYear = proj.activities.length === 0;
+        const isYearCurrent = selectedYear === currentYear;
+        
+        // El aviso solo sale si es el año actual y no hay tareas
+        const showWarning = isYearCurrent && hasNoActivitiesThisYear;
+
+        let accentColor;
+        let rowBackground;
+
+        if (showWarning) {
+            accentColor = "#ff9800"; 
+            rowBackground = "#fff3e0"; 
+        } else {
+            accentColor = proj.status === 'tbd' ? "var(--TS)" : (proj.status === 'done' ? "var(--loc-mexico)" : "var(--loc-india)");
+            rowBackground = "var(--huf-dark1)";
+        }
 
         html += `<div class="gantt-row">
-           <div class="gantt-task-name" style="background: var(--huf-dark1)!important; border-left: 15px solid ${accentColor}; padding: 8px 10px; display: flex; justify-content: space-between; align-items: center; min-height: 45px; height: auto;">
-        <span onclick="toggleProject(${pIdx})" style="cursor:pointer; font-weight:bold; font-size: 13px; color:black; flex: 1; white-space: normal; word-break: break-word; line-height: 1.2; padding-right: 10px;">
-    ${proj.collapsed ? '<i class="fa-solid fa-folder-tree"></i>' : '<i class="fa-solid fa-square-minus"></i>'} ${proj.name}
+           <div class="gantt-task-name" style="background: ${rowBackground}!important; border-left: 15px solid ${accentColor}; padding: 8px 10px; display: flex; justify-content: space-between; align-items: center; min-height: 45px; height: auto;">
+<span onclick="toggleProject(${pIdx})" style="cursor:pointer; font-weight:bold; font-size: 13px; color:black; flex: 1; white-space: normal; word-break: break-word; line-height: 1.2; padding-right: 10px;">
+    ${proj.collapsed ? '<i class="fa-solid fa-folder-tree"></i>' : '<i class="fa-solid fa-square-minus"></i>'} 
+    ${showWarning ? '⚠️ ' : ''}${proj.name}
+    
+    ${(proj.history && proj.history.length > 0) ? 
+        `<i class="fa-solid fa-clock-rotate-left" style="color: #3498db; margin-left: 8px; font-size: 11px;" title="View history (${proj.history.length} entries)"></i>` 
+        : ''}
 </span>
                 <div style="display: flex; align-items: center; gap: 10px;">
                     <select onchange="setProjectStatus(${pIdx}, this.value)" style="font-size: 11px;font-weight:bold; text-align: center; padding: 2px; border-radius: 4px; border: 1px solid #999; background: #fff; width: 100px; min-width: 100px; flex-shrink: 0;">
-                       <option value="active" ${proj.status === 'active' ? 'selected' : ''}> RUNNING</option>
+                        <option value="active" ${proj.status === 'active' ? 'selected' : ''}> RUNNING</option>
                         <option value="done" ${proj.status === 'done' ? 'selected' : ''}> COMPLETED</option>
                         <option value="tbd" ${proj.status === 'tbd' ? 'selected' : ''}> FORECAST</option>
                     </select>
-                    <div class="action-btns">
-                        <button class="btn-icon add" onclick="copyTaskToInputs('${proj.name.replace(/'/g, "\\'")}', '')"><i class="fa-solid fa-plus"></i></button>
-                        <button class="btn-icon" style="color:white;" onclick="editProject1(${pIdx})"><i class="fa-solid fa-pen-to-square"></i></button>
-                        <button class="btn-icon" style="color:white;" onclick="deleteProject1(${pIdx})"><i class="fa-solid fa-trash-can"></i></button>
+                    <div class="action-btns" style="display: flex; gap: 5px;">
+                        <button class="btn-icon add" onclick="copyTaskToInputs('${proj.name.replace(/'/g, "\\'")}', '')" style="background: var(--huf-dark1) !important; color: white !important; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer;"><i class="fa-solid fa-plus"></i></button>
+                        <button class="btn-icon" onclick="editProject1(${pIdx})" style="background: var(--huf-dark1) !important; color: white !important; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer;"><i class="fa-solid fa-pen-to-square"></i></button>
+                        <button class="btn-icon" onclick="deleteProject1(${pIdx})" style="background: var(--huf-dark1) !important; color: white !important; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer;"><i class="fa-solid fa-trash-can"></i></button>
+                        <button class="btn-icon" onclick="openProjectNotes(${pIdx})" style="background: #3498db !important; color: white !important; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer;">
+    <i class="fa-solid fa-comment-dots"></i>
+</button>
                     </div>
                 </div>
             </div>
-            <div class="gantt-bar-container" style="background:var(--huf-dark1);"></div>
+            <div class="gantt-bar-container" style="background:${rowBackground};"></div>
         </div>`;
 
         if (!proj.collapsed) {
@@ -2172,11 +2243,11 @@ function renderGantt() {
                 html += `<div class="gantt-row">
                     <div class="gantt-task-name" style="padding-left:15px; border-left: 15px solid transparent;">
                         <div style="display:flex; justify-content:space-between; width:100%;">
-                            <span style="font-size: 14px;"><i class="fa-solid fa-gem"></i> ${act.name}</span>
-                            <div class="action-btns">
-                                <button class="btn-icon add" onclick="copyTaskToInputs('${proj.name.replace(/'/g, "\\'")}', '${act.name.replace(/'/g, "\\'")}')"><i class="fa-solid fa-plus"></i></button>
-                                <button class="btn-icon" onclick="editActivity(${pIdx}, ${aIdx})"><i class="fa-solid fa-pen-to-square"></i></button>
-                                <button class="btn-icon" onclick="deleteActivity(${pIdx}, ${aIdx})"><i class="fa-solid fa-trash-can"></i></button>
+                            <span style="font-size: 14px; color: black;"><i class="fa-solid fa-gem"></i> ${act.name}</span>
+                            <div class="action-btns" style="display: flex; gap: 5px;">
+                                <button class="btn-icon add" onclick="copyTaskToInputs('${proj.name.replace(/'/g, "\\'")}', '${act.name.replace(/'/g, "\\'")}')" style="background: white !important; color: white !important; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer;"><i class="fa-solid fa-plus"></i></button>
+                                <button class="btn-icon" onclick="editActivity(${pIdx}, ${aIdx})" style="background: white !important; color: white !important; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer;"><i class="fa-solid fa-pen-to-square"></i></button>
+                                <button class="btn-icon" onclick="deleteActivity(${pIdx}, ${aIdx})" style="background: white !important; color: white !important; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer;"><i class="fa-solid fa-trash-can"></i></button>
                             </div>
                         </div>
                     </div>
@@ -3628,6 +3699,405 @@ document.addEventListener('keydown', function(event) {
         console.log(allExpanded ? "Proyectos expandidos" : "Proyectos colapsados");
     }
 });
+async function exportGanttToPDF() {
+    const { jsPDF } = window.jspdf;
+    const container = document.getElementById('ganttContainer');
+    
+    // Mostramos un mensaje de "Procesando..."
+    Swal.fire({
+        title: 'Generating PDF...',
+        text: 'Please wait while we capture the Gantt chart.',
+        allowOutsideClick: false,
+        didOpen: () => { Swal.showLoading(); }
+    });
+
+    try {
+        const canvas = await html2canvas(container, {
+            scale: 2, // Mayor calidad
+            useCORS: true,
+            backgroundColor: "#ffffff"
+        });
+
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new jsPDF('l', 'mm', 'a4'); // Orientación horizontal
+        const imgProps = pdf.getImageProperties(imgData);
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+        pdf.save(`Gantt_QM-T_${selectedYear}.pdf`);
+
+        Swal.fire('Success!', 'PDF downloaded successfully.', 'success');
+    } catch (error) {
+        console.error("Error generating PDF:", error);
+        Swal.fire('Error', 'Could not generate PDF.', 'error');
+    }
+}
+function openProjectNotes(pIdx) {
+    const project = toolingProjects[pIdx];
+    if (!project.history) project.history = [];
+    const activeUser = (typeof userSession !== 'undefined' && userSession) ? userSession : "Omar Amador";
+
+    // Función interna para generar el HTML de los items según el filtro
+    const generateHistoryHtml = (filter = 'all') => {
+        if (project.history.length === 0) {
+            return '<p style="color: #999; text-align: center; margin: 20px 0;">No records found.</p>';
+        }
+
+        const sortedHistory = [...project.history].reverse();
+        const filtered = sortedHistory.filter(entry => {
+            if (filter === 'all') return true;
+            if (filter === 'comments') return entry.type === 'comment' || !entry.type; // Default to comment if no type
+            if (filter === 'movements') return entry.type === 'movement';
+            return true;
+        });
+
+        if (filtered.length === 0) return `<p style="color: #999; text-align: center; margin: 20px 0;">No ${filter} found.</p>`;
+
+        return filtered.map(entry => {
+            const isMove = entry.type === 'movement';
+            const cardStyle = isMove 
+                ? 'background: #ebebeb; border-left: 5px solid #7f8c8d; color: #555;' 
+                : 'background: #ffffff; border-left: 5px solid #27ae60; color: #2c3e50; box-shadow: 0 2px 4px rgba(0,0,0,0.05);';
+            const icon = isMove ? '🚚' : '💬';
+
+            return `
+                <div style="margin-bottom: 10px; padding: 10px; border-radius: 5px; ${cardStyle}">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                        <span style="font-size: 9px; font-weight: bold; opacity: 0.8;">${icon} ${isMove ? 'SYSTEM' : 'USER'}</span>
+                        <span style="font-size: 10px; color: #aa1c25; font-weight: bold;">${entry.user || 'N/A'}</span>
+                    </div>
+                    <p style="margin: 0; font-size: 13px; line-height: 1.4;">${entry.text}</p>
+                    <div style="font-size: 9px; margin-top: 5px; text-align: right; opacity: 0.6;">${entry.date}</div>
+                </div>`;
+        }).join('');
+    };
+
+    Swal.fire({
+        title: `Project Logs: ${project.name}`,
+        html: `
+            <div style="display: flex; justify-content: center; gap: 5px; margin-bottom: 15px;">
+                <button onclick="filterNotes('all')" class="filter-btn active" id="btn-all">All</button>
+                <button onclick="filterNotes('comments')" class="filter-btn" id="btn-comments">Notes</button>
+                <button onclick="filterNotes('movements')" class="filter-btn" id="btn-movements">Moves</button>
+            </div>
+
+            <div id="history-container" style="max-height: 250px; overflow-y: auto; text-align: left; border: 1px solid #ddd; padding: 10px; border-radius: 8px; background: #f4f6f7;">
+                ${generateHistoryHtml('all')}
+            </div>
+
+            <div style="text-align: left; font-weight: bold; margin-top: 15px; margin-bottom: 5px; font-size: 13px;">
+                Add Comment as: <span style="color: #aa1c25;">${activeUser}</span>
+            </div>
+            <textarea id="swal-note-input" class="swal2-textarea" style="margin: 0; width: 100%; border-radius: 8px; font-size: 14px;" placeholder="Write a comment..."></textarea>
+            
+            <style>
+                .filter-btn {
+                    padding: 5px 12px;
+                    border-radius: 15px;
+                    border: 1px solid #ddd;
+                    background: white;
+                    cursor: pointer;
+                    font-size: 11px;
+                    font-weight: bold;
+                    transition: 0.3s;
+                }
+                .filter-btn.active {
+                    background: #2c3e50;
+                    color: white;
+                    border-color: #2c3e50;
+                }
+            </style>
+        `,
+        showCancelButton: true,
+        confirmButtonText: '<i class="fa-solid fa-save"></i> Save Comment',
+        confirmButtonColor: '#27ae60',
+        didOpen: () => {
+            // Exponemos la función de filtrado al objeto window para que los botones onclick la encuentren
+            window.filterNotes = (type) => {
+                document.getElementById('history-container').innerHTML = generateHistoryHtml(type);
+                // Actualizar clases de botones
+                document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+                document.getElementById('btn-' + type).classList.add('active');
+            };
+        },
+        willClose: () => {
+            delete window.filterNotes; // Limpieza al cerrar
+        },
+        preConfirm: () => {
+            const val = document.getElementById('swal-note-input').value.trim();
+            if (!val) return null; // Permitir cerrar sin guardar si está vacío, o validar:
+            return val;
+        }
+    }).then((result) => {
+        if (result.isConfirmed && result.value) {
+            const now = new Date();
+            const timestamp = `${now.toLocaleDateString()} ${now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
+            
+            project.history.push({
+                date: timestamp,
+                text: result.value,
+                user: activeUser,
+                type: 'comment' 
+            });
+
+            if (typeof guardarCambios === 'function') guardarCambios();
+            renderGantt();
+        }
+    });
+}
+async function exportFullReport() {
+const { jsPDF } = window.jspdf;
+    // 'p' = portrait (vertical), 'mm' = milímetros, 'a4' = tamaño papel
+    const pdf = new jsPDF('p', 'mm', 'a4');
+    const today = new Date().toLocaleDateString();
+    const activeYear = typeof selectedYear !== 'undefined' ? selectedYear : new Date().getFullYear();
+    let yPos = 20;
+
+    // --- 1. FUNCIÓN PARA CALCULAR SEMANA (CW) ---
+    const getCW = (date) => {
+        let d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+        let dayNum = d.getUTCDay() || 7;
+        d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+        let yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+        return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+    };
+
+    // --- 2. CONTROL DE SALTOS DE PÁGINA ---
+    const checkPage = (neededSpace) => {
+        if (yPos + neededSpace > 275) {
+            pdf.addPage();
+            yPos = 20;
+        }
+    };
+
+    // --- 3. LÓGICA DE DETECCIÓN DE OVERBOOK ---
+    const himSchedule = {};
+    toolingProjects.forEach(p => {
+        p.activities.forEach(a => {
+            a.teams.forEach(t => {
+                if (!himSchedule[t.name]) himSchedule[t.name] = [];
+                const start = new Date(t.start).getTime();
+                const end = start + (t.days * 86400000);
+                himSchedule[t.name].push({ start, end });
+            });
+        });
+    });
+
+    const checkOverbook = (himName, startStr, days) => {
+        const start = new Date(startStr).getTime();
+        const end = start + (days * 86400000);
+        const periods = himSchedule[himName] || [];
+        // Filtramos solapamientos: si hay más de 1, es overbook
+        let overlaps = periods.filter(p => (start < p.end && end > p.start));
+        return overlaps.length > 1;
+    };
+
+    // --- 4. ENCABEZADO DEL REPORTE ---
+    pdf.setFontSize(18);
+    pdf.setTextColor(44, 62, 80);
+    pdf.setFont(undefined, 'bold');
+    pdf.text("QM-T EXECUTIVE STATUS REPORT", 10, yPos);
+    yPos += 7;
+
+    pdf.setFontSize(10);
+    pdf.setFont(undefined, 'normal');
+    pdf.text(`Fiscal Year: ${activeYear} | Generated by: ${userSession || 'System'} | Date: ${today}`, 10, yPos);
+    yPos += 10;
+
+    // Leyenda de Overbook
+    pdf.setFontSize(8);
+    pdf.setTextColor(227, 6, 19);
+    pdf.text("● RED ENTRIES: Indicate HIM Overbooking (overlapping allocations in the same period)", 10, yPos);
+    yPos += 8;
+
+    // --- 5. CUERPO DEL REPORTE (PROYECTOS) ---
+    toolingProjects.forEach((proj) => {
+        const currentYearActs = proj.activities.filter(a => 
+            a.teams.some(t => new Date(t.start).getFullYear() === activeYear)
+        );
+        const hasHistory = proj.history && proj.history.length > 0;
+
+        // Si no tiene nada relevante este año, saltamos al siguiente
+        if (currentYearActs.length === 0 && !hasHistory) return;
+
+        checkPage(25);
+
+        // Banner del Proyecto
+        pdf.setFillColor(44, 62, 80);
+        pdf.rect(10, yPos, 190, 7, 'F');
+        pdf.setFont(undefined, 'bold');
+        pdf.setFontSize(10);
+        pdf.setTextColor(255, 255, 255);
+        pdf.text(proj.name.toUpperCase(), 12, yPos + 5);
+        yPos += 12;
+
+        // --- SUBSECCIÓN: HIMS ---
+        if (currentYearActs.length > 0) {
+            pdf.setFontSize(9);
+            pdf.setTextColor(44, 62, 80);
+            pdf.text("HIM ALLOCATIONS & WEEKS:", 12, yPos);
+            yPos += 5;
+
+            currentYearActs.forEach(act => {
+                act.teams.forEach(t => {
+                    const startDate = new Date(t.start);
+                    if (startDate.getFullYear() === activeYear) {
+                        checkPage(6);
+                        const endDate = new Date(startDate.getTime() + (t.days * 86400000));
+                        const startCW = String(getCW(startDate)).padStart(2, '0');
+                        const endCW = String(getCW(endDate)).padStart(2, '0');
+
+                        const over = checkOverbook(t.name, t.start, t.days);
+                        
+                        if (over) {
+                            pdf.setTextColor(227, 6, 19); // Rojo Alerta
+                            pdf.setFont(undefined, 'bold');
+                        } else {
+                            pdf.setTextColor(80);
+                            pdf.setFont(undefined, 'normal');
+                        }
+
+                        const line = `${over ? '[OVERBOOK] ' : '• '}${t.name.padEnd(20)} | Start: CW${startCW} | End: CW${endCW} | (${act.name})`;
+                        pdf.text(line, 15, yPos);
+                        yPos += 5;
+                    }
+                });
+            });
+            yPos += 3;
+        }
+
+        // --- SUBSECCIÓN: HISTORIAL DE NOTAS ---
+        if (hasHistory) {
+            checkPage(10);
+            pdf.setFont(undefined, 'bold');
+            pdf.setFontSize(9);
+            pdf.setTextColor(44, 62, 80);
+            pdf.text("PROJECT LOGS (HISTORY):", 12, yPos);
+            yPos += 5;
+
+            proj.history.forEach(entry => {
+                checkPage(12);
+                
+                // Meta info: Fecha y Usuario
+                pdf.setFontSize(7.5);
+                pdf.setFont(undefined, 'bold');
+                pdf.setTextColor(150);
+                pdf.text(`[${entry.date}]`, 15, yPos);
+                
+                pdf.setTextColor(170, 28, 37); // Rojo HUF
+                const author = `BY: ${String(entry.user || 'N/A').toUpperCase()}`;
+                const authorWidth = pdf.getTextWidth(author);
+                pdf.text(author, 200 - authorWidth, yPos);
+                yPos += 4;
+
+                // Texto de la nota
+                pdf.setFont(undefined, 'normal');
+                pdf.setTextColor(60);
+                pdf.setFontSize(9);
+                const splitNote = pdf.splitTextToSize(entry.text, 175);
+                pdf.text(splitNote, 18, yPos);
+                yPos += (splitNote.length * 5) + 3;
+            });
+            yPos += 4;
+        }
+        yPos += 5; // Separación final entre proyectos
+    });
+
+    // --- 6. FINALIZAR Y DESCARGAR ---
+    pdf.save(`QM-T_MasterReport_${activeYear}_${today}.pdf`);
+    
+    Swal.fire({
+        icon: 'success',
+        title: 'Report Generated',
+        text: 'The document includes allocations, weeks, overbooking alerts, and signed logs.',
+        confirmButtonColor: '#2c3e50'
+    });
+}
+function editBarFull(pIdx, aIdx, tIdx) {
+    const project = toolingProjects[pIdx];
+    const activity = project.activities[aIdx];
+    const team = activity.teams[tIdx];
+
+    Swal.fire({
+        title: `Modify Allocation: ${team.name}`,
+        html: `
+            <div style="text-align: left; font-size: 14px;">
+                <label><b>Start Date:</b></label>
+                <input type="text" id="swal-start" class="swal2-input" placeholder="Select Date..." value="${team.start}">
+                
+                <label><b>Duration (Weeks):</b></label>
+                <input type="number" id="swal-weeks" class="swal2-input" value="${(team.days / 7).toFixed(1)}">
+            </div>
+        `,
+        showCancelButton: true,
+        confirmButtonText: 'Save Changes',
+        confirmButtonColor: '#e30613',
+        didOpen: () => {
+            flatpickr("#swal-start", {
+                weekNumbers: true, 
+                dateFormat: "Y-m-d",
+                defaultDate: team.start,
+                locale: { firstDayOfWeek: 1 },
+                onChange: function(selectedDates, dateStr) {
+                    console.log("Nueva fecha seleccionada:", dateStr);
+                }
+            });
+        },
+        preConfirm: () => {
+            const newStart = document.getElementById('swal-start').value;
+            const newWeeks = parseFloat(document.getElementById('swal-weeks').value);
+            const newDays = Math.round(newWeeks * 7);
+
+            if (!newStart || isNaN(newDays) || newDays <= 0) {
+                Swal.showValidationMessage('Please enter a valid date and duration');
+                return false;
+            }
+
+            const check = validarDisponibilidad(team.name, newStart, newDays, pIdx, aIdx, tIdx);
+            if (check.conflict) {
+                const msg = check.type === 'MAINTENANCE' 
+                    ? `BLOCKED: Equipment in maintenance (${check.desc})`
+                    : `CONFLICT: Overlap with Project: ${check.project}`;
+                Swal.showValidationMessage(msg);
+                return false;
+            }
+
+            return { newStart, newDays, newWeeks };
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            const oldStart = team.start;
+            const oldWeeks = (team.days / 7).toFixed(1);
+
+            // 1. Aplicar cambios locales
+            team.start = result.value.newStart;
+            team.days = result.value.newDays;
+
+            // 2. Historial de auditoría CORREGIDO
+            if (!project.history) project.history = [];
+            project.history.push({
+                date: new Date().toLocaleString(),
+                user: typeof userSession !== 'undefined' ? userSession : "Omar Amador",
+                text: `MOVE LOG: ${team.name} rescheduled. Start ${oldStart} ➔ ${team.start}, Weeks ${oldWeeks} ➔ ${result.value.newWeeks}`,
+                type: 'movement' // <--- CLAVE: Esto lo separa de los comentarios manuales
+            });
+
+            // 3. Sincronizar y Renderizar
+            guardarCambios();
+            renderGantt(); 
+            
+            Swal.fire({
+                icon: 'success',
+                title: 'Updated',
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 1000
+            });
+        }
+    });
+}
 </script>
 </body>
 </html>
