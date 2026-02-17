@@ -901,8 +901,8 @@ onkeydown="manejarTeclado(event)" onclick="hideContextMenu()">
         <div class="login-box">
             <h2>forecast huf system</h2></div>
         <div class="menu-container">
-            <button class="btn-menu" onclick="showModule('viewTooling')"style="border-color: var(--huf-red);font-size: 40px;">🛠  EQUIPMENT</button>
- <button class="btn-menu" onclick="showModule('main-app')" style="border-color: var(--huf-red);font-size: 40px;">⏱ MAN POWER </button>
+            <button class="btn-menu" onclick="showModule('viewTooling')"style="border-color: var(--huf-red);font-size: 40px;"><i class="fa-solid fa-microchip">    </i>EQUIPMENT</button>
+ <button class="btn-menu" onclick="showModule('main-app')" style="border-color: var(--huf-red);font-size: 40px;"><i class="fa-solid fa-user-tie">    </i>MAN POWER</button>
         </div>
     </div>
 
@@ -1116,7 +1116,7 @@ onkeydown="manejarTeclado(event)" onclick="hideContextMenu()">
     
     <div style="display:flex; gap:8px;">
 <div class="btn-tool" style="--bg-color: #2c3e50; --hover-color: #34495e; width: auto; padding: 0 15px; cursor: default; max-height: 30px; display: flex; align-items: center; justify-content: center;">
-    LOADED: <span id="projectCount1" style="font-size: 18px;margin-left: 5px; color: #0cda16;">0</span>
+    <i class="fa-solid fa-spinner"></i>LOADED: <span id="projectCount1" style="font-size: 18px;margin-left: 5px; color: #0cda16;">0</span>
 </div>
          <button class="btn-tool" style="--bg-color: #2c3e50; --hover-color: #34495e;" onclick="toggleAllProjects(true)"> <span><i class="fa-solid fa-folder-tree"></i></span> EXPAND </button>
         <button class="btn-tool" style="--bg-color: #2c3e50; --hover-color: #34495e;" onclick="toggleAllProjects(false)"> <span><i class="fa-solid fa-square-minus"></i></span> COLLAPSE </button>
@@ -1699,90 +1699,100 @@ function revisarConflictoRealTime() {
 function addToolingRow() {
     const project = document.getElementById('toolProject').value.trim();
     const task = document.getElementById('toolTask').value.trim();
-    
-    // 1. Validar semanas
     const weeksValue = parseInt(document.getElementById('toolDays').value);
-    if (isNaN(weeksValue) || weeksValue <= 0) {
-        return Swal.fire("Attention", "Please enter a valid number of weeks", "warning");
-    }
-
-    const days = weeksValue * 7; 
     const startStr = document.getElementById('toolStart').value;
     const deviceTypeId = document.getElementById('deviceType').value;
     const him = document.getElementById('toolHIM').value;
 
-    // 2. Validar campos obligatorios
-    if (!project || !task || !startStr || !him) {
-        return Swal.fire("Attention", "Please fill all the fields!", "warning");
+    // 1. Validación mínima: El nombre del proyecto es obligatorio
+    if (!project) {
+        return Swal.fire("Attention", "Please enter at least a Project Name", "warning");
     }
-
-    // --- LÓGICA: SIEMPRE INICIAR EN LUNES ---
-    // Usamos replace para evitar desfase de zona horaria y forzamos el lunes
-    let tempDate = new Date(startStr.replace(/-/g, '\/'));
-    let dayOfWeek = tempDate.getDay(); // 0=Dom, 1=Lun...
-    let diff = tempDate.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
-    const start = new Date(tempDate.setDate(diff));
 
     // --- FUNCIÓN INTERNA PARA EJECUTAR LA INSERCIÓN ---
     const ejecutarInsercion = () => {
         let projObj = toolingProjects.find(p => p.name === project);
         if (!projObj) {
-            projObj = { name: project, collapsed: false, activities: [] };
+            projObj = { 
+                name: project, 
+                collapsed: false, 
+                activities: [], 
+                status: 'active', // Estado por defecto
+                isTBD: false 
+            };
             toolingProjects.push(projObj);
         }
 
-        let actObj = projObj.activities.find(a => a.name === task);
-        if (!actObj) {
-            actObj = { name: task, teams: [] };
-            projObj.activities.push(actObj);
+        // SOLO si hay datos de tarea, equipo y fecha, agregamos la actividad
+        if (task && him && startStr && !isNaN(weeksValue)) {
+            const days = weeksValue * 7;
+            let tempDate = new Date(startStr.replace(/-/g, '\/'));
+            let dayOfWeek = tempDate.getDay();
+            let diff = tempDate.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
+            const start = new Date(tempDate.setDate(diff));
+
+            let actObj = projObj.activities.find(a => a.name === task);
+            if (!actObj) {
+                actObj = { name: task, teams: [] };
+                projObj.activities.push(actObj);
+            }
+
+            actObj.teams.push({ 
+                name: him, 
+                start: start, 
+                days: days, 
+                weeks: weeksValue, 
+                typeId: deviceTypeId 
+            });
+            
+            Swal.fire("Task Added!", `Project updated with task starting Monday: ${start.toLocaleDateString()}`, "success");
+        } else if (!task && !him && !startStr) {
+            // Si solo se puso el nombre del proyecto
+            Swal.fire("Project Created", `The project "${project}" is now in the list.`, "success");
         }
 
-        actObj.teams.push({ 
-            name: him, 
-            start: start, 
-            days: days, 
-            weeks: weeksValue, 
-            typeId: deviceTypeId 
-        });
-        
         guardarCambios(); 
         renderGantt();
-        
+
         // Limpiar campos
         document.getElementById('toolTask').value = "";
         document.getElementById('toolDays').value = "";
-        document.getElementById('toolStart').value = ""; // Limpiar también fecha
+        document.getElementById('toolStart').value = "";
         document.getElementById('deviceType').style.background = "#fff";
         document.getElementById('toolHIM').style.background = "#fff";
-        
-        Swal.fire("Task Added!", `Assigned starting Monday: ${start.toLocaleDateString()}`, "success");
     };
 
-    // 3. EJECUCIÓN DE LA VALIDACIÓN CON OPCIÓN DE OVERBOOKING
-    const check = validarDisponibilidad(him, start, days);
-    
-    if (check.conflict) {
-        let msg = check.type === 'MAINTENANCE' 
-            ? `The equipment ${him} is in MAINTENANCE (${check.desc}).`
-            : `The equipment ${him} is busy in Project: ${check.project}, Activity: ${check.activity}.`;
-        
-        // PREGUNTA DE CONFIRMACIÓN (OVERBOOKING)
-        Swal.fire({
-            title: 'Conflict Detected',
-            text: msg + " Do you want to add it anyway?",
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#aa1c25',
-            cancelButtonColor: '#555',
-            confirmButtonText: 'Yes, Overbook',
-            cancelButtonText: 'Cancel'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                ejecutarInsercion();
-            }
-        });
+    // 3. VALIDACIÓN DE CONFLICTO (Solo si se está agregando una tarea completa)
+    if (task && him && startStr && !isNaN(weeksValue)) {
+        const days = weeksValue * 7;
+        let tempDate = new Date(startStr.replace(/-/g, '\/'));
+        let dayOfWeek = tempDate.getDay();
+        let diff = tempDate.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
+        const start = new Date(tempDate.setDate(diff));
+
+        const check = validarDisponibilidad(him, start, days);
+        if (check.conflict) {
+            let msg = check.type === 'MAINTENANCE' 
+                ? `The equipment ${him} is in MAINTENANCE (${check.desc}).`
+                : `The equipment ${him} is busy in Project: ${check.project}, Activity: ${check.activity}.`;
+            
+            Swal.fire({
+                title: 'Conflict Detected',
+                text: msg + " Do you want to add it anyway?",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#aa1c25',
+                cancelButtonColor: '#555',
+                confirmButtonText: 'Yes, Overbook',
+                cancelButtonText: 'Cancel'
+            }).then((result) => {
+                if (result.isConfirmed) ejecutarInsercion();
+            });
+        } else {
+            ejecutarInsercion();
+        }
     } else {
-        // Si no hay conflicto, se agrega directamente
+        // Si solo se está creando el contenedor del proyecto
         ejecutarInsercion();
     }
 }
@@ -1813,16 +1823,21 @@ function addToolingRow() {
         }).then((result) => { if (result.isConfirmed && result.value) { toolingProjects[pIdx].activities[aIdx].name = result.value; guardarCambios(); } });
     }
 
-    function deleteIndividualBar(pIdx, aIdx, tIdx) { 
-        Swal.fire({ title: 'Delete this equipment allocation?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#e30613'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                toolingProjects[pIdx].activities[aIdx].teams.splice(tIdx, 1);
-                if(toolingProjects[pIdx].activities[aIdx].teams.length === 0) { toolingProjects[pIdx].activities.splice(aIdx, 1); }
-                guardarCambios();
-            }
-        });
-    }
+function deleteIndividualBar(pIdx, aIdx, tIdx) { 
+    Swal.fire({ 
+        title: 'Delete this equipment allocation?',
+        icon: 'warning', 
+        showCancelButton: true, 
+        confirmButtonColor: '#e30613'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            toolingProjects[pIdx].activities[aIdx].teams.splice(tIdx, 1);
+            // Ya no se borra la actividad automáticamente si queda vacía
+            guardarCambios();
+            renderGantt();
+        }
+    });
+}
 
     function editBarDays(pIdx, aIdx, tIdx) {
     const team = toolingProjects[pIdx].activities[aIdx].teams[tIdx];
@@ -1849,14 +1864,23 @@ function addToolingRow() {
         }
     });
 }
+function showBarContextMenu(pIdx, aIdx, tIdx, event) {
+    event.preventDefault(); 
+    event.stopPropagation();
 
-    function showBarContextMenu(pIdx, aIdx, tIdx, event) {
-        event.preventDefault(); event.stopPropagation();
-        const menu = document.getElementById('customContextMenu');
-        menu.style.display = 'block'; menu.style.left = event.pageX + 'px'; menu.style.top = event.pageY + 'px';
-        document.getElementById('menuEditBtn').onclick = () => { hideContextMenu(); editBarDays(pIdx, aIdx, tIdx); };
-        document.getElementById('menuDeleteBtn').onclick = () => { hideContextMenu(); deleteIndividualBar(pIdx, aIdx, tIdx); };
-    }
+    const menu = document.getElementById('customContextMenu');
+    
+    // Cambiamos a fixed para que la posición sea relativa a la pantalla
+    menu.style.position = 'fixed'; 
+    menu.style.display = 'block'; 
+    
+    // Usamos clientX/Y que son más precisos en contenedores con scroll
+    menu.style.left = event.clientX + 'px'; 
+    menu.style.top = event.clientY + 'px';
+
+    document.getElementById('menuEditBtn').onclick = () => { hideContextMenu(); editBarDays(pIdx, aIdx, tIdx); };
+    document.getElementById('menuDeleteBtn').onclick = () => { hideContextMenu(); deleteIndividualBar(pIdx, aIdx, tIdx); };
+}
 
     function hideContextMenu() { document.getElementById('customContextMenu').style.display = 'none'; }
     
@@ -1919,32 +1943,33 @@ function setGanttStatusFilter(status) {
     ganttStatusFilter = status;
     renderGantt(); 
 }
-
-function toggleTBD(pIdx) {
+function setProjectStatus(pIdx, newStatus) {
     const proj = toolingProjects[pIdx];
-    const seraFC = !proj.isTBD; // El estado al que va a cambiar
-
-    // Personalizamos el mensaje según si se activa o se desactiva
-    const titulo = seraFC ? 'Move to Forecast' : 'Return to Active';
-    const mensaje = seraFC 
-        ? `Are you sure you want to send "${proj.name}" to FC?` 
-        : `Are you sure you want to remove "${proj.name}" from FC and return it to the active list?`;
+    const statusTitles = {
+        'active': 'Running',
+        'done': 'Completed',
+        'tbd': 'Forecast'
+    };
 
     Swal.fire({
-        title: titulo,
-        text: mensaje,
+        title: 'Change Status',
+        text: `Move "${proj.name}" to ${statusTitles[newStatus]}?`,
         icon: 'question',
         showCancelButton: true,
-        confirmButtonColor: seraFC ? '#aa1c25' : '#27ae60', // Rojo si va a FC, Verde si regresa
+        confirmButtonColor: '#aa1c25',
         cancelButtonColor: '#555',
-        confirmButtonText: 'Yes, confirm',
-        cancelButtonText: 'Cancel'
+        confirmButtonText: 'Yes, change it'
     }).then((result) => {
         if (result.isConfirmed) {
-            // Si el usuario confirma, ejecutamos el cambio y guardamos en Firebase
-            ejecutarCambioTBD(pIdx);
+            // Actualizamos la propiedad status (o creamos una si no existe)
+            toolingProjects[pIdx].status = newStatus;
+            
+            // Mantenemos compatibilidad con tu código anterior por si acaso
+            toolingProjects[pIdx].isTBD = (newStatus === 'tbd');
+            
+            guardarCambios();
+            renderGantt();
         } else {
-            // Si cancela, redibujamos para que el checkbox regrese a su estado visual real
             renderGantt();
         }
     });
@@ -1993,48 +2018,42 @@ function renderGantt() {
                     const weekInfo = getWeekData(startDate);
                     const cwString = `cw-${String(weekInfo.week).padStart(2, '0')}`;
                     const matchesSearch = p.name.toLowerCase().includes(searchTerm) || 
-                                          t.name.toLowerCase().includes(searchTerm) || 
-                                          cwString.includes(searchTerm);
+                                         t.name.toLowerCase().includes(searchTerm) || 
+                                         cwString.includes(searchTerm);
                     const matchesYear = startDate.getFullYear() === selectedYear;
                     return matchesSearch && matchesYear;
                 });
             return { ...a, originalAIdx, teams: matchingTeams };
         }).filter(a => a.teams.length > 0);
+
+        // QUITAMOS EL .filter final para permitir proyectos vacíos
         return { ...p, originalPIdx, activities: matchingActivities };
-    }).filter(p => p.activities.length > 0);
+    }).filter(p => {
+        // El proyecto se muestra si coincide con la búsqueda, tenga o no actividades
+        return p.name.toLowerCase().includes(searchTerm) || p.activities.length > 0;
+    });
 
     const filteredMaintenance = maintenanceLogs.filter(m => {
         const matchesMaint = m.him.toLowerCase().includes(searchTerm) || m.desc.toLowerCase().includes(searchTerm);
         return matchesMaint && new Date(m.start).getFullYear() === selectedYear;
     });
 
-    // --- CLASIFICACIÓN Y CONTEO (SOPORTE FIREBASE) ---
+    // --- CLASIFICACIÓN Y CONTEO MANUAL ---
     let activeCount = 0;
     let doneCount = 0;
     let tbdCount = 0;
 
     const categorizedProjects = filteredToolingProjects.map(p => {
-        let lastDate = new Date(0);
-        p.activities.forEach(a => a.teams.forEach(t => {
-            let endD = new Date(t.start); endD.setDate(endD.getDate() + t.days);
-            if (endD > lastDate) lastDate = endD;
-        }));
-        
-        const isDone = lastDate < today;
-        const isTBD = p.isTBD || false; // Si Firebase no tiene el campo, por defecto es false
-
-        if (isTBD) tbdCount++;
-        else if (isDone) doneCount++; 
+        if (!p.status) {
+            p.status = p.isTBD ? 'tbd' : 'active';
+        }
+        if (p.status === 'tbd') tbdCount++;
+        else if (p.status === 'done') doneCount++; 
         else activeCount++;
-
-        return { ...p, isDone, isTBD };
+        return { ...p };
     });
 
-    const projectsToDisplay = categorizedProjects.filter(p => {
-        if (ganttStatusFilter === 'tbd') return p.isTBD;
-        if (ganttStatusFilter === 'done') return p.isDone && !p.isTBD;
-        return !p.isDone && !p.isTBD;
-    });
+    const projectsToDisplay = categorizedProjects.filter(p => p.status === ganttStatusFilter);
 
     // --- RANGOS DE FECHA Y ESCALAS ---
     let allDates = [today];
@@ -2043,15 +2062,22 @@ function renderGantt() {
         let endD = new Date(t.start); endD.setDate(endD.getDate() + t.days);
         allDates.push(endD);
     })));
-    filteredMaintenance.forEach(m => { allDates.push(new Date(m.start)); allDates.push(new Date(m.end)); });
+    filteredMaintenance.forEach(m => { 
+        allDates.push(new Date(m.start)); 
+        allDates.push(new Date(m.end)); 
+    });
 
-    let minDate = new Date(Math.min(...allDates)); minDate.setDate(minDate.getDate() - 7);
-    let maxDate = new Date(Math.max(...allDates)); maxDate.setDate(maxDate.getDate() + 14);
+    let minDate = new Date(Math.min(...allDates));
+    minDate.setDate(minDate.getDate() - 7);
+    let maxDate = new Date(Math.max(...allDates));
+    maxDate.setDate(maxDate.getDate() + 14);
 
     let htmlLabels = [];
     let upperLabels = [];
+
     const isDateShutdown = (d) => shutdownLogs.some(s => {
-        let sS = new Date(s.start + "T00:00:00"); let sE = new Date(s.end + "T23:59:59");
+        let sS = new Date(s.start + "T00:00:00"); 
+        let sE = new Date(s.end + "T23:59:59");
         return d >= sS && d <= sE;
     });
 
@@ -2059,7 +2085,8 @@ function renderGantt() {
         let currentWeekStr = ""; let count = 0;
         let totalDays = Math.ceil((maxDate - minDate) / 86400000);
         for (let i = 0; i < totalDays; i++) {
-            let d = new Date(minDate); d.setDate(d.getDate() + i);
+            let d = new Date(minDate);
+            d.setDate(d.getDate() + i);
             htmlLabels.push({ l: d.getDate() + "/" + (d.getMonth() + 1), t: d.toDateString() === today.toDateString(), s: isDateShutdown(d) });
             let wn = getWeekData(d); let weekKey = `CW ${wn.week}`;
             if (weekKey !== currentWeekStr) {
@@ -2073,7 +2100,8 @@ function renderGantt() {
         let currentMonth = -1; let count = 0;
         let totalWeeks = Math.ceil((maxDate - minDate) / (86400000 * 7)) + 1;
         for (let i = 0; i < totalWeeks; i++) {
-            let d = new Date(minDate); d.setDate(d.getDate() + (i * 7));
+            let d = new Date(minDate);
+            d.setDate(d.getDate() + (i * 7));
             let wn = getWeekData(d);
             htmlLabels.push({ l: "CW-" + String(wn.week).padStart(2, '0'), t: today >= d && today < new Date(d.getTime() + 604800000), s: isDateShutdown(d) });
             let mn = d.getMonth();
@@ -2086,12 +2114,10 @@ function renderGantt() {
         if (upperLabels.length > 0) upperLabels[upperLabels.length - 1].span = count;
     }
 
-    // --- ACTUALIZAR CONTADOR SUPERIOR ---
     if (document.getElementById('projectCount1')) {
         document.getElementById('projectCount1').innerText = activeCount + doneCount + tbdCount;
     }
 
-    // --- CONSTRUCCIÓN HTML ---
     let html = `<div class="gantt-grid">
         <div class="gantt-header-title" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 10px; background: var(--huf-dark);">
             <div style="font-weight: bold; font-size: 14px; color: white; letter-spacing: 1px;">QM-T PROJECTS</div>
@@ -2103,36 +2129,33 @@ function renderGantt() {
         </div>
         <div class="gantt-header-time">
             <div class="gantt-upper-header">`;
-    
+
     upperLabels.forEach(u => {
         let width = u.span * 70;
         html += `<div class="gantt-upper-cell" style="width:${width}px; min-width:${width}px; flex: 0 0 ${width}px; border-right: 1px solid #444;">${u.label}</div>`;
     });
-    
+
     html += `</div><div class="gantt-header-days">`;
     htmlLabels.forEach(obj => {
         html += `<div class="gantt-day-cell ${obj.t ? 'is-today' : ''} ${obj.s ? 'is-shutdown' : ''}"><div class="vertical-text">${obj.l}</div></div>`;
     });
     html += `</div></div>`;
 
-// --- PROYECTOS ---
     projectsToDisplay.forEach(proj => {
         const pIdx = proj.originalPIdx;
-        let accentColor = proj.isTBD ? "var(--TS)" : (proj.isDone ? "var(--loc-mexico)" : "var(--loc-india)");
-        
+        let accentColor = proj.status === 'tbd' ? "var(--TS)" : (proj.status === 'done' ? "var(--loc-mexico)" : "var(--loc-india)");
+
         html += `<div class="gantt-row">
-            <div class="gantt-task-name" style="background: var(--huf-dark1)!important; color: black; border-left: 15px solid ${accentColor}; padding-left: 10px; display: flex; justify-content: space-between; align-items: center;">
-                <span onclick="toggleProject(${pIdx})" style="cursor:pointer; font-weight:bold; font-size: 13px;">
-                    ${proj.collapsed ? '<i class="fa-solid fa-folder-tree"></i>' : '<i class="fa-solid fa-square-minus"></i></i>'} ${proj.name}
-                </span>
+           <div class="gantt-task-name" style="background: var(--huf-dark1)!important; border-left: 15px solid ${accentColor}; padding: 8px 10px; display: flex; justify-content: space-between; align-items: center; min-height: 45px; height: auto;">
+        <span onclick="toggleProject(${pIdx})" style="cursor:pointer; font-weight:bold; font-size: 13px; color:black; flex: 1; white-space: normal; word-break: break-word; line-height: 1.2; padding-right: 10px;">
+    ${proj.collapsed ? '<i class="fa-solid fa-folder-tree"></i>' : '<i class="fa-solid fa-square-minus"></i>'} ${proj.name}
+</span>
                 <div style="display: flex; align-items: center; gap: 10px;">
-                    <div style="font-size: 10px; color: black; display: flex; align-items: center; gap: 6px; background: rgba(0,0,0,0.0); padding: 2px 8px; border-radius: 10px;">
-                        <span style="font-weight: bold; letter-spacing: 0.5px;">FC</span>
-                        <label class="switch-fc">
-                            <input type="checkbox" ${proj.isTBD ? 'checked' : ''} onchange="toggleTBD(${pIdx})">
-                            <span class="slider-fc"></span>
-                        </label>
-                    </div>
+                    <select onchange="setProjectStatus(${pIdx}, this.value)" style="font-size: 11px;font-weight:bold; text-align: center; padding: 2px; border-radius: 4px; border: 1px solid #999; background: #fff; width: 100px; min-width: 100px; flex-shrink: 0;">
+                       <option value="active" ${proj.status === 'active' ? 'selected' : ''}> RUNNING</option>
+                        <option value="done" ${proj.status === 'done' ? 'selected' : ''}> COMPLETED</option>
+                        <option value="tbd" ${proj.status === 'tbd' ? 'selected' : ''}> FORECAST</option>
+                    </select>
                     <div class="action-btns">
                         <button class="btn-icon add" onclick="copyTaskToInputs('${proj.name.replace(/'/g, "\\'")}', '')"><i class="fa-solid fa-plus"></i></button>
                         <button class="btn-icon" style="color:white;" onclick="editProject1(${pIdx})"><i class="fa-solid fa-pen-to-square"></i></button>
@@ -2142,30 +2165,36 @@ function renderGantt() {
             </div>
             <div class="gantt-bar-container" style="background:var(--huf-dark1);"></div>
         </div>`;
+
         if (!proj.collapsed) {
             proj.activities.forEach(act => {
                 const aIdx = act.originalAIdx;
                 html += `<div class="gantt-row">
-                    <div class="gantt-task-name" style="padding-left:15px; background:; border-left: 15px solid transparent;">
+                    <div class="gantt-task-name" style="padding-left:15px; border-left: 15px solid transparent;">
                         <div style="display:flex; justify-content:space-between; width:100%;">
                             <span style="font-size: 14px;"><i class="fa-solid fa-gem"></i> ${act.name}</span>
                             <div class="action-btns">
                                 <button class="btn-icon add" onclick="copyTaskToInputs('${proj.name.replace(/'/g, "\\'")}', '${act.name.replace(/'/g, "\\'")}')"><i class="fa-solid fa-plus"></i></button>
-                               <button class="btn-icon" onclick="editActivity(${pIdx}, ${aIdx})"><i class="fa-solid fa-pen-to-square"></i></button>
+                                <button class="btn-icon" onclick="editActivity(${pIdx}, ${aIdx})"><i class="fa-solid fa-pen-to-square"></i></button>
                                 <button class="btn-icon" onclick="deleteActivity(${pIdx}, ${aIdx})"><i class="fa-solid fa-trash-can"></i></button>
                             </div>
                         </div>
                     </div>
                     <div class="gantt-bar-container">`;
-                htmlLabels.forEach(obj => { html += `<div class="gantt-bg-cell ${obj.s ? 'is-shutdown-bg' : ''}"></div>`; });
+
+                htmlLabels.forEach(obj => {
+                    html += `<div class="gantt-bg-cell ${obj.s ? 'is-shutdown-bg' : ''}"></div>`;
+                });
+
                 act.teams.forEach(t => {
                     let div = scale === 'day' ? 1 : 7;
                     let lp = (((new Date(t.start) - minDate) / 86400000) / div) * (100 / htmlLabels.length);
                     let ws = (t.days / div) * (100 / htmlLabels.length);
                     let h = 100 / act.teams.length;
-                    let barOpacity = proj.isTBD ? "0.6" : "1";
+                    let barOpacity = proj.status === 'tbd' ? "0.6" : "1";
+
                     html += `<div class="gantt-bar" oncontextmenu="showBarContextMenu(${pIdx}, ${aIdx}, ${t.originalTIdx}, event)" 
-                             style="left:${lp}%; width:${ws}%; height:${h - 4}%; top:${h * act.teams.indexOf(t)}%; background:${getPastelColor(t.typeId)}; opacity:${barOpacity};">
+                        style="left:${lp}%; width:${ws}%; height:${h - 4}%; top:${h * act.teams.indexOf(t)}%; background:${getPastelColor(t.typeId)}; opacity:${barOpacity};">
                         <span class="floating-label">${t.name}</span>
                     </div>`;
                 });
