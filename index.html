@@ -1828,10 +1828,32 @@ function addToolingRow() {
         }).then((result) => { if (result.isConfirmed) { toolingProjects.splice(pIdx, 1); guardarCambios(); } });
     }
 
-    function editProject1(pIdx, aIdx) { 
-        Swal.fire({ title: 'Edit Project Name', input: 'text', inputValue: toolingProjects[pIdx].name, showCancelButton: true, confirmButtonColor: '#e30613'
-        }).then((result) => { if (result.isConfirmed && result.value) { toolingProjects[pIdx].name = result.value; guardarCambios(); } });
-    }
+function editProject1(pIdx) { 
+    // Usamos 'textarea' para que quepa mucho más texto y 'width' para agrandar el modal
+    Swal.fire({ 
+        title: 'Edit Project Name / Description', 
+        input: 'textarea', 
+        inputValue: toolingProjects[pIdx].name, 
+        inputAttributes: {
+            'style': 'height: 200px; font-size: 14px; line-height: 1.5;',
+            'placeholder': 'Enter the full project description here...'
+        },
+        width: '800px', // Cuadro mucho más ancho
+        showCancelButton: true, 
+        confirmButtonColor: '#e30613',
+        cancelButtonText: 'Cancel',
+        confirmButtonText: 'Save Changes',
+        customClass: {
+            input: 'custom-swal-textarea'
+        }
+    }).then((result) => { 
+        if (result.isConfirmed && result.value) { 
+            toolingProjects[pIdx].name = result.value; 
+            guardarCambios(); 
+            if (typeof renderGantt === 'function') renderGantt(); // Refrescar vista
+        } 
+    });
+}
 
     function deleteActivity(pIdx, aIdx) { 
         Swal.fire({ title: 'Delete activity?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#e30613'
