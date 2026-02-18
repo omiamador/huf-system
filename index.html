@@ -863,6 +863,17 @@ input:checked + .slider-fc {
 input:checked + .slider-fc:before {
     transform: translateX(14px);
 }
+/* Bloqueo para usuarios de solo lectura */
+body.is-readonly .admin-only {
+    display: none !important;
+}
+
+/* Opcional: Si quieres que los inputs se vean pero no se puedan tocar */
+body.is-readonly input.admin-only, 
+body.is-readonly select.admin-only {
+    pointer-events: none;
+    background-color: #f0f0f0;
+}
     </style>
 
     
@@ -875,7 +886,7 @@ input:checked + .slider-fc:before {
 
 onkeydown="manejarTeclado(event)" onclick="hideContextMenu()">
 
-<div id="customContextMenu">
+<div class="admin-only" id="customContextMenu">
      <div class="menu-item" id="menuEditBtn"><i class="fa-solid fa-pen-to-square"></i> Edit Bar</div>
  
     <div class="menu-item delete" id="menuDeleteBtn" style="border-top: 1px solid #eee; color: red;"><i class="fa-solid fa-trash-can"></i> DELETE</div>
@@ -903,7 +914,7 @@ onkeydown="manejarTeclado(event)" onclick="hideContextMenu()">
         <div class="login-box">
             <h2>forecast huf system</h2></div>
         <div class="menu-container">
-            <button class="btn-menu" onclick="showModule('viewTooling')"style="border-color: var(--huf-red);font-size: 40px;"><i class="fa-solid fa-microchip">    </i>EQUIPMENT</button>
+            <button class="btn-menu" onclick="accesoEquipment()"style="border-color: var(--huf-red);font-size: 40px;"><i class="fa-solid fa-microchip">    </i>EQUIPMENT</button>
  <button class="btn-menu" onclick="showModule('main-app')" style="border-color: var(--huf-red);font-size: 40px;"><i class="fa-solid fa-user-tie">    </i>MAN POWER</button>
         </div>
     </div>
@@ -915,7 +926,7 @@ onkeydown="manejarTeclado(event)" onclick="hideContextMenu()">
 
     
     <h2>HUF MX -FORECAST DEVICES TYPE</h2>
-        <button class="btn-tool" style="background:var(--huf-red); margin-left:00px;" onclick="goToCapacityEditor()">⚙️ EDIT CAPACITY</button>
+        <button class="btn-tool admin-only" style="background:var(--huf-red); margin-left:00px;" onclick="goToCapacityEditor()">⚙️ EDIT CAPACITY</button>
     <div id="statsMainContainer" class="stats-view-container"></div>
 </div>
 
@@ -1081,7 +1092,7 @@ onkeydown="manejarTeclado(event)" onclick="hideContextMenu()">
 </div>
 
 <div id="viewTooling" class="view-layer">
-    <div class="header-tooling"></div>
+    <div class="header-tooling "></div>
         <button class="btn-back" onclick="showModule('viewMenu')">⬅ BACK</button>
         <h2 id="toolingTopTitle">FORECAST EQUIPMENT HUF MX</h2>
         
@@ -1111,7 +1122,7 @@ onkeydown="manejarTeclado(event)" onclick="hideContextMenu()">
 
 
            
-            <button onclick="addToolingRow()" style="background: var(--huf-red); color: white; border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; height: 38px;">ADD TASK</button>
+            <button class="admin-only" onclick="addToolingRow()" style="background: var(--huf-red); color: white; border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; height: 38px;">ADD TASK</button>
         </div>
 
 <div class="collapse-controls" style="display:flex; gap:15px; margin-bottom:15px; align-items:center; justify-content:space-between; flex-wrap:wrap; background:#f8f9fa; padding:10px; border-radius:8px;">
@@ -1127,9 +1138,9 @@ onkeydown="manejarTeclado(event)" onclick="hideContextMenu()">
 
     
         <button class="btn-tool" style="--bg-color: #2c3e50; --hover-color: #34495e;" onclick="showModule('viewStats')"> <span><i class="fa-solid fa-chart-simple"></i></span> WORKLOAD </button>
-        <button class="btn-tool" style="--bg-color: #2c3e50; --hover-color: #34495e;" onclick="showModule('viewMaintenance')"> <span><i class="fa-solid fa-screwdriver-wrench"></i></span> MAINTENANCE </button>
-        <button class="btn-tool" style="--bg-color: #2c3e50; --hover-color: #34495e;" onclick="showModule('viewShutdown')"> <span><i class="fa-solid fa-person-digging"></i></span> SHUTDOWN </button>
-        <button class="btn-tool" style="--bg-color: #2c3e50; --hover-color: #34495e;" onclick="exportFullReport()"> <span><i class="fa-solid fa-file-pdf"></i></span> GEN.PDF </button>
+        <button class="btn-tool admin-only" style="--bg-color: #2c3e50; --hover-color: #34495e;" onclick="showModule('viewMaintenance')"> <span><i class="fa-solid fa-screwdriver-wrench"></i></span> MAINTENANCE </button>
+        <button class="btn-tool admin-only" style="--bg-color: #2c3e50; --hover-color: #34495e;" onclick="showModule('viewShutdown')"> <span><i class="fa-solid fa-person-digging"></i></span> SHUTDOWN </button>
+        <button class="btn-tool admin-only" style="--bg-color: #2c3e50; --hover-color: #34495e;" onclick="exportFullReport()"> <span><i class="fa-solid fa-file-pdf"></i></span> GEN.PDF </button>
      
 
         <!-- <button class="btn-tool" style="--bg-color: #27ae60; --hover-color: #2ecc71;" onclick="document.getElementById('csvEquipmentInput').click()"> 
@@ -1418,32 +1429,45 @@ db.ref('toolingProjects').on('value', (snapshot) => {
     });
 
 function guardarCambios() {
+    // 1. VALIDACIÓN DE SEGURIDAD (Nivel de Datos)
+    // Verificamos si el rol guardado en localStorage es diferente de 'admin'
+    if (localStorage.getItem('role_huf') !== 'admin') {
+        Swal.fire({
+            icon: 'error',
+            title: 'Access Denied',
+            text: 'You do not have permissions',
+            confirmButtonColor: 'var(--huf-red)'
+        });
+        return; // Detiene la ejecución por completo
+    }
+
+    // 2. PREPARACIÓN DE DATOS (Tu código original)
     const dataParaGuardar = toolingProjects.map(proj => ({
         ...proj,
         activities: proj.activities.map(act => ({
             ...act,
-            // Validamos si start ya es string o si es objeto Date
             teams: act.teams.map(t => {
                 let fechaIso;
                 try {
                     fechaIso = (typeof t.start === 'string') ? t.start : t.start.toISOString();
                 } catch (e) {
-                    fechaIso = t.start; // Fallback por si ya es string
+                    fechaIso = t.start; 
                 }
                 return { ...t, start: fechaIso };
             })
         }))
     }));
 
-    // El .set de Firebase devuelve una Promesa. Usamos .then para refrescar
+    // 3. EJECUCIÓN EN FIREBASE
     db.ref('toolingProjects').set(dataParaGuardar)
         .then(() => {
             console.log("Database Sync: OK");
-            renderGantt(); // <--- ACTUALIZA EL DIAGRAMA AL TERMINAR
+            renderGantt(); 
             if (typeof renderAllStats === 'function') renderAllStats();
         })
         .catch(err => {
             console.error("Firebase Error:", err);
+            Swal.fire('Error', 'Could not sync with database: ' + err.message, 'error');
         });
 }
     function popularDeviceTypes() {
@@ -1498,40 +1522,51 @@ function guardarCambios() {
         if(viewId === 'summary-view') showSummary();
     }
 
-    function validarAcceso() {
-        const u = document.getElementById('userInput').value;
-        const p = document.getElementById('passInput').value;
-        const user = (window.usuarios_password || []).find(item => item.user === u && item.pass === p);
-        if (user) {
-            userSession = user.nombre;
-            const card = document.getElementById('mainCard');
+let userRole = 'viewer'; // Variable global de control
+
+function validarAcceso() {
+    const u = document.getElementById('userInput').value;
+    const p = document.getElementById('passInput').value;
+    
+    // Buscamos el usuario en la lista de config.js
+    const user = (window.usuarios_password || []).find(item => item.user === u && item.pass === p);
+    
+    if (user) {
+        userSession = user.nombre;
+        userRole = user.rol || 'viewer'; // Si no tiene rol definido, por defecto es lector
         
-        // QUITAMOS la clase de 30% para que tome el 98% por defecto de .card
+        // Guardamos en localStorage para persistencia
+        localStorage.setItem('role_huf', userRole);
+
+        // Aplicamos el bloqueo visual inmediatamente
+        aplicarRestriccionesRol();
+
+        const card = document.getElementById('mainCard');
         card.classList.remove('card-login');
-            // ELIMINADO: document.getElementById('selectOp').innerHTML = ... (Causaba el error)
-            popularDeviceTypes(); 
-            showModule('viewMenu');
-         
-            
-            const configCalendario = {
-                weekNumbers: true, 
-                dateFormat: "Y-m-d",
-                locale: { firstDayOfWeek: 1 }, 
-                onChange: function() {
-                    if(typeof revisarConflictoRealTime === "function") revisarConflictoRealTime();
-                }
-            };
+        
+        popularDeviceTypes(); 
+        showModule('viewMenu');
+        
+        const configCalendario = {
+            weekNumbers: true, 
+            dateFormat: "Y-m-d",
+            locale: { firstDayOfWeek: 1 }, 
+            onChange: function() {
+                if(typeof revisarConflictoRealTime === "function") revisarConflictoRealTime();
+            }
+        };
 
-            flatpickr("#toolStart", configCalendario);
-            flatpickr("#shutStart, #shutEnd, #maintStart, #maintEnd", { 
-                weekNumbers: true, 
-                dateFormat: "Y-m-d" 
-            });
-        } else { 
-            document.getElementById('loginError').style.display = 'block'; 
-        }
+        flatpickr("#toolStart", configCalendario);
+        flatpickr("#shutStart, #shutEnd, #maintStart, #maintEnd", { 
+            weekNumbers: true, 
+            dateFormat: "Y-m-d" 
+        });
+        
+        console.log("Acceso concedido como: " + userRole);
+    } else { 
+        document.getElementById('loginError').style.display = 'block'; 
     }
-
+}
     function logout() { userSession = ""; showModule('viewLogin'); if(backupTimer) clearInterval(backupTimer); document.getElementById('mainCard').classList.add('card-login');
     showModule('viewLogin');
 }
@@ -2255,12 +2290,12 @@ function renderGantt() {
         : ''}
 </span>
                 <div style="display: flex; align-items: center; gap: 10px;">
-                    <select onchange="setProjectStatus(${pIdx}, this.value)" style="font-size: 11px;font-weight:bold; text-align: center; padding: 2px; border-radius: 4px; border: 1px solid #999; background: #fff; width: 100px; min-width: 100px; flex-shrink: 0;">
+                    <select class="admin-only" onchange="setProjectStatus(${pIdx}, this.value)" style="font-size: 11px;font-weight:bold; text-align: center; padding: 2px; border-radius: 4px; border: 1px solid #999; background: #fff; width: 100px; min-width: 100px; flex-shrink: 0;">
                         <option value="active" ${proj.status === 'active' ? 'selected' : ''}> RUNNING</option>
                         <option value="done" ${proj.status === 'done' ? 'selected' : ''}> COMPLETED</option>
                         <option value="tbd" ${proj.status === 'tbd' ? 'selected' : ''}> FORECAST</option>
                     </select>
-                    <div class="action-btns" style="display: flex; gap: 5px;">
+                    <div class="action-btns admin-only" style="display: flex; gap: 5px;">
                         <button class="btn-icon add" onclick="copyTaskToInputs('${proj.name.replace(/'/g, "\\'")}', '')" style="background: var(--huf-dark1) !important; color: white !important; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer;"><i class="fa-solid fa-plus"></i></button>
                         <button class="btn-icon" onclick="editProject1(${pIdx})" style="background: var(--huf-dark1) !important; color: white !important; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer;"><i class="fa-solid fa-pen-to-square"></i></button>
                         <button class="btn-icon" onclick="deleteProject1(${pIdx})" style="background: var(--huf-dark1) !important; color: white !important; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer;"><i class="fa-solid fa-trash-can"></i></button>
@@ -2280,7 +2315,7 @@ function renderGantt() {
                     <div class="gantt-task-name" style="padding-left:15px; border-left: 15px solid transparent;">
                         <div style="display:flex; justify-content:space-between; width:100%;">
                             <span style="font-size: 14px; color: black;"><i class="fa-solid fa-gem"></i> ${act.name}</span>
-                            <div class="action-btns" style="display: flex; gap: 5px;">
+                            <div class="action-btns admin-only" style="display: flex; gap: 5px;">
                                 <button class="btn-icon add" onclick="copyTaskToInputs('${proj.name.replace(/'/g, "\\'")}', '${act.name.replace(/'/g, "\\'")}')" style="background: white !important; color: white !important; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer;"><i class="fa-solid fa-plus"></i></button>
                                 <button class="btn-icon" onclick="editActivity(${pIdx}, ${aIdx})" style="background: white !important; color: white !important; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer;"><i class="fa-solid fa-pen-to-square"></i></button>
                                 <button class="btn-icon" onclick="deleteActivity(${pIdx}, ${aIdx})" style="background: white !important; color: white !important; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer;"><i class="fa-solid fa-trash-can"></i></button>
@@ -2340,16 +2375,22 @@ function renderAllStats() {
         toolingProjects.forEach(p => p.activities.forEach(act => act.teams.forEach(t => {
             if (t.typeId === dev.id) {
                 let cur = new Date(t.start);
+                let weeksForThisTask = new Set();
+                
                 for (let i = 0; i < t.days; i++) { 
                     if (cur.getFullYear() === selectedYear) { 
                         let weekResult = getWeekNumber(cur);
                         let wn = (typeof weekResult === 'object' ? weekResult.week : weekResult) - 1;
                         if (wn >= 0 && wn < 52) {
-                            occupancyCount[wn] += 1; 
+                            weeksForThisTask.add(wn);
                         }
                     } 
                     cur.setDate(cur.getDate() + 1); 
                 }
+                
+                weeksForThisTask.forEach(wn => {
+                    occupancyCount[wn] += 1;
+                });
             }
         })));
 
@@ -2363,30 +2404,29 @@ function renderAllStats() {
 
         let pathD = "";
         
-        let bars = occupancyCount.map((totalDaysOccupied, idx) => {
+        let bars = occupancyCount.map((totalEquipsOccupied, idx) => {
             const weekNum = idx + 1;
             const currentMaxEquips = (window.customCapacity[dev.id] && window.customCapacity[dev.id][weekNum] !== undefined)
                                      ? window.customCapacity[dev.id][weekNum]
                                      : defaultTotalHims;
 
-            let equipsUsedAverage = totalDaysOccupied / 7;
-            let val = currentMaxEquips > 0 ? (equipsUsedAverage / currentMaxEquips) * 100 : (equipsUsedAverage > 0 ? 100 : 0);
+            let equipsUsedTotal = totalEquipsOccupied; 
+            let val = currentMaxEquips > 0 ? (equipsUsedTotal / currentMaxEquips) * 100 : (equipsUsedTotal > 0 ? 100 : 0);
             
-            // h controla la altura visual de la barra (máximo 100)
-            let h = Math.min(val, 100); 
-            
-            // displayVal es lo que se escribe en el texto (máximo 100 según pides)
-            let displayVal = Math.min(Math.round(val), 100);
+            let h = val; 
+            let displayVal = Math.round(val);
 
-            let isOverloaded = val >= 100;
-            let barColor = isOverloaded ? "var(--huf-red)" : getPastelColor(dev.id);
-            let textColor = isOverloaded ? "#ffffff" : "#000000";
+            // AHORA: Parpadeo y Rojo desde el 100% exacto
+            let isCritical = val >= 100;
+            let isOverloaded = val > 100;
+            
+            let barColor = isCritical ? "var(--huf-red)" : getPastelColor(dev.id);
+            let textColor = isCritical ? "#ffffff" : "#000000";
             
             let centerX = ((idx + 0.5) / 52) * 1000;
-            pathD += (idx === 0 ? "M" : " L") + `${centerX} ${100 - h}`;
+            pathD += (idx === 0 ? "M" : " L") + `${centerX} ${100 - (h > 100 ? 100 : h)}`; 
             
-            // El tooltip sigue mostrando el valor real para auditoría
-            const labelTooltip = `CW${weekNum}: ${Math.round(val)}% (${equipsUsedAverage.toFixed(1)} de ${currentMaxEquips} Equipos)`;
+            const labelTooltip = `CW${weekNum}: ${displayVal}% (${equipsUsedTotal} de ${currentMaxEquips} Equipos)`;
 
             return `
                 <div class="stats-week-col" 
@@ -2394,22 +2434,24 @@ function renderAllStats() {
                      style="display: flex; flex-direction: column; justify-content: flex-end; position: relative; flex: 1; min-width: 0; height: 100%; z-index: 25;">
                     <div class="bar-fill" 
                          style="
-                            height:${h}%; 
+                            height:${Math.min(h, 100)}%; 
                             background:${barColor}; 
                             width: 100%; 
-                            border-top: ${isOverloaded ? '1px solid darkred' : 'none'};
+                            border-top: ${isOverloaded ? '2px solid black' : (val === 100 ? '2px solid #900' : 'none')};
                             display: flex;
                             align-items: center; 
                             justify-content: center;
                             position: relative;
                          ">
-                        ${val > 25 ? `
+                        ${val > 20 ? `
                         <span style="
                             transform: rotate(-90deg); 
-                            font-size: 12px; 
-                            font-weight: italic; 
+                            font-size: 11px; 
+                            font-weight: bold; 
                             color: ${textColor};
                             pointer-events: none;
+                            white-space: nowrap;
+                            ${isCritical ? 'animation: huf-blink 0.8s infinite;' : ''}
                         ">
                             ${displayVal}%
                         </span>
@@ -2420,19 +2462,29 @@ function renderAllStats() {
         }).join("");
 
         row.innerHTML = `
-            <div class="device-stat-title" style="font-size: 13px; font-weight: bold; margin-bottom: 5px;">
-                ${dev.name} (${selectedYear})
+            <style>
+                @keyframes huf-blink {
+                    0% { opacity: 1; }
+                    50% { opacity: 0.2; }
+                    100% { opacity: 1; }
+                }
+            </style>
+            <div class="device-stat-title" style="font-size: 13px; font-weight: bold; margin-bottom: 5px; display: flex; justify-content: space-between;">
+                <span>${dev.name} (${selectedYear})</span>
+                
             </div>
             <div class="chart-frame" style="padding: 5px 0 0 35px; position: relative; height: 220px; min-width: 0; display: flex; flex-direction: column;"> 
                 
                 <div class="y-axis-labels" style="position: absolute; left: 0; top: 5px; height: calc(100% - 30px); display: flex; flex-direction: column; justify-content: space-between; font-size: 8px; color: #999; width: 25px; text-align: right;">
-                    <span>100%</span><span>75%</span><span>50%</span><span>25%</span><span>0%</span>
+                    <span>100%+</span><span>75%</span><span>50%</span><span>25%</span><span>0%</span>
                 </div>
 
                 <div class="stats-plot-area" style="position: relative; flex-grow: 1; width: 100%; min-width: 0; border-left: 1px solid #eee; border-bottom: 1px solid #eee;">
+                    <div style="position: absolute; top: 0; left: 0; width: 100%; border-top: 1px dashed rgba(227, 6, 19, 0.6); z-index: 10;"></div>
+                    
                     <svg class="trend-line-svg" preserveAspectRatio="none" viewBox="0 0 1000 100" 
                          style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 30; pointer-events: none;">
-                        <path class="trend-path" d="${pathD}" fill="none" stroke="rgba(0,0,0,0.4)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></path>
+                        <path class="trend-path" d="${pathD}" fill="none" stroke="rgba(0,0,0,0.3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
                     </svg>
 
                     <div class="stats-week-wrapper" style="display: flex; align-items: flex-end; height: 100%; width: 100%; gap: 1px; position: absolute; top: 0; left: 0;">
@@ -4184,6 +4236,29 @@ function editBarFull(pIdx, aIdx, tIdx) {
             renderGantt(); 
         }
     });
+}
+function aplicarRestriccionesRol() {
+    const role = localStorage.getItem('role_huf') || userRole;
+    if (role === 'viewer') {
+        document.body.classList.add('is-readonly');
+    } else {
+        document.body.classList.remove('is-readonly');
+    }
+}
+function accesoEquipment() {
+    const role = localStorage.getItem('role_huf');
+
+    if (role === 'admin') {
+        // Si es admin, va al editor completo
+        showModule('viewTooling'); 
+    } else {
+        // Si es viewer, va directo a las estadísticas/gráficas
+        showModule('viewStats');
+        
+        // Opcional: Ejecutar la función que dibuja las gráficas 
+        // para asegurar que se vean al entrar
+        if (typeof renderAllStats === 'function') renderAllStats();
+    }
 }
 </script>
 </body>
