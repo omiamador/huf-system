@@ -2033,10 +2033,29 @@ function renderGantt() {
     const container = document.getElementById('ganttContainer');
     if (!container) return;
 
+    // Inyectar estilo para mejorar calendarios de edición (inputs de fecha)
+    if (!document.getElementById('gantt-dynamic-styles')) {
+        const style = document.createElement('style');
+        style.id = 'gantt-dynamic-styles';
+        style.innerHTML = `
+            input[type="date"] {
+                padding: 12px !important;
+                font-size: 16px !important;
+                min-height: 45px !important;
+                width: 100% !important;
+                cursor: pointer;
+            }
+            .modal-content input, .modal-content select {
+                margin-bottom: 15px;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
     const scale = document.getElementById('viewScale').value;
     const searchTerm = document.getElementById('ganttSearch')?.value.toLowerCase() || "";
     const today = new Date();
-    const currentYear = today.getFullYear(); // Año real hoy
+    const currentYear = today.getFullYear(); 
     today.setHours(0, 0, 0, 0);
 
     const getWeekData = (date) => {
@@ -2071,9 +2090,6 @@ function renderGantt() {
         const isYearCurrent = selectedYear === currentYear;
         const matchesSearch = p.name.toLowerCase().includes(searchTerm);
 
-        // LOGICA DE VISIBILIDAD:
-        // Si no es el año actual, solo mostramos si tiene actividades.
-        // Si es el año actual, mostramos todo (para ver los proyectos vacíos).
         if (!isYearCurrent) {
             return hasActivitiesThisYear && matchesSearch;
         }
@@ -2193,8 +2209,6 @@ function renderGantt() {
         const pIdx = proj.originalPIdx;
         const hasNoActivitiesThisYear = proj.activities.length === 0;
         const isYearCurrent = selectedYear === currentYear;
-        
-        // El aviso solo sale si es el año actual y no hay tareas
         const showWarning = isYearCurrent && hasNoActivitiesThisYear;
 
         let accentColor;
@@ -3787,9 +3801,9 @@ function openProjectNotes(pIdx) {
             </div>
 
             <div style="text-align: left; font-weight: bold; margin-top: 15px; margin-bottom: 5px; font-size: 13px;">
-                Add Comment as: <span style="color: #aa1c25;">${activeUser}</span>
+                Add as: <span style="color: #aa1c25;">${activeUser}</span>
             </div>
-            <textarea id="swal-note-input" class="swal2-textarea" style="margin: 0; width: 100%; border-radius: 8px; font-size: 14px;" placeholder="Write a comment..."></textarea>
+            <textarea id="swal-note-input" class="swal2-textarea" style="margin: 0; width: 100%; border-radius: 8px; font-size: 14px;" placeholder="Write..."></textarea>
             
             <style>
                 .filter-btn {
@@ -3810,8 +3824,8 @@ function openProjectNotes(pIdx) {
             </style>
         `,
         showCancelButton: true,
-        confirmButtonText: '<i class="fa-solid fa-save"></i> Save Comment',
-        confirmButtonColor: '#27ae60',
+        confirmButtonText: '<i class="fa-solid fa-save"></i> Save',
+        confirmButtonColor: 'var(--huf-red)',
         didOpen: () => {
             // Exponemos la función de filtrado al objeto window para que los botones onclick la encuentren
             window.filterNotes = (type) => {
@@ -4022,12 +4036,34 @@ function editBarFull(pIdx, aIdx, tIdx) {
     Swal.fire({
         title: `Modify Allocation: ${team.name}`,
         html: `
-            <div style="text-align: left; font-size: 14px;">
+            <style>
+                .swal2-html-container {
+                    overflow: visible !important;
+                }
+                .swal2-popup {
+                    overflow: visible !important;
+                }
+                .allocation-form {
+                    text-align: left; 
+                    font-size: 14px; 
+                    padding: 10px;
+                }
+                .allocation-form label {
+                    display: block;
+                    margin-top: 10px;
+                    margin-bottom: 5px;
+                }
+                #swal-start {
+                    background: white !important;
+                    cursor: pointer;
+                }
+            </style>
+            <div class="allocation-form">
                 <label><b>Start Date:</b></label>
-                <input type="text" id="swal-start" class="swal2-input" placeholder="Select Date..." value="${team.start}">
+                <input type="text" id="swal-start" class="swal2-input" placeholder="Select Date..." readonly>
                 
                 <label><b>Duration (Weeks):</b></label>
-                <input type="number" id="swal-weeks" class="swal2-input" value="${(team.days / 7).toFixed(1)}">
+                <input type="number" id="swal-weeks" class="swal2-input" value="${(team.days / 7).toFixed(1)}" step="0.5">
             </div>
         `,
         showCancelButton: true,
@@ -4038,9 +4074,25 @@ function editBarFull(pIdx, aIdx, tIdx) {
                 weekNumbers: true, 
                 dateFormat: "Y-m-d",
                 defaultDate: team.start,
-                locale: { firstDayOfWeek: 1 },
-                onChange: function(selectedDates, dateStr) {
-                    console.log("Nueva fecha seleccionada:", dateStr);
+                // Configuración para que el Lunes sea el primer día de la semana
+                locale: {
+                    firstDayOfWeek: 1, // 1 representa el Lunes
+                    weekdays: {
+                        shorthand: ['Do', 'Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sa'],
+                        longhand: ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
+                    },
+                    months: {
+                        shorthand: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'],
+                        longhand: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
+                    }
+                },
+                static: false, 
+                monthSelectorType: "static",
+                onReady: function(selectedDates, dateStr, instance) {
+                    if (team.start) {
+                        const d = team.start.split('-');
+                        instance.setDate(new Date(d[0], d[1] - 1, d[2]), false);
+                    }
                 }
             });
         },
@@ -4057,44 +4109,30 @@ function editBarFull(pIdx, aIdx, tIdx) {
             const check = validarDisponibilidad(team.name, newStart, newDays, pIdx, aIdx, tIdx);
             if (check.conflict) {
                 const msg = check.type === 'MAINTENANCE' 
-                    ? `BLOCKED: Equipment in maintenance (${check.desc})`
+                    ? `BLOCKED: Equipment (${check.desc})`
                     : `CONFLICT: Overlap with Project: ${check.project}`;
                 Swal.showValidationMessage(msg);
                 return false;
             }
-
-            return { newStart, newDays, newWeeks };
+            return { newStart, newDays };
         }
     }).then((result) => {
         if (result.isConfirmed) {
             const oldStart = team.start;
-            const oldWeeks = (team.days / 7).toFixed(1);
-
-            // 1. Aplicar cambios locales
-            team.start = result.value.newStart;
+            
+            team.start = result.value.newStart; 
             team.days = result.value.newDays;
 
-            // 2. Historial de auditoría CORREGIDO
             if (!project.history) project.history = [];
             project.history.push({
                 date: new Date().toLocaleString(),
                 user: typeof userSession !== 'undefined' ? userSession : "Omar Amador",
-                text: `MOVE LOG: ${team.name} rescheduled. Start ${oldStart} ➔ ${team.start}, Weeks ${oldWeeks} ➔ ${result.value.newWeeks}`,
-                type: 'movement' // <--- CLAVE: Esto lo separa de los comentarios manuales
+                text: `MOVE LOG: ${team.name} rescheduled. Start ${oldStart} ➔ ${team.start}`,
+                type: 'movement' 
             });
 
-            // 3. Sincronizar y Renderizar
             guardarCambios();
             renderGantt(); 
-            
-            Swal.fire({
-                icon: 'success',
-                title: 'Updated',
-                toast: true,
-                position: 'top-end',
-                showConfirmButton: false,
-                timer: 1000
-            });
         }
     });
 }
