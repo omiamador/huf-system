@@ -5,7 +5,7 @@ window.usuarios_password = [
     { user: "oramirez", pass: "ramirez#23", nombre: "Omar Ramirez", rol: "admin" },
 	 { user: "irodriguez", pass: "nacho123", nombre: "Ignacio Rodriguez", rol: "admin" },
 	{ user: "abonilla", pass: "bonilla#12", nombre: "Antonio Bonilla", rol: "admin" },
-	{ user: "alopez	", pass: "alejandro#12", nombre: "Alejandro Lopez", rol: "admin" },
+	{ user: "alopez", pass: "alejandro#12", nombre: "Alejandro Lopez", rol: "admin" }
 ];
 
 var nombre_dispositivo = "JAILOR";
@@ -47,6 +47,7 @@ window.dispositivos_config = {
     "4": ["HIM 4.1", "HIM 4.2", "HIM 4.3", "HIM 4.4"],
     "5": ["HIM 5.1"]
 };
+
 
 
 
