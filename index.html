@@ -4033,36 +4033,66 @@ function editBarFull(pIdx, aIdx, tIdx) {
     const activity = project.activities[aIdx];
     const team = activity.teams[tIdx];
 
+    // --- BÚSQUEDA DEL NOMBRE DEL DISPOSITIVO ---
+    let resourceTypeName = "";
+    
+    // 1. Intentar obtenerlo de la variable resourceTypes (maestro de tipos)
+    if (typeof resourceTypes !== 'undefined' && Array.isArray(resourceTypes)) {
+        const found = resourceTypes.find(r => String(r.id) === String(team.typeId));
+        if (found) resourceTypeName = found.name;
+    }
+
+    // 2. Si no se encuentra y el select 'deviceType' existe en el HTML, buscamos el texto ahí
+    if (!resourceTypeName) {
+        const deviceSelect = document.getElementById('deviceType');
+        if (deviceSelect) {
+            const option = Array.from(deviceSelect.options).find(opt => String(opt.value) === String(team.typeId));
+            if (option) resourceTypeName = option.text;
+        }
+    }
+
+    // 3. Fallback final
+    if (!resourceTypeName) {
+        resourceTypeName = "Device Type: " + (team.typeId || "N/A");
+    }
+
     Swal.fire({
         title: `Modify Allocation: ${team.name}`,
         html: `
             <style>
-                .swal2-html-container {
-                    overflow: visible !important;
-                }
-                .swal2-popup {
-                    overflow: visible !important;
-                }
-                .allocation-form {
-                    text-align: left; 
-                    font-size: 14px; 
-                    padding: 10px;
+                .swal2-html-container { overflow: visible !important; }
+                .swal2-popup { overflow: visible !important; }
+                .allocation-form { text-align: left; font-size: 14px; padding: 10px; }
+                .device-badge {
+                    display: inline-block;
+                    background: #2c3e50;
+                    color: #ffffff;
+                    padding: 6px 12px;
+                    border-radius: 4px;
+                    font-size: 12px;
+                    font-weight: bold;
+                    margin-bottom: 15px;
+                    border-left: 4px solid #e30613;
+                    text-transform: uppercase;
                 }
                 .allocation-form label {
                     display: block;
                     margin-top: 10px;
                     margin-bottom: 5px;
+                    font-weight: bold;
+                    color: #444;
                 }
-                #swal-start {
-                    background: white !important;
-                    cursor: pointer;
-                }
+                #swal-start { background: white !important; cursor: pointer; }
             </style>
             <div class="allocation-form">
-                <label><b>Start Date:</b></label>
+                <div class="device-badge">
+                    <i class="fa-solid fa-microchip"></i> ${resourceTypeName}
+                </div>
+
+                <label>Start Date:</label>
                 <input type="text" id="swal-start" class="swal2-input" placeholder="Select Date..." readonly>
                 
-                <label><b>Duration (Weeks):</b></label>
+                <label>Duration (Weeks):</label>
                 <input type="number" id="swal-weeks" class="swal2-input" value="${(team.days / 7).toFixed(1)}" step="0.5">
             </div>
         `,
@@ -4074,9 +4104,8 @@ function editBarFull(pIdx, aIdx, tIdx) {
                 weekNumbers: true, 
                 dateFormat: "Y-m-d",
                 defaultDate: team.start,
-                // Configuración para que el Lunes sea el primer día de la semana
                 locale: {
-                    firstDayOfWeek: 1, // 1 representa el Lunes
+                    firstDayOfWeek: 1, // Empieza en Lunes
                     weekdays: {
                         shorthand: ['Do', 'Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sa'],
                         longhand: ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
@@ -4087,7 +4116,6 @@ function editBarFull(pIdx, aIdx, tIdx) {
                     }
                 },
                 static: false, 
-                monthSelectorType: "static",
                 onReady: function(selectedDates, dateStr, instance) {
                     if (team.start) {
                         const d = team.start.split('-');
@@ -4119,7 +4147,6 @@ function editBarFull(pIdx, aIdx, tIdx) {
     }).then((result) => {
         if (result.isConfirmed) {
             const oldStart = team.start;
-            
             team.start = result.value.newStart; 
             team.days = result.value.newDays;
 
