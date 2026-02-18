@@ -895,7 +895,7 @@ onkeydown="manejarTeclado(event)" onclick="hideContextMenu()">
 <div id="mainCard" class="car card-login">
     <div class="logo-container">
         <img src="logo.png" alt="HUF Logo" onerror="this.style.display='none';">
-        <p class="logo-subtitle">Developed By Omar Amador 1.10</p>
+        <p class="logo-subtitle">Developed By Omar Amador 1.11</p>
     </div>
 
     <div id="viewLogin" class="view-layer active-view"class="card">
@@ -922,7 +922,7 @@ onkeydown="manejarTeclado(event)" onclick="hideContextMenu()">
 
 
 <div id="viewStats" class="view-layer">
-    <button class="btn-back" onclick="showModule('viewTooling')">⬅ BACK</button>
+    <button class="btn-back" onclick="volverAtras()">⬅ BACK</button>
 
     
     <h2>HUF MX -FORECAST DEVICES TYPE</h2>
@@ -4260,6 +4260,18 @@ function accesoEquipment() {
         if (typeof renderAllStats === 'function') renderAllStats();
     }
 }
+function volverAtras() {
+    const role = localStorage.getItem('role_huf');
+
+    if (role === 'admin') {
+        // El administrador regresa a la tabla de edición
+        showModule('viewTooling');
+    } else {
+        // El lector (viewer) regresa al menú principal de botones grandes
+        showModule('viewMenu');
+    }
+}
+
 </script>
 </body>
 </html>
