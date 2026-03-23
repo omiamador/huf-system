@@ -3,7 +3,7 @@ window.usuarios_password = [
     { user: "alara", pass: "chtm", nombre: "Angela Lara", rol: "admin" },
     { user: "lmorales", pass: "luis123", nombre: "Luis Morales", rol: "admin" },
     { user: "oramirez", pass: "ramirez#23", nombre: "Omar Ramirez", rol: "admin" },
-	 { user: "irodriguez", pass: "nacho123", nombre: "Ignacio Rodriguez", rol: "admin" },
+	 { user: "irodriguez", pass: "nacho123", nombre: "Ignacio Rodriguez", rol: "viewer" },
 	{ user: "abonilla", pass: "bonilla#12", nombre: "Antonio Bonilla", rol: "admin" },
 	{ user: "alopez", pass: "alejandro#12", nombre: "Alejandro Lopez", rol: "admin" },
 	{ user: "alejandro", pass: "ale#12", nombre: "Alejandro Lopez", rol: "admin" },
