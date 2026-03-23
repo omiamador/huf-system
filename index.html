@@ -895,7 +895,7 @@ onkeydown="manejarTeclado(event)" onclick="hideContextMenu()">
 <div id="mainCard" class="car card-login">
     <div class="logo-container">
         <img src="logo.png" alt="HUF Logo" onerror="this.style.display='none';">
-        <p class="logo-subtitle">Developed By Omar Amador 1.11</p>
+        <p class="logo-subtitle">Developed By Omar Amador 1.12</p>
     </div>
 
     <div id="viewLogin" class="view-layer active-view"class="card">
@@ -2369,6 +2369,17 @@ function renderAllStats() {
     if (!window.huf_devices_config) return;
 
     window.huf_devices_config.forEach(dev => {
+        
+        // ==========================================
+        // FILTRO RÁPIDO PARA OCULTAR
+        // Sustituye 'NOMBRE_A_OCULTAR' por el nombre real del dispositivo
+        // o usa dev.id si prefieres filtrar por ID.
+        // ==========================================
+        const excludedDevices = ['DURAB.CART SOMA']; 
+        if (excludedDevices.includes(dev.name) || excludedDevices.includes(dev.id)) {
+            return; // Salta este dispositivo y no renderiza nada
+        }
+
         let occupancyCount = new Array(52).fill(0); 
         const defaultTotalHims = dev.hims.length || 1;
 
@@ -2416,7 +2427,6 @@ function renderAllStats() {
             let h = val; 
             let displayVal = Math.round(val);
 
-            // AHORA: Parpadeo y Rojo desde el 100% exacto
             let isCritical = val >= 100;
             let isOverloaded = val > 100;
             
