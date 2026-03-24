@@ -4334,7 +4334,9 @@ async function openAnnual() {
         })));
 
         let totalPercentage = 0;
-        for (let idx = 0; idx < 52; idx++) {
+        // Cambiamos el rango: empezamos en idx 1 (Semana 2) y terminamos antes de idx 51 (Semana 51)
+        // Esto excluye semana 1 (idx 0) y semana 52 (idx 51)
+        for (let idx = 1; idx < 51; idx++) {
             const weekNum = idx + 1;
             const currentMax = (window.customCapacity[dev.id] && window.customCapacity[dev.id][weekNum] !== undefined)
                                ? window.customCapacity[dev.id][weekNum]
@@ -4344,7 +4346,8 @@ async function openAnnual() {
             totalPercentage += val;
         }
 
-        const avgAnnual = Math.round(totalPercentage / 52);
+        // Dividimos entre 50 en lugar de 52
+        const avgAnnual = Math.round(totalPercentage / 50);
         annualData.push({ name: dev.name, id: dev.id, value: avgAnnual });
     });
 
@@ -4357,10 +4360,11 @@ async function openAnnual() {
             </button>
         </div>
         
-        <div id="capture-area" style="background: white;text-color:black; padding: 20px; border-radius: 10px;">
+        <div id="capture-area" style="background: white; padding: 20px; border-radius: 10px;">
             <h2 style="text-align: center; margin-top: 0; color: var(--huf-dark); font-family: sans-serif;">
                 HUF MX - ANNUAL USAGE SUMMARY (${selectedYear})
             </h2>
+            
             
             <div class="stats-grid-container" style="
                 display: grid; 
@@ -4376,12 +4380,12 @@ async function openAnnual() {
                     const isOver = data.value >= 100;
                     
                     return `
-                    <div style="background: rgba(255,255,255,0.08); padding: 15px; border-radius: 8px; border-left: 7px solid ${barColor}; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                    <div style="background: rgba(255,255,255,0.08); padding: 15px; border-radius: 8px; border-left: 7px solid ${barColor}; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border-top: 1px solid #eee; border-right: 1px solid #eee; border-bottom: 1px solid #eee;">
                         <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-weight: bold; font-size: 14px; color: black;">
                             <span>${data.name}</span>
                             <span style="color: ${isOver ? 'var(--huf-red)' : 'black'};">${data.value}%</span>
                         </div>
-                        <div style="background: white; height: 45px; border-radius: 20px; overflow: hidden; position: relative; border: 3px solid #444;color: var(--huf-dark);">
+                        <div style="background: white; height: 45px; border-radius: 20px; overflow: hidden; position: relative; border: 3px solid #444; color: var(--huf-dark);">
                             <div style="
                                 width: ${Math.min(data.value, 100)}%; 
                                 height: 100%; 
@@ -4398,7 +4402,6 @@ async function openAnnual() {
     document.getElementById('download-annual-btn').addEventListener('click', function() {
         const target = document.getElementById('capture-area');
         
-        // Verificamos si la librería está cargada, si no, la cargamos dinámicamente
         if (typeof html2canvas === 'undefined') {
             const script = document.createElement('script');
             script.src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";
@@ -4411,8 +4414,8 @@ async function openAnnual() {
 
     function executeCapture(element) {
         html2canvas(element, {
-            backgroundColor: "#1a1a1a", // Asegura que el fondo no sea transparente
-            scale: 2, // Mejora la calidad de la imagen
+            backgroundColor: "#ffffff",
+            scale: 2,
             logging: false
         }).then(canvas => {
             const link = document.createElement('a');
