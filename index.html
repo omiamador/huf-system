@@ -895,7 +895,7 @@ onkeydown="manejarTeclado(event)" onclick="hideContextMenu()">
 <div id="mainCard" class="car card-login">
     <div class="logo-container">
         <img src="logo.png" alt="HUF Logo" onerror="this.style.display='none';">
-        <p class="logo-subtitle">Developed By Omar Amador 1.12</p>
+        <p class="logo-subtitle">Developed By Omar Amador 1.13</p>
     </div>
 
     <div id="viewLogin" class="view-layer active-view"class="card">
@@ -927,6 +927,7 @@ onkeydown="manejarTeclado(event)" onclick="hideContextMenu()">
     
     <h2>HUF MX -FORECAST DEVICES TYPE</h2>
         <button class="btn-tool admin-only" style="background:var(--huf-red); margin-left:00px;" onclick="goToCapacityEditor()">⚙️ EDIT CAPACITY</button>
+        <button class="btn-tool admin-only" style="background:var(--huf-red); margin-left:00px;" onclick="openAnnual()">⚙️ VIEW ANNUAL</button>
     <div id="statsMainContainer" class="stats-view-container"></div>
 </div>
 
@@ -4281,7 +4282,113 @@ function volverAtras() {
         showModule('viewMenu');
     }
 }
+function openAnnual() {
+    // 1. Intentar obtener el contenedor anual o crearlo si no existe
+    let annualLayer = document.getElementById('viewAnnualStats');
+    if (!annualLayer) {
+        annualLayer = document.createElement('div');
+        annualLayer.id = 'viewAnnualStats';
+        annualLayer.className = 'view-layer'; 
+        document.body.appendChild(annualLayer);
+    }
 
+    // Ocultamos la vista actual y mostramos la anual
+    document.getElementById('viewStats').style.display = 'none';
+    annualLayer.style.display = 'block';
+
+    // 2. Lógica de Cálculo de Ocupación Anual
+    const excludedDevices = ['DURAB.CART SOMA'];
+    const annualData = [];
+
+    if (!window.huf_devices_config) return;
+
+    window.huf_devices_config.forEach(dev => {
+        if (excludedDevices.includes(dev.name) || excludedDevices.includes(dev.id)) return;
+
+        let occupancyCount = new Array(52).fill(0);
+        const defaultTotalHims = dev.hims.length || 1;
+
+        toolingProjects.forEach(p => p.activities.forEach(act => act.teams.forEach(t => {
+            if (t.typeId === dev.id) {
+                let cur = new Date(t.start);
+                let weeksForThisTask = new Set();
+                for (let i = 0; i < t.days; i++) {
+                    if (cur.getFullYear() === selectedYear) {
+                        let weekResult = getWeekNumber(cur);
+                        let wn = (typeof weekResult === 'object' ? weekResult.week : weekResult) - 1;
+                        if (wn >= 0 && wn < 52) weeksForThisTask.add(wn);
+                    }
+                    cur.setDate(cur.getDate() + 1);
+                }
+                weeksForThisTask.forEach(wn => { occupancyCount[wn] += 1; });
+            }
+        })));
+
+        let totalPercentage = 0;
+        for (let idx = 0; idx < 52; idx++) {
+            const weekNum = idx + 1;
+            const currentMax = (window.customCapacity[dev.id] && window.customCapacity[dev.id][weekNum] !== undefined)
+                               ? window.customCapacity[dev.id][weekNum]
+                               : defaultTotalHims;
+            
+            let val = currentMax > 0 ? (occupancyCount[idx] / currentMax) * 100 : 0;
+            totalPercentage += val;
+        }
+
+        const avgAnnual = Math.round(totalPercentage / 52);
+        annualData.push({ name: dev.name, id: dev.id, value: avgAnnual });
+    });
+
+    // 3. Renderizado en Matriz (Grid de 2 columnas)
+    annualLayer.innerHTML = `
+        <button class="btn-back" onclick="closeAnnual()">⬅ BACK</button>
+        
+        <h2 style="text-align: center; margin-bottom: 20px;">HUF MX - ANNUAL USAGE SUMMARY (${selectedYear})</h2>
+        
+        <div class="stats-view-container" style="
+            display: grid; 
+            grid-template-columns: repeat(2, 1fr); 
+            gap: 15px; 
+            padding: 20px; 
+            max-width: 1100px; 
+            margin: 0 auto;
+        ">
+            ${annualData.map(data => {
+                const barColor = data.value >= 100 ? "var(--huf-red)" : getPastelColor(data.id);
+                const isOver = data.value >= 100;
+                
+                return `
+                <div style="background: rgba(0,0,0,0.03); padding: 12px; border-radius: 8px; border-left: 5px solid ${barColor}; display: flex; flex-direction: column; justify-content: center;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 6px; font-weight: bold; font-size: 13px;">
+                        <span>${data.name}</span>
+                        <span style="color: ${isOver ? 'var(--huf-red)' : 'inherit'};">${data.value}%</span>
+                    </div>
+                    <div style="background: #e0e0e0; height: 18px; border-radius: 9px; overflow: hidden; position: relative; border: 1px solid #ccc;">
+                        <div style="
+                            width: ${Math.min(data.value, 100)}%; 
+                            height: 100%; 
+                            background: ${barColor}; 
+                            transition: width 1s ease-in-out;
+                            ${isOver ? 'animation: huf-blink 1s infinite;' : ''}
+                        "></div>
+                    </div>
+                </div>`;
+            }).join('')}
+        </div>
+
+        <div style="display: flex; justify-content: center; color: #999; font-size: 11px; margin-top: 20px; gap: 40px;">
+            <span>0% AVG</span><span>25%</span><span>50%</span><span>75%</span><span>100% CAPACITY</span>
+        </div>
+    `;
+}
+
+function closeAnnual() {
+    const annualLayer = document.getElementById('viewAnnualStats');
+    if (annualLayer) annualLayer.style.display = 'none';
+    
+    const statsLayer = document.getElementById('viewStats');
+    if (statsLayer) statsLayer.style.display = 'block';
+}
 </script>
 </body>
 </html>
