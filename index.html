@@ -895,7 +895,7 @@ onkeydown="manejarTeclado(event)" onclick="hideContextMenu()">
 <div id="mainCard" class="car card-login">
     <div class="logo-container">
         <img src="logo.png" alt="HUF Logo" onerror="this.style.display='none';">
-        <p class="logo-subtitle">Developed By Omar Amador 1.13</p>
+        <p class="logo-subtitle">Developed By Omar Amador 1.14</p>
     </div>
 
     <div id="viewLogin" class="view-layer active-view"class="card">
@@ -1268,6 +1268,15 @@ onkeydown="manejarTeclado(event)" onclick="hideContextMenu()">
     </div>
 </div>
 
+
+<div id="annual-view" class="view-layer">
+    <div class="header-tooling"></div>
+    <button class="btn-back" onclick="showModule('viewStats')">⬅ BACK</button>
+   
+
+    
+</div>
+
  
 
         
@@ -1520,6 +1529,7 @@ function guardarCambios() {
         if(viewId === 'viewStats') setTimeout(renderAllStats, 100);
         if(viewId === 'main-app') initApp();
         if(viewId === 'capacity-view') showCapacityEditor();
+        if(viewId === 'annual-view');
         if(viewId === 'summary-view') showSummary();
     }
 
@@ -3598,6 +3608,10 @@ function goToCapacityEditor() {
     showModule('capacity-view');
     initCapacitySelectors();
 }
+function openannual() {
+    showModule('annual-view');
+    initCapacitySelectors();
+}
 
 function loadCapacityGrid() {
     const grid = document.getElementById('capMonthsGrid');
@@ -4282,19 +4296,14 @@ function volverAtras() {
         showModule('viewMenu');
     }
 }
-function openAnnual() {
-    // 1. Intentar obtener el contenedor anual o crearlo si no existe
-    let annualLayer = document.getElementById('viewAnnualStats');
-    if (!annualLayer) {
-        annualLayer = document.createElement('div');
-        annualLayer.id = 'viewAnnualStats';
-        annualLayer.className = 'view-layer'; 
-        document.body.appendChild(annualLayer);
-    }
 
-    // Ocultamos la vista actual y mostramos la anual
-    document.getElementById('viewStats').style.display = 'none';
-    annualLayer.style.display = 'block';
+async function openAnnual() {
+    // 1. Referencia al contenedor existente y mostrar módulo
+    const annualLayer = document.getElementById('annual-view');
+    if (!annualLayer) return;
+    
+    // Usamos tu función de navegación existente
+    showModule('annual-view');
 
     // 2. Lógica de Cálculo de Ocupación Anual
     const excludedDevices = ['DURAB.CART SOMA'];
@@ -4339,55 +4348,83 @@ function openAnnual() {
         annualData.push({ name: dev.name, id: dev.id, value: avgAnnual });
     });
 
-    // 3. Renderizado en Matriz (Grid de 2 columnas)
+    // 3. Renderizado con Botón de Captura
     annualLayer.innerHTML = `
-        <button class="btn-back" onclick="closeAnnual()">⬅ BACK</button>
-        
-        <h2 style="text-align: center; margin-bottom: 20px;">HUF MX - ANNUAL USAGE SUMMARY (${selectedYear})</h2>
-        
-        <div class="stats-view-container" style="
-            display: grid; 
-            grid-template-columns: repeat(2, 1fr); 
-            gap: 15px; 
-            padding: 20px; 
-            max-width: 1100px; 
-            margin: 0 auto;
-        ">
-            ${annualData.map(data => {
-                const barColor = data.value >= 100 ? "var(--huf-red)" : getPastelColor(data.id);
-                const isOver = data.value >= 100;
-                
-                return `
-                <div style="background: rgba(0,0,0,0.03); padding: 12px; border-radius: 8px; border-left: 5px solid ${barColor}; display: flex; flex-direction: column; justify-content: center;">
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 6px; font-weight: bold; font-size: 13px;">
-                        <span>${data.name}</span>
-                        <span style="color: ${isOver ? 'var(--huf-red)' : 'inherit'};">${data.value}%</span>
-                    </div>
-                    <div style="background: #e0e0e0; height: 18px; border-radius: 9px; overflow: hidden; position: relative; border: 1px solid #ccc;">
-                        <div style="
-                            width: ${Math.min(data.value, 100)}%; 
-                            height: 100%; 
-                            background: ${barColor}; 
-                            transition: width 1s ease-in-out;
-                            ${isOver ? 'animation: huf-blink 1s infinite;' : ''}
-                        "></div>
-                    </div>
-                </div>`;
-            }).join('')}
+        <div class="header-tooling" style="padding: 10px 20px; display: flex; justify-content: space-between; align-items: center;">
+            <button class="btn-back" onclick="showModule('viewStats')">⬅ BACK</button>
+            <button id="download-annual-btn" class="btn-tooling" style="background: var(--huf-red); color: white; padding: 8px 15px; border-radius: 4px; cursor: pointer; border: none; font-weight: bold;">
+                💾 SAVE IMAGE
+            </button>
         </div>
-
-        <div style="display: flex; justify-content: center; color: #999; font-size: 11px; margin-top: 20px; gap: 40px;">
-            <span>0% AVG</span><span>25%</span><span>50%</span><span>75%</span><span>100% CAPACITY</span>
+        
+        <div id="capture-area" style="background: white;text-color:black; padding: 20px; border-radius: 10px;">
+            <h2 style="text-align: center; margin-top: 0; color: var(--huf-dark); font-family: sans-serif;">
+                HUF MX - ANNUAL USAGE SUMMARY (${selectedYear})
+            </h2>
+            
+            <div class="stats-grid-container" style="
+                display: grid; 
+                grid-template-columns: repeat(2, 1fr); 
+                gap: 15px; 
+                padding: 10px; 
+                max-width: 1100px; 
+                margin: 0 auto;
+                color: var(--huf-dark);
+            ">
+                ${annualData.map(data => {
+                    const barColor = data.value >= 100 ? "var(--huf-red)" : getPastelColor(data.id);
+                    const isOver = data.value >= 100;
+                    
+                    return `
+                    <div style="background: rgba(255,255,255,0.08); padding: 15px; border-radius: 8px; border-left: 7px solid ${barColor}; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-weight: bold; font-size: 14px; color: black;">
+                            <span>${data.name}</span>
+                            <span style="color: ${isOver ? 'var(--huf-red)' : 'black'};">${data.value}%</span>
+                        </div>
+                        <div style="background: white; height: 45px; border-radius: 20px; overflow: hidden; position: relative; border: 3px solid #444;color: var(--huf-dark);">
+                            <div style="
+                                width: ${Math.min(data.value, 100)}%; 
+                                height: 100%; 
+                                background: ${barColor}; 
+                            "></div>
+                        </div>
+                    </div>`;
+                }).join('')}
+            </div>
         </div>
     `;
-}
 
-function closeAnnual() {
-    const annualLayer = document.getElementById('viewAnnualStats');
-    if (annualLayer) annualLayer.style.display = 'none';
-    
-    const statsLayer = document.getElementById('viewStats');
-    if (statsLayer) statsLayer.style.display = 'block';
+    // 4. Lógica del botón de descarga
+    document.getElementById('download-annual-btn').addEventListener('click', function() {
+        const target = document.getElementById('capture-area');
+        
+        // Verificamos si la librería está cargada, si no, la cargamos dinámicamente
+        if (typeof html2canvas === 'undefined') {
+            const script = document.createElement('script');
+            script.src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";
+            script.onload = () => executeCapture(target);
+            document.head.appendChild(script);
+        } else {
+            executeCapture(target);
+        }
+    });
+
+    function executeCapture(element) {
+        html2canvas(element, {
+            backgroundColor: "#1a1a1a", // Asegura que el fondo no sea transparente
+            scale: 2, // Mejora la calidad de la imagen
+            logging: false
+        }).then(canvas => {
+            const link = document.createElement('a');
+            link.download = `HUF_Annual_Usage_${selectedYear}.png`;
+            link.href = canvas.toDataURL("image/png");
+            link.click();
+        });
+    }
+
+    if (typeof initCapacitySelectors === "function") {
+        initCapacitySelectors();
+    }
 }
 </script>
 </body>
