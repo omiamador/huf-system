@@ -1142,9 +1142,8 @@ onkeydown="manejarTeclado(event)" onclick="hideContextMenu()">
         <button class="btn-tool admin-only" style="--bg-color: #2c3e50; --hover-color: #34495e;" onclick="showModule('viewMaintenance')"> <span><i class="fa-solid fa-screwdriver-wrench"></i></span> MAINTENANCE </button>
         <button class="btn-tool admin-only" style="--bg-color: #2c3e50; --hover-color: #34495e;" onclick="showModule('viewShutdown')"> <span><i class="fa-solid fa-person-digging"></i></span> SHUTDOWN </button>
         <button class="btn-tool admin-only" style="--bg-color: #2c3e50; --hover-color: #34495e;" onclick="exportFullReport()"> <span><i class="fa-solid fa-file-pdf"></i></span> GEN.PDF </button>
- <button onclick="checkOverbookStatus()" class="btn-check-overbook">
-    🔍 Check All Overbooks
-</button>
+        <button class="btn-tool admin-only" style="--bg-color: #2c3e50; --hover-color: #34495e;" onclick="checkOverbookStatus()"> <span><i class="fa-solid fa-file-pdf"></i></span> OVERBOOK </button>
+
 
         <!-- <button class="btn-tool" style="--bg-color: #27ae60; --hover-color: #2ecc71;" onclick="document.getElementById('csvEquipmentInput').click()"> 
     <span>📥</span> IMPORT CSV 
@@ -4448,32 +4447,40 @@ async function openAnnual() {
     }
 }
 
+/**
+ * ANALIZA TODOS LOS PROYECTOS ACTIVOS Y DETECTA SOLAPAMIENTOS DE EQUIPOS
+ */
 function obtenerEquiposOverbook() {
     const asignacionesPorEquipo = {};
     const conflictos = [];
 
+    // 1. Agrupar todas las asignaciones por nombre de equipo
     toolingProjects.forEach(proyecto => {
         if (proyecto.status === 'active') {
             proyecto.activities.forEach(actividad => {
+                if (!actividad.teams) return;
+
                 actividad.teams.forEach(teamAsignado => {
-                    // Verificación de seguridad para el error de .replace
+                    // Verificación de seguridad para la fecha
                     if (!teamAsignado.start) return;
 
                     let fechaInicio;
                     if (teamAsignado.start instanceof Date) {
                         fechaInicio = new Date(teamAsignado.start);
                     } else {
-                        // Forzamos a string para evitar el TypeError
-                        const dateStr = String(teamAsignado.start).replace(/-/g, '\/');
+                        // Limpieza de formato de fecha para JS
+                        const dateStr = String(teamAsignado.start).replace(/-/g, '/');
                         fechaInicio = new Date(dateStr);
                     }
+
+                    // Calcular fecha de fin basada en los días asignados
+                    const fechaFin = new Date(fechaInicio);
+                    const dias = parseInt(teamAsignado.days) || 0;
+                    fechaFin.setDate(fechaInicio.getDate() + dias);
 
                     if (!asignacionesPorEquipo[teamAsignado.name]) {
                         asignacionesPorEquipo[teamAsignado.name] = [];
                     }
-
-                    const fechaFin = new Date(fechaInicio);
-                    fechaFin.setDate(fechaInicio.getDate() + (parseInt(teamAsignado.days) || 0));
 
                     asignacionesPorEquipo[teamAsignado.name].push({
                         proyecto: proyecto.name,
@@ -4487,15 +4494,16 @@ function obtenerEquiposOverbook() {
         }
     });
 
-    // Comparar tareas del mismo equipo entre sí
+    // 2. Comparar tareas del mismo equipo entre sí (Detección de colisiones)
     for (const equipo in asignacionesPorEquipo) {
-        const lista = asignacionesPorEquipo[equipo];
-        for (let i = 0; i < lista.length; i++) {
-            for (let j = i + 1; j < lista.length; j++) {
-                const t1 = lista[i];
-                const t2 = lista[j];
+        const listaAsignaciones = asignacionesPorEquipo[equipo];
+        
+        for (let i = 0; i < listaAsignaciones.length; i++) {
+            for (let j = i + 1; j < listaAsignaciones.length; j++) {
+                const t1 = listaAsignaciones[i];
+                const t2 = listaAsignaciones[j];
 
-                // Si las fechas se solapan
+                // Lógica de solapamiento: (InicioA < FinB) && (FinA > InicioB)
                 if (t1.inicio < t2.fin && t1.fin > t2.inicio) {
                     conflictos.push({
                         equipo: equipo,
@@ -4511,74 +4519,32 @@ function obtenerEquiposOverbook() {
     return conflictos;
 }
 
-// Ejemplo de uso:
-function mostrarAlertasOverbook() {
-    const listaConflictos = obtenerEquiposOverbook();
-    
-    if (listaConflictos.length === 0) {
-        console.log("No hay equipos en overbook.");
-        return;
-    }
-
-    console.table(listaConflictos); // Muestra los conflictos en una tabla en la consola
-    
-    // Opcional: Mostrar un aviso visual
-    const nombresEquipos = [...new Set(listaConflictos.map(c => c.equipo))];
-    Swal.fire("Overbook Alert", `Equipos con conflicto: ${nombresEquipos.join(", ")}`, "info");
-}
-function revisarOverbook() {
-    const conflictos = obtenerEquiposOverbook();
-
-    if (conflictos.length === 0) {
-        return Swal.fire({
-            title: "Everything OK",
-            text: "No equipment overbooking detected.",
-            icon: "success",
-            confirmButtonColor: "#28a745"
-        });
-    }
-
-    // Formatear la lista de conflictos para mostrarla
-    let htmlLista = '<div style="text-align: left; max-height: 300px; overflow-y: auto;">';
-    conflictos.forEach(c => {
-        htmlLista += `
-            <p style="border-bottom: 1px solid #eee; padding-bottom: 5px;">
-                <strong>📍 ${c.equipo}</strong><br>
-                <small>Conflict between:</small><br>
-                • ${c.proyectoA} (${c.tareaA})<br>
-                • ${c.proyectoB} (${c.tareaB})
-            </p>`;
-    });
-    htmlLista += '</div>';
-
-    Swal.fire({
-        title: "Overbook Detected!",
-        html: htmlLista,
-        icon: "warning",
-        confirmButtonColor: "#aa1c25"
-    });
-}
+/**
+ * FUNCIÓN PRINCIPAL: Se ejecuta al dar clic al botón
+ */
 function checkOverbookStatus() {
     const lista = obtenerEquiposOverbook();
 
+    // Caso: No hay conflictos
     if (lista.length === 0) {
         return Swal.fire({
             title: "System Clear",
-            text: "No overbooking detected.",
+            text: "No equipment overbooking detected in active projects.",
             icon: "success",
-            timer: 1500,
+            timer: 2000,
             showConfirmButton: false
         });
     }
 
+    // Caso: Hay conflictos - Construcción de la tabla
     let htmlMsg = `
-    <div style="width: 100%; overflow: hidden;">
-        <table style="width: 100%; border-collapse: collapse; font-family: sans-serif; font-size: 11px; table-layout: fixed;">
+    <div style="width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; margin-top: 10px;">
+        <table style="width: 100%; min-width: 650px; border-collapse: collapse; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-size: 12px; border: 1px solid #ddd;">
             <thead>
-                <tr style="background-color: #444; color: white;">
-                    <th style="padding: 8px; border: 1px solid #ccc; width: 20%;">EQUIPMENT</th>
-                    <th style="padding: 8px; border: 1px solid #ccc; width: 40%;">PROJECT A / TASK</th>
-                    <th style="padding: 8px; border: 1px solid #ccc; width: 40%;">PROJECT B / TASK</th>
+                <tr style="background-color: #aa1c25; color: white;">
+                    <th style="padding: 12px; border: 1px solid #ddd; width: 20%;">EQUIPMENT</th>
+                    <th style="padding: 12px; border: 1px solid #ddd; width: 40%;">PROJECT A / TASK</th>
+                    <th style="padding: 12px; border: 1px solid #ddd; width: 40%;">PROJECT B / TASK</th>
                 </tr>
             </thead>
             <tbody>`;
@@ -4586,31 +4552,42 @@ function checkOverbookStatus() {
     lista.forEach((c, index) => {
         const bg = index % 2 === 0 ? '#ffffff' : '#f9f9f9';
         htmlMsg += `
-            <tr style="background-color: ${bg};">
-                <td style="padding: 8px; border: 1px solid #ccc; text-align: center; font-weight: bold; color: #aa1c25; word-wrap: break-word;">
-                    ${c.equipo}
+            <tr style="background-color: ${bg}; border-bottom: 1px solid #eee;">
+                <td style="padding: 10px; border: 1px solid #ddd; text-align: center; font-weight: bold; color: #aa1c25;">
+                    <div style="font-size: 14px;">📍</div>${c.equipo}
                 </td>
-                <td style="padding: 8px; border: 1px solid #ccc; text-align: left; vertical-align: top;">
+                <td style="padding: 10px; border: 1px solid #ddd; text-align: left; vertical-align: top;">
                     <div style="font-weight: bold; color: #333;">${c.p1}</div>
-                    <div style="color: #666;">${c.tarea1}</div>
+                    <div style="color: #666; font-size: 11px;">${c.tarea1}</div>
                 </td>
-                <td style="padding: 8px; border: 1px solid #ccc; text-align: left; vertical-align: top;">
+                <td style="padding: 10px; border: 1px solid #ddd; text-align: left; vertical-align: top;">
                     <div style="font-weight: bold; color: #333;">${c.p2}</div>
-                    <div style="color: #666;">${c.tarea2}</div>
+                    <div style="color: #666; font-size: 11px;">${c.tarea2}</div>
                 </td>
             </tr>`;
     });
 
     htmlMsg += `</tbody></table></div>`;
 
+    // Lanzar el modal de SweetAlert2
     Swal.fire({
-        title: 'Conflict Report',
+        title: '<span style="color: #aa1c25">Conflict Report</span>',
         html: htmlMsg,
-        width: '95%', // Casi todo el ancho de la pantalla
-        maxWidth: '1200px', // Límite para que no se deforme en monitores ultra-wide
-        confirmButtonText: 'Close',
+        width: '95%',
+        maxWidth: '1100px',
+        confirmButtonText: 'Got it',
         confirmButtonColor: '#444',
-        padding: '10px' // Menos padding para ganar espacio
+        showCloseButton: true,
+        padding: '1em',
+        customClass: {
+            container: 'my-swal-container'
+        },
+        didOpen: () => {
+            const container = Swal.getHtmlContainer();
+            if (container) {
+                container.style.padding = '0'; // Aprovechar espacio al máximo
+            }
+        }
     });
 }
 </script>
