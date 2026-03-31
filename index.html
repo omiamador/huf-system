@@ -895,7 +895,7 @@ onkeydown="manejarTeclado(event)" onclick="hideContextMenu()">
 <div id="mainCard" class="car card-login">
     <div class="logo-container">
         <img src="logo.png" alt="HUF Logo" onerror="this.style.display='none';">
-        <p class="logo-subtitle">Developed By Omar Amador 1.14</p>
+        <p class="logo-subtitle">Developed By Omar Amador 1.15</p>
     </div>
 
     <div id="viewLogin" class="view-layer active-view"class="card">
@@ -1142,7 +1142,9 @@ onkeydown="manejarTeclado(event)" onclick="hideContextMenu()">
         <button class="btn-tool admin-only" style="--bg-color: #2c3e50; --hover-color: #34495e;" onclick="showModule('viewMaintenance')"> <span><i class="fa-solid fa-screwdriver-wrench"></i></span> MAINTENANCE </button>
         <button class="btn-tool admin-only" style="--bg-color: #2c3e50; --hover-color: #34495e;" onclick="showModule('viewShutdown')"> <span><i class="fa-solid fa-person-digging"></i></span> SHUTDOWN </button>
         <button class="btn-tool admin-only" style="--bg-color: #2c3e50; --hover-color: #34495e;" onclick="exportFullReport()"> <span><i class="fa-solid fa-file-pdf"></i></span> GEN.PDF </button>
-     
+ <button onclick="checkOverbookStatus()" class="btn-check-overbook">
+    🔍 Check All Overbooks
+</button>
 
         <!-- <button class="btn-tool" style="--bg-color: #27ae60; --hover-color: #2ecc71;" onclick="document.getElementById('csvEquipmentInput').click()"> 
     <span>📥</span> IMPORT CSV 
@@ -1763,39 +1765,62 @@ function revisarConflictoRealTime() {
  * Agrega la fila de tooling convirtiendo semanas a días para el motor del Gantt
  */
 function addToolingRow() {
-    const project = document.getElementById('toolProject').value.trim();
+    let projectRaw = document.getElementById('toolProject').value.trim();
     const task = document.getElementById('toolTask').value.trim();
-    const weeksValue = parseInt(document.getElementById('toolDays').value);
+    const weeksValue = parseFloat(document.getElementById('toolDays').value);
     const startStr = document.getElementById('toolStart').value;
     const deviceTypeId = document.getElementById('deviceType').value;
     const him = document.getElementById('toolHIM').value;
 
-    // 1. Validación mínima: El nombre del proyecto es obligatorio
-    if (!project) {
+    if (!projectRaw) {
         return Swal.fire("Attention", "Please enter at least a Project Name", "warning");
     }
 
-    // --- FUNCIÓN INTERNA PARA EJECUTAR LA INSERCIÓN ---
     const ejecutarInsercion = () => {
-        let projObj = toolingProjects.find(p => p.name === project);
+        let projObj = toolingProjects.find(p => p.name === projectRaw);
+        
         if (!projObj) {
+            const lastId = toolingProjects.reduce((max, p) => {
+                const currentId = parseInt(p.id);
+                return (!isNaN(currentId) && currentId > max) ? currentId : max;
+            }, 90);
+
+            const nextId = lastId + 1;
+            const formattedName = `${nextId}. ${projectRaw}`;
+
             projObj = { 
-                name: project, 
+                id: nextId, 
+                name: formattedName, 
                 collapsed: false, 
                 activities: [], 
-                status: 'active', // Estado por defecto
+                status: 'active',
                 isTBD: false 
             };
             toolingProjects.push(projObj);
         }
 
-        // SOLO si hay datos de tarea, equipo y fecha, agregamos la actividad
         if (task && him && startStr && !isNaN(weeksValue)) {
-            const days = weeksValue * 7;
-            let tempDate = new Date(startStr.replace(/-/g, '\/'));
-            let dayOfWeek = tempDate.getDay();
-            let diff = tempDate.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
-            const start = new Date(tempDate.setDate(diff));
+            const days = Math.round(weeksValue * 7);
+            
+            // --- CORRECCIÓN DEFINITIVA DE LUNES ---
+            const parts = startStr.split('-');
+            // Creamos la fecha en hora local
+            let tempDate = new Date(parts[0], parts[1] - 1, parts[2]); 
+            tempDate.setHours(0, 0, 0, 0);
+
+            let dayOfWeek = tempDate.getDay(); // Dom=0, Lun=1...
+            
+            // Si es Domingo (0), queremos que se quede en esa semana o mueva al lunes previo.
+            // Para que el Lunes sea el día 1 y el Domingo el 7:
+            let diffToMonday = tempDate.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1);
+            
+            let mondayDate = new Date(tempDate.setDate(diffToMonday));
+            
+            // Formateo manual YYYY-MM-DD (Local)
+            const y = mondayDate.getFullYear();
+            const m = String(mondayDate.getMonth() + 1).padStart(2, '0');
+            const d = String(mondayDate.getDate()).padStart(2, '0');
+            const startNormalized = `${y}-${m}-${d}`;
 
             let actObj = projObj.activities.find(a => a.name === task);
             if (!actObj) {
@@ -1805,50 +1830,47 @@ function addToolingRow() {
 
             actObj.teams.push({ 
                 name: him, 
-                start: start, 
+                start: startNormalized, 
                 days: days, 
                 weeks: weeksValue, 
                 typeId: deviceTypeId 
             });
             
-            Swal.fire("Task Added!", `Project updated with task starting Monday: ${start.toLocaleDateString()}`, "success");
+            Swal.fire("Task Added!", `Assigned to ${projObj.name}. Start: ${startNormalized}`, "success");
         } else if (!task && !him && !startStr) {
-            // Si solo se puso el nombre del proyecto
-            Swal.fire("Project Created", `The project "${project}" is now in the list.`, "success");
+            Swal.fire("Project Created", `New entry: "${projObj.name}"`, "success");
         }
 
         guardarCambios(); 
         renderGantt();
 
-        // Limpiar campos
+        // Limpieza
+        document.getElementById('toolProject').value = "";
         document.getElementById('toolTask').value = "";
         document.getElementById('toolDays').value = "";
         document.getElementById('toolStart').value = "";
-        document.getElementById('deviceType').style.background = "#fff";
-        document.getElementById('toolHIM').style.background = "#fff";
     };
 
-    // 3. VALIDACIÓN DE CONFLICTO (Solo si se está agregando una tarea completa)
+    // --- VALIDACIÓN DE CONFLICTO ---
     if (task && him && startStr && !isNaN(weeksValue)) {
-        const days = weeksValue * 7;
-        let tempDate = new Date(startStr.replace(/-/g, '\/'));
+        const parts = startStr.split('-');
+        let tempDate = new Date(parts[0], parts[1] - 1, parts[2]);
         let dayOfWeek = tempDate.getDay();
-        let diff = tempDate.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
-        const start = new Date(tempDate.setDate(diff));
+        let diffToMonday = tempDate.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1);
+        const startCheck = new Date(tempDate.setDate(diffToMonday));
 
-        const check = validarDisponibilidad(him, start, days);
+        const check = validarDisponibilidad(him, startCheck, Math.round(weeksValue * 7));
         if (check.conflict) {
             let msg = check.type === 'MAINTENANCE' 
-                ? `The equipment ${him} is in MAINTENANCE (${check.desc}).`
-                : `The equipment ${him} is busy in Project: ${check.project}, Activity: ${check.activity}.`;
+                ? `The equipment ${him} is in MAINTENANCE.`
+                : `Conflict with Project: ${check.project}.`;
             
             Swal.fire({
                 title: 'Conflict Detected',
-                text: msg + " Do you want to add it anyway?",
+                text: msg + " Add anyway?",
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: '#aa1c25',
-                cancelButtonColor: '#555',
                 confirmButtonText: 'Yes, Overbook',
                 cancelButtonText: 'Cancel'
             }).then((result) => {
@@ -1858,7 +1880,6 @@ function addToolingRow() {
             ejecutarInsercion();
         }
     } else {
-        // Si solo se está creando el contenedor del proyecto
         ejecutarInsercion();
     }
 }
@@ -2101,7 +2122,6 @@ function renderGantt() {
     const container = document.getElementById('ganttContainer');
     if (!container) return;
 
-    // Inyectar estilo para mejorar calendarios de edición (inputs de fecha)
     if (!document.getElementById('gantt-dynamic-styles')) {
         const style = document.createElement('style');
         style.id = 'gantt-dynamic-styles';
@@ -2135,7 +2155,15 @@ function renderGantt() {
         return { week: weekNo, year: d.getUTCFullYear() };
     };
 
-    // --- FILTRADO POR AÑO, BÚSQUEDA Y ORDEN ALFABÉTICO ---
+    const getMonday = (d) => {
+        const date = new Date(d);
+        const day = date.getDay();
+        const diff = date.getDate() - day + (day === 0 ? -6 : 1); 
+        const monday = new Date(date.setDate(diff));
+        monday.setHours(0,0,0,0);
+        return monday;
+    };
+
     const filteredToolingProjects = toolingProjects.map((p, originalPIdx) => {
         const matchingActivities = p.activities.map((a, originalAIdx) => {
             const matchingTeams = a.teams.map((t, originalTIdx) => ({ ...t, originalTIdx }))
@@ -2170,7 +2198,6 @@ function renderGantt() {
         return matchesMaint && new Date(m.start).getFullYear() === selectedYear;
     });
 
-    // --- CLASIFICACIÓN Y CONTEO ---
     let activeCount = 0;
     let doneCount = 0;
     let tbdCount = 0;
@@ -2187,7 +2214,6 @@ function renderGantt() {
 
     const projectsToDisplay = categorizedProjects.filter(p => p.status === ganttStatusFilter);
 
-    // --- RANGOS DE FECHA Y ESCALAS ---
     let allDates = [today];
     categorizedProjects.forEach(p => p.activities.forEach(a => a.teams.forEach(t => {
         allDates.push(new Date(t.start));
@@ -2199,8 +2225,9 @@ function renderGantt() {
         allDates.push(new Date(m.end)); 
     });
 
-    let minDate = new Date(Math.min(...allDates));
+    let minDate = getMonday(new Date(Math.min(...allDates)));
     minDate.setDate(minDate.getDate() - 7);
+    
     let maxDate = new Date(Math.max(...allDates));
     maxDate.setDate(maxDate.getDate() + 14);
 
@@ -2279,40 +2306,27 @@ function renderGantt() {
         const isYearCurrent = selectedYear === currentYear;
         const showWarning = isYearCurrent && hasNoActivitiesThisYear;
 
-        let accentColor;
-        let rowBackground;
-
-        if (showWarning) {
-            accentColor = "#ff9800"; 
-            rowBackground = "#fff3e0"; 
-        } else {
-            accentColor = proj.status === 'tbd' ? "var(--TS)" : (proj.status === 'done' ? "var(--loc-mexico)" : "var(--loc-india)");
-            rowBackground = "var(--huf-dark1)";
-        }
+        let accentColor = showWarning ? "#ff9800" : (proj.status === 'tbd' ? "var(--TS)" : (proj.status === 'done' ? "var(--loc-mexico)" : "var(--loc-india)"));
+        let rowBackground = showWarning ? "#fff3e0" : "var(--huf-dark1)";
 
         html += `<div class="gantt-row">
-           <div class="gantt-task-name" style="background: ${rowBackground}!important; border-left: 15px solid ${accentColor}; padding: 8px 10px; display: flex; justify-content: space-between; align-items: center; min-height: 45px; height: auto;">
+            <div class="gantt-task-name" style="background: ${rowBackground}!important; border-left: 15px solid ${accentColor}; padding: 8px 10px; display: flex; justify-content: space-between; align-items: center; min-height: 45px; height: auto;">
 <span onclick="toggleProject(${pIdx})" style="cursor:pointer; font-weight:bold; font-size: 13px; color:black; flex: 1; white-space: normal; word-break: break-word; line-height: 1.2; padding-right: 10px;">
     ${proj.collapsed ? '<i class="fa-solid fa-folder-tree"></i>' : '<i class="fa-solid fa-square-minus"></i>'} 
     ${showWarning ? '⚠️ ' : ''}${proj.name}
-    
-    ${(proj.history && proj.history.length > 0) ? 
-        `<i class="fa-solid fa-clock-rotate-left" style="color: #3498db; margin-left: 8px; font-size: 11px;" title="View history (${proj.history.length} entries)"></i>` 
-        : ''}
+    ${(proj.history && proj.history.length > 0) ? `<i class="fa-solid fa-clock-rotate-left" style="color: #3498db; margin-left: 8px; font-size: 11px;" title="View history"></i>` : ''}
 </span>
                 <div style="display: flex; align-items: center; gap: 10px;">
-                    <select class="admin-only" onchange="setProjectStatus(${pIdx}, this.value)" style="font-size: 11px;font-weight:bold; text-align: center; padding: 2px; border-radius: 4px; border: 1px solid #999; background: #fff; width: 100px; min-width: 100px; flex-shrink: 0;">
+                    <select class="admin-only" onchange="setProjectStatus(${pIdx}, this.value)" style="font-size: 11px;font-weight:bold; text-align: center; padding: 2px; border-radius: 4px; border: 1px solid #999; background: #fff; width: 100px; min-width: 100px;">
                         <option value="active" ${proj.status === 'active' ? 'selected' : ''}> RUNNING</option>
                         <option value="done" ${proj.status === 'done' ? 'selected' : ''}> COMPLETED</option>
                         <option value="tbd" ${proj.status === 'tbd' ? 'selected' : ''}> FORECAST</option>
                     </select>
                     <div class="action-btns admin-only" style="display: flex; gap: 5px;">
-                        <button class="btn-icon add" onclick="copyTaskToInputs('${proj.name.replace(/'/g, "\\'")}', '')" style="background: var(--huf-dark1) !important; color: white !important; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer;"><i class="fa-solid fa-plus"></i></button>
-                        <button class="btn-icon" onclick="editProject1(${pIdx})" style="background: var(--huf-dark1) !important; color: white !important; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer;"><i class="fa-solid fa-pen-to-square"></i></button>
-                        <button class="btn-icon" onclick="deleteProject1(${pIdx})" style="background: var(--huf-dark1) !important; color: white !important; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer;"><i class="fa-solid fa-trash-can"></i></button>
-                        <button class="btn-icon" onclick="openProjectNotes(${pIdx})" style="background: #3498db !important; color: white !important; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer;">
-    <i class="fa-solid fa-comment-dots"></i>
-</button>
+                        <button class="btn-icon add" onclick="copyTaskToInputs('${proj.name.replace(/'/g, "\\'")}', '')"><i class="fa-solid fa-plus"></i></button>
+                        <button class="btn-icon" onclick="editProject1(${pIdx})"><i class="fa-solid fa-pen-to-square"></i></button>
+                        <button class="btn-icon" onclick="deleteProject1(${pIdx})"><i class="fa-solid fa-trash-can"></i></button>
+                        <button class="btn-icon" onclick="openProjectNotes(${pIdx})" style="background: #3498db !important;"><i class="fa-solid fa-comment-dots"></i></button>
                     </div>
                 </div>
             </div>
@@ -2327,9 +2341,9 @@ function renderGantt() {
                         <div style="display:flex; justify-content:space-between; width:100%;">
                             <span style="font-size: 14px; color: black;"><i class="fa-solid fa-gem"></i> ${act.name}</span>
                             <div class="action-btns admin-only" style="display: flex; gap: 5px;">
-                                <button class="btn-icon add" onclick="copyTaskToInputs('${proj.name.replace(/'/g, "\\'")}', '${act.name.replace(/'/g, "\\'")}')" style="background: white !important; color: white !important; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer;"><i class="fa-solid fa-plus"></i></button>
-                                <button class="btn-icon" onclick="editActivity(${pIdx}, ${aIdx})" style="background: white !important; color: white !important; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer;"><i class="fa-solid fa-pen-to-square"></i></button>
-                                <button class="btn-icon" onclick="deleteActivity(${pIdx}, ${aIdx})" style="background: white !important; color: white !important; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer;"><i class="fa-solid fa-trash-can"></i></button>
+                                <button class="btn-icon add" onclick="copyTaskToInputs('${proj.name.replace(/'/g, "\\'")}', '${act.name.replace(/'/g, "\\'")}')"><i class="fa-solid fa-plus"></i></button>
+                                <button class="btn-icon" onclick="editActivity(${pIdx}, ${aIdx})"><i class="fa-solid fa-pen-to-square"></i></button>
+                                <button class="btn-icon" onclick="deleteActivity(${pIdx}, ${aIdx})"><i class="fa-solid fa-trash-can"></i></button>
                             </div>
                         </div>
                     </div>
@@ -2341,15 +2355,33 @@ function renderGantt() {
 
                 act.teams.forEach(t => {
                     let div = scale === 'day' ? 1 : 7;
-                    let lp = (((new Date(t.start) - minDate) / 86400000) / div) * (100 / htmlLabels.length);
-                    let ws = (t.days / div) * (100 / htmlLabels.length);
-                    let h = 100 / act.teams.length;
-                    let barOpacity = proj.status === 'tbd' ? "0.6" : "1";
+                    let displayStart = new Date(t.start);
+                    let displayDays = t.days;
 
-                    html += `<div class="gantt-bar" oncontextmenu="showBarContextMenu(${pIdx}, ${aIdx}, ${t.originalTIdx}, event)" 
-                        style="left:${lp}%; width:${ws}%; height:${h - 4}%; top:${h * act.teams.indexOf(t)}%; background:${getPastelColor(t.typeId)}; opacity:${barOpacity};">
-                        <span class="floating-label">${t.name}</span>
-                    </div>`;
+                    if (scale !== 'day') {
+                        // REVISIÓN: Solo ajustamos visualmente, pero respetamos la proporción
+                        // Para evitar que se "infle" la barra, calculamos la posición basada en el lunes más cercano
+                        let alignedStart = getMonday(displayStart);
+                        let lp = (((alignedStart - minDate) / 86400000) / div) * (100 / htmlLabels.length);
+                        let ws = (displayDays / div) * (100 / htmlLabels.length);
+                        let h = 100 / act.teams.length;
+                        let barOpacity = proj.status === 'tbd' ? "0.6" : "1";
+
+                        html += `<div class="gantt-bar" oncontextmenu="showBarContextMenu(${pIdx}, ${aIdx}, ${t.originalTIdx}, event)" 
+                            style="left:${lp}%; width:${ws}%; height:${h - 4}%; top:${h * act.teams.indexOf(t)}%; background:${getPastelColor(t.typeId)}; opacity:${barOpacity};">
+                            <span class="floating-label">${t.name}</span>
+                        </div>`;
+                    } else {
+                        let lp = (((displayStart - minDate) / 86400000) / div) * (100 / htmlLabels.length);
+                        let ws = (displayDays / div) * (100 / htmlLabels.length);
+                        let h = 100 / act.teams.length;
+                        let barOpacity = proj.status === 'tbd' ? "0.6" : "1";
+
+                        html += `<div class="gantt-bar" oncontextmenu="showBarContextMenu(${pIdx}, ${aIdx}, ${t.originalTIdx}, event)" 
+                            style="left:${lp}%; width:${ws}%; height:${h - 4}%; top:${h * act.teams.indexOf(t)}%; background:${getPastelColor(t.typeId)}; opacity:${barOpacity};">
+                            <span class="floating-label">${t.name}</span>
+                        </div>`;
+                    }
                 });
                 html += `</div></div>`;
             });
@@ -2358,8 +2390,8 @@ function renderGantt() {
 
     container.innerHTML = html + "</div>";
     setTimeout(() => { if (typeof syncFloatingLabels === "function") syncFloatingLabels(); }, 150);
+    renderAllStats();
 }
-
 function renderAllStats() {
     const container = document.getElementById('statsMainContainer'); 
     if (!window.customCapacity) {
@@ -4132,16 +4164,11 @@ function editBarFull(pIdx, aIdx, tIdx) {
     const activity = project.activities[aIdx];
     const team = activity.teams[tIdx];
 
-    // --- BÚSQUEDA DEL NOMBRE DEL DISPOSITIVO ---
     let resourceTypeName = "";
-    
-    // 1. Intentar obtenerlo de la variable resourceTypes (maestro de tipos)
     if (typeof resourceTypes !== 'undefined' && Array.isArray(resourceTypes)) {
         const found = resourceTypes.find(r => String(r.id) === String(team.typeId));
         if (found) resourceTypeName = found.name;
     }
-
-    // 2. Si no se encuentra y el select 'deviceType' existe en el HTML, buscamos el texto ahí
     if (!resourceTypeName) {
         const deviceSelect = document.getElementById('deviceType');
         if (deviceSelect) {
@@ -4149,11 +4176,7 @@ function editBarFull(pIdx, aIdx, tIdx) {
             if (option) resourceTypeName = option.text;
         }
     }
-
-    // 3. Fallback final
-    if (!resourceTypeName) {
-        resourceTypeName = "Device Type: " + (team.typeId || "N/A");
-    }
+    if (!resourceTypeName) resourceTypeName = "Device Type: " + (team.typeId || "N/A");
 
     Swal.fire({
         title: `Modify Allocation: ${team.name}`,
@@ -4203,17 +4226,7 @@ function editBarFull(pIdx, aIdx, tIdx) {
                 weekNumbers: true, 
                 dateFormat: "Y-m-d",
                 defaultDate: team.start,
-                locale: {
-                    firstDayOfWeek: 1, // Empieza en Lunes
-                    weekdays: {
-                        shorthand: ['Do', 'Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sa'],
-                        longhand: ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
-                    },
-                    months: {
-                        shorthand: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'],
-                        longhand: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
-                    }
-                },
+                locale: { firstDayOfWeek: 1 },
                 static: false, 
                 onReady: function(selectedDates, dateStr, instance) {
                     if (team.start) {
@@ -4226,9 +4239,11 @@ function editBarFull(pIdx, aIdx, tIdx) {
         preConfirm: () => {
             const newStart = document.getElementById('swal-start').value;
             const newWeeks = parseFloat(document.getElementById('swal-weeks').value);
+            
+            // CORRECCIÓN CLAVE: Asegurar que los días guardados sean múltiplos exactos de 7 si usas semanas.
             const newDays = Math.round(newWeeks * 7);
 
-            if (!newStart || isNaN(newDays) || newDays <= 0) {
+            if (!newStart || isNaN(newWeeks) || newWeeks <= 0) {
                 Swal.showValidationMessage('Please enter a valid date and duration');
                 return false;
             }
@@ -4241,19 +4256,22 @@ function editBarFull(pIdx, aIdx, tIdx) {
                 Swal.showValidationMessage(msg);
                 return false;
             }
-            return { newStart, newDays };
+            return { newStart, newDays, newWeeks };
         }
     }).then((result) => {
         if (result.isConfirmed) {
             const oldStart = team.start;
+            const oldWeeks = (team.days / 7).toFixed(1);
+
+            // Guardamos los valores limpios
             team.start = result.value.newStart; 
             team.days = result.value.newDays;
 
             if (!project.history) project.history = [];
             project.history.push({
                 date: new Date().toLocaleString(),
-                user: typeof userSession !== 'undefined' ? userSession : "Omar Amador",
-                text: `MOVE LOG: ${team.name} rescheduled. Start ${oldStart} ➔ ${team.start}`,
+                user: "Omar Amador",
+                text: `MOVE LOG: ${team.name} updated. [Start: ${oldStart} ➔ ${team.start}] [Weeks: ${oldWeeks} ➔ ${result.value.newWeeks}]`,
                 type: 'movement' 
             });
 
@@ -4429,11 +4447,172 @@ async function openAnnual() {
         initCapacitySelectors();
     }
 }
+
+function obtenerEquiposOverbook() {
+    const asignacionesPorEquipo = {};
+    const conflictos = [];
+
+    toolingProjects.forEach(proyecto => {
+        if (proyecto.status === 'active') {
+            proyecto.activities.forEach(actividad => {
+                actividad.teams.forEach(teamAsignado => {
+                    // Verificación de seguridad para el error de .replace
+                    if (!teamAsignado.start) return;
+
+                    let fechaInicio;
+                    if (teamAsignado.start instanceof Date) {
+                        fechaInicio = new Date(teamAsignado.start);
+                    } else {
+                        // Forzamos a string para evitar el TypeError
+                        const dateStr = String(teamAsignado.start).replace(/-/g, '\/');
+                        fechaInicio = new Date(dateStr);
+                    }
+
+                    if (!asignacionesPorEquipo[teamAsignado.name]) {
+                        asignacionesPorEquipo[teamAsignado.name] = [];
+                    }
+
+                    const fechaFin = new Date(fechaInicio);
+                    fechaFin.setDate(fechaInicio.getDate() + (parseInt(teamAsignado.days) || 0));
+
+                    asignacionesPorEquipo[teamAsignado.name].push({
+                        proyecto: proyecto.name,
+                        tarea: actividad.name,
+                        inicio: fechaInicio,
+                        fin: fechaFin,
+                        equipo: teamAsignado.name
+                    });
+                });
+            });
+        }
+    });
+
+    // Comparar tareas del mismo equipo entre sí
+    for (const equipo in asignacionesPorEquipo) {
+        const lista = asignacionesPorEquipo[equipo];
+        for (let i = 0; i < lista.length; i++) {
+            for (let j = i + 1; j < lista.length; j++) {
+                const t1 = lista[i];
+                const t2 = lista[j];
+
+                // Si las fechas se solapan
+                if (t1.inicio < t2.fin && t1.fin > t2.inicio) {
+                    conflictos.push({
+                        equipo: equipo,
+                        p1: t1.proyecto,
+                        tarea1: t1.tarea,
+                        p2: t2.proyecto,
+                        tarea2: t2.tarea
+                    });
+                }
+            }
+        }
+    }
+    return conflictos;
+}
+
+// Ejemplo de uso:
+function mostrarAlertasOverbook() {
+    const listaConflictos = obtenerEquiposOverbook();
+    
+    if (listaConflictos.length === 0) {
+        console.log("No hay equipos en overbook.");
+        return;
+    }
+
+    console.table(listaConflictos); // Muestra los conflictos en una tabla en la consola
+    
+    // Opcional: Mostrar un aviso visual
+    const nombresEquipos = [...new Set(listaConflictos.map(c => c.equipo))];
+    Swal.fire("Overbook Alert", `Equipos con conflicto: ${nombresEquipos.join(", ")}`, "info");
+}
+function revisarOverbook() {
+    const conflictos = obtenerEquiposOverbook();
+
+    if (conflictos.length === 0) {
+        return Swal.fire({
+            title: "Everything OK",
+            text: "No equipment overbooking detected.",
+            icon: "success",
+            confirmButtonColor: "#28a745"
+        });
+    }
+
+    // Formatear la lista de conflictos para mostrarla
+    let htmlLista = '<div style="text-align: left; max-height: 300px; overflow-y: auto;">';
+    conflictos.forEach(c => {
+        htmlLista += `
+            <p style="border-bottom: 1px solid #eee; padding-bottom: 5px;">
+                <strong>📍 ${c.equipo}</strong><br>
+                <small>Conflict between:</small><br>
+                • ${c.proyectoA} (${c.tareaA})<br>
+                • ${c.proyectoB} (${c.tareaB})
+            </p>`;
+    });
+    htmlLista += '</div>';
+
+    Swal.fire({
+        title: "Overbook Detected!",
+        html: htmlLista,
+        icon: "warning",
+        confirmButtonColor: "#aa1c25"
+    });
+}
+function checkOverbookStatus() {
+    const lista = obtenerEquiposOverbook();
+
+    if (lista.length === 0) {
+        return Swal.fire({
+            title: "System Clear",
+            text: "No overbooking detected.",
+            icon: "success",
+            timer: 1500,
+            showConfirmButton: false
+        });
+    }
+
+    let htmlMsg = `
+    <div style="width: 100%; overflow: hidden;">
+        <table style="width: 100%; border-collapse: collapse; font-family: sans-serif; font-size: 11px; table-layout: fixed;">
+            <thead>
+                <tr style="background-color: #444; color: white;">
+                    <th style="padding: 8px; border: 1px solid #ccc; width: 20%;">EQUIPMENT</th>
+                    <th style="padding: 8px; border: 1px solid #ccc; width: 40%;">PROJECT A / TASK</th>
+                    <th style="padding: 8px; border: 1px solid #ccc; width: 40%;">PROJECT B / TASK</th>
+                </tr>
+            </thead>
+            <tbody>`;
+
+    lista.forEach((c, index) => {
+        const bg = index % 2 === 0 ? '#ffffff' : '#f9f9f9';
+        htmlMsg += `
+            <tr style="background-color: ${bg};">
+                <td style="padding: 8px; border: 1px solid #ccc; text-align: center; font-weight: bold; color: #aa1c25; word-wrap: break-word;">
+                    ${c.equipo}
+                </td>
+                <td style="padding: 8px; border: 1px solid #ccc; text-align: left; vertical-align: top;">
+                    <div style="font-weight: bold; color: #333;">${c.p1}</div>
+                    <div style="color: #666;">${c.tarea1}</div>
+                </td>
+                <td style="padding: 8px; border: 1px solid #ccc; text-align: left; vertical-align: top;">
+                    <div style="font-weight: bold; color: #333;">${c.p2}</div>
+                    <div style="color: #666;">${c.tarea2}</div>
+                </td>
+            </tr>`;
+    });
+
+    htmlMsg += `</tbody></table></div>`;
+
+    Swal.fire({
+        title: 'Conflict Report',
+        html: htmlMsg,
+        width: '95%', // Casi todo el ancho de la pantalla
+        maxWidth: '1200px', // Límite para que no se deforme en monitores ultra-wide
+        confirmButtonText: 'Close',
+        confirmButtonColor: '#444',
+        padding: '10px' // Menos padding para ganar espacio
+    });
+}
 </script>
 </body>
 </html>
-
-
-
-
-
