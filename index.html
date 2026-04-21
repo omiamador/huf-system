@@ -2398,6 +2398,12 @@ function renderAllStats() {
     }
     if (!container) return;
     
+    // Identificar la semana actual para el resaltado
+    const today = new Date();
+    const currentYear = today.getFullYear();
+    const currentWeekResult = getWeekNumber(today);
+    const currentWeekNum = (typeof currentWeekResult === 'object' ? currentWeekResult.week : currentWeekResult);
+
     // --- CONFIGURACIÓN DE CONTENEDOR (2 COLUMNAS) ---
     container.innerHTML = "";
     container.style.display = "grid";
@@ -2412,14 +2418,9 @@ function renderAllStats() {
 
     window.huf_devices_config.forEach(dev => {
         
-        // ==========================================
-        // FILTRO RÁPIDO PARA OCULTAR
-        // Sustituye 'NOMBRE_A_OCULTAR' por el nombre real del dispositivo
-        // o usa dev.id si prefieres filtrar por ID.
-        // ==========================================
         const excludedDevices = ['DURAB.CART SOMA']; 
         if (excludedDevices.includes(dev.name) || excludedDevices.includes(dev.id)) {
-            return; // Salta este dispositivo y no renderiza nada
+            return; 
         }
 
         let occupancyCount = new Array(52).fill(0); 
@@ -2459,6 +2460,8 @@ function renderAllStats() {
         
         let bars = occupancyCount.map((totalEquipsOccupied, idx) => {
             const weekNum = idx + 1;
+            const isTodayWeek = (selectedYear === currentYear && weekNum === currentWeekNum);
+
             const currentMaxEquips = (window.customCapacity[dev.id] && window.customCapacity[dev.id][weekNum] !== undefined)
                                      ? window.customCapacity[dev.id][weekNum]
                                      : defaultTotalHims;
@@ -2478,12 +2481,14 @@ function renderAllStats() {
             let centerX = ((idx + 0.5) / 52) * 1000;
             pathD += (idx === 0 ? "M" : " L") + `${centerX} ${100 - (h > 100 ? 100 : h)}`; 
             
-            const labelTooltip = `CW${weekNum}: ${displayVal}% (${equipsUsedTotal} de ${currentMaxEquips} Equipos)`;
+            const labelTooltip = `${isTodayWeek ? '[HOY] ' : ''}CW${weekNum}: ${displayVal}% (${equipsUsedTotal} de ${currentMaxEquips} Equipos)`;
 
             return `
                 <div class="stats-week-col" 
                      title="${labelTooltip}" 
-                     style="display: flex; flex-direction: column; justify-content: flex-end; position: relative; flex: 1; min-width: 0; height: 100%; z-index: 25;">
+                     style="display: flex; flex-direction: column; justify-content: flex-end; position: relative; flex: 1; min-width: 0; height: 100%; z-index: 25;
+                            ${isTodayWeek ? 'background: linear-gradient(to bottom, rgba(227, 6, 19, 0.1) 0%, rgba(227, 6, 19, 0) 100%); border-left: 1px dashed var(--huf-red); border-right: 1px dashed var(--huf-red);' : ''}">
+                    
                     <div class="bar-fill" 
                          style="
                             height:${Math.min(h, 100)}%; 
@@ -2494,6 +2499,7 @@ function renderAllStats() {
                             align-items: center; 
                             justify-content: center;
                             position: relative;
+                            ${isTodayWeek ? 'box-shadow: 0 0 5px rgba(0,0,0,0.2);' : ''}
                          ">
                         ${val > 20 ? `
                         <span style="
@@ -2509,7 +2515,27 @@ function renderAllStats() {
                         </span>
                         ` : ''}
                     </div>
-                    <div class="week-label-stat" style="font-size: 6px; margin-top: 2px; text-align: center; color: #666;">${weekNum}</div>
+
+                    <div class="week-label-stat" style="
+                        font-size: 11px; 
+                        margin-top: 25px; 
+                        text-align: center; 
+                        z-index: 40;
+                        ${isTodayWeek ? `
+                            background: var(--huf-red); 
+                            color: white !important; 
+                            border-radius: 50%; 
+                            width: 14px; 
+                            height: 14px; 
+                            display: flex; 
+                            align-items: center; 
+                            justify-content: center; 
+                            margin-left: auto; 
+                            margin-right: auto;
+                            font-weight: bold;
+                        ` : 'color: #666;'}">
+                        ${weekNum}
+                    </div>
                 </div>`;
         }).join("");
 
@@ -2523,11 +2549,10 @@ function renderAllStats() {
             </style>
             <div class="device-stat-title" style="font-size: 13px; font-weight: bold; margin-bottom: 5px; display: flex; justify-content: space-between;">
                 <span>${dev.name} (${selectedYear})</span>
-                
             </div>
             <div class="chart-frame" style="padding: 5px 0 0 35px; position: relative; height: 220px; min-width: 0; display: flex; flex-direction: column;"> 
                 
-                <div class="y-axis-labels" style="position: absolute; left: 0; top: 5px; height: calc(100% - 30px); display: flex; flex-direction: column; justify-content: space-between; font-size: 8px; color: #999; width: 25px; text-align: right;">
+                <div class="y-axis-labels" style="position: absolute; left: 0; top: 5px; height: calc(100% - 35px); display: flex; flex-direction: column; justify-content: space-between; font-size: 11px; color: #999; width: 25px; text-align: right;">
                     <span>100%+</span><span>75%</span><span>50%</span><span>25%</span><span>0%</span>
                 </div>
 
@@ -2536,7 +2561,7 @@ function renderAllStats() {
                     
                     <svg class="trend-line-svg" preserveAspectRatio="none" viewBox="0 0 1000 100" 
                          style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 30; pointer-events: none;">
-                        <path class="trend-path" d="${pathD}" fill="none" stroke="rgba(0,0,0,0.3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                        <path class="trend-path" d="${pathD}" fill="none" stroke="rgba(0,0,0,0.2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
                     </svg>
 
                     <div class="stats-week-wrapper" style="display: flex; align-items: flex-end; height: 100%; width: 100%; gap: 1px; position: absolute; top: 0; left: 0;">
@@ -2544,7 +2569,7 @@ function renderAllStats() {
                     </div>
                 </div>
                 
-                <div class="x-axis-title" style="font-size: 9px; text-align: center; margin-top: 5px; color: #aaa;">${selectedYear} WEEKS</div>
+                <div class="x-axis-title" style="font-size: 9px; text-align: center; margin-top: 10px; color: #aaa;">${selectedYear} WEEKS</div>
             </div>`;
         container.appendChild(row);
     });
