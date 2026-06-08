@@ -3456,71 +3456,24 @@ function actualizarBaseDeDatos(p, a, h, w, d, y) {
 // 1. Función para abrir el modal de edición
 function openEditCapacityModal() {
     let options = window.huf_devices_config.map(d => `<option value="${d.id}">${d.name}</option>`).join("");
-    
-    Swal.fire({
-        title: 'MASTER CAPACITY PLANNER',
-        html: `
-            <div style="margin-bottom: 20px; background: #f8f9fa; padding: 15px; border-radius: 8px; border-bottom: 3px solid var(--huf-red);">
-                <label style="font-weight:bold; display:block; margin-bottom:10px; color:#333;">1. SELECT DEVICE TYPE:</label>
-                <select id="swal-device-select" class="swal2-input" style="width: 100%; max-width: 400px; margin: 0 auto; display: block;" 
-                        onchange="updateCapacityTable(this.value)">
-                    <option value="">-- Choose Equipment --</option>
-                    ${options}
-                </select>
-            </div>
-            
-            <div id="capacity-editor-ui" style="display:none;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding: 0 10px;">
-                    <span style="font-size: 12px; color: #666;">2. Edit weekly units:</span>
-                    <button type="button" onclick="copyFirstToAll()" style="background: #555; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 11px;">
-                        <i class="fas fa-copy"></i> Copy W1 to all weeks
-                    </button>
-                </div>
-                <div id="capacity-table-container" style="width: 100%;"></div>
-            </div>
+    // Obtenemos el año actual del selector principal o por defecto 2026
+    const currentYear = document.getElementById('capYearSelect')?.value || "2026";
 
-            <div id="capacity-placeholder" style="padding: 60px 20px; color: #bbb; text-align: center; background: #fff; border: 2px dashed #eee; border-radius: 8px;">
-                <i class="fas fa-layer-group" style="font-size: 40px; margin-bottom: 15px; display: block;"></i>
-                <p>Select a device from the list above to display the 52-week grid</p>
-            </div>
-        `,
-        width: '95%',
-        showCancelButton: true,
-        confirmButtonText: '<i class="fas fa-save"></i> SAVE CHANGES',
-        confirmButtonColor: '#27ae60',
-        cancelButtonText: 'CANCEL',
-        preConfirm: () => {
-            const devId = document.getElementById('swal-device-select').value;
-            if (!devId) return Swal.showValidationMessage('You must select a device first');
-            
-            if (!window.customCapacity[devId]) window.customCapacity[devId] = {};
-            for (let w = 1; w <= 52; w++) {
-                const input = document.getElementById(`cap-w-${w}`);
-                if (input) {
-                    window.customCapacity[devId][w] = parseInt(input.value) || 0;
-                }
-            }
-            localStorage.setItem('huf_custom_capacity', JSON.stringify(window.customCapacity));
-            return true;
-        }
-    }).then(result => { if(result.isConfirmed) renderAllStats(); });
-}
-
-function openEditCapacityModal() {
-    let options = window.huf_devices_config.map(d => `<option value="${d.id}">${d.name}</option>`).join("");
-    
     Swal.fire({
         title: '<span style="font-size:18px;">ANNUAL CAPACITY PLANNER</span>',
         html: `
-            <div style="margin-bottom: 10px; background: #f8f9fa; padding: 10px; border-radius: 8px; border: 1px solid #ddd; display: flex; align-items: center; justify-content: center; gap: 15px;">
-                <label style="font-weight:bold; font-size:13px;">DEVICE:</label>
-                <select id="swal-device-select" class="swal2-input" style="width: 250px; margin: 0; height: 35px; font-size: 13px;" 
-                        onchange="updateCapacityTable(this.value)">
+            <div style="margin-bottom: 15px; background: #f8f9fa; padding: 10px; border-radius: 8px; border: 1px solid #ddd; display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap;">
+                <label style="font-weight:bold; font-size:13px;">YEAR:</label>
+                <input type="text" id="swal-year-input" value="${currentYear}" style="width: 60px; padding: 5px; text-align: center; border: 1px solid #ccc; border-radius: 4px;">
+                
+                <label style="font-weight:bold; font-size:13px; margin-left:10px;">DEVICE:</label>
+                <select id="swal-device-select" style="width: 200px; padding: 5px; font-size: 13px;" onchange="updateCapacityTable(this.value)">
                     <option value="">-- Select --</option>
                     ${options}
                 </select>
-                <button type="button" onclick="copyFirstToAll()" style="background: #555; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 11px;">
-                    <i class="fas fa-copy"></i> Copy W1 to All
+                
+                <button type="button" onclick="copyFirstToAll()" style="background: #555; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 11px;">
+                    <i class="fas fa-copy"></i> Copy W1
                 </button>
             </div>
             
@@ -3529,24 +3482,36 @@ function openEditCapacityModal() {
             </div>
 
             <div id="capacity-placeholder" style="padding: 40px; color: #bbb; text-align: center; background: #fff; border: 1px dashed #eee; border-radius: 8px;">
-                <p style="font-size:13px;">Select a device to display the compact 52-week grid</p>
+                <p style="font-size:13px;">Select a device to display the 52-week grid</p>
             </div>
         `,
         width: '98%',
-        padding: '10px',
         showCancelButton: true,
         confirmButtonText: 'SAVE PLAN',
         confirmButtonColor: '#27ae60',
         preConfirm: () => {
             const devId = document.getElementById('swal-device-select').value;
-            if (!devId) return Swal.showValidationMessage('Select a device');
+            const year = document.getElementById('swal-year-input').value;
             
-            if (!window.customCapacity[devId]) window.customCapacity[devId] = {};
+            if (!devId || !year) {
+                Swal.showValidationMessage('Select device and year');
+                return false;
+            }
+            
+            // Estructura: window.customCapacity[year][devId]
+            if (!window.customCapacity[year]) window.customCapacity[year] = {};
+            if (!window.customCapacity[year][devId]) window.customCapacity[year][devId] = {};
+            
             for (let w = 1; w <= 52; w++) {
                 const input = document.getElementById(`cap-w-${w}`);
-                if (input) window.customCapacity[devId][w] = parseInt(input.value) || 0;
+                if (input) window.customCapacity[year][devId][w] = parseInt(input.value) || 0;
             }
+            
             localStorage.setItem('huf_custom_capacity', JSON.stringify(window.customCapacity));
+            
+            // Aquí puedes llamar a tu función de guardado en Firebase:
+            // saveCapacityToFirebase(year, devId, window.customCapacity[year][devId]);
+            
             return true;
         }
     }).then(result => { if(result.isConfirmed) renderAllStats(); });
@@ -3556,6 +3521,7 @@ function updateCapacityTable(devId) {
     const container = document.getElementById('capacity-table-container');
     const placeholder = document.getElementById('capacity-placeholder');
     const editorUI = document.getElementById('capacity-editor-ui');
+    const year = document.getElementById('swal-year-input').value;
 
     if (!devId) {
         placeholder.style.display = "block";
@@ -3569,28 +3535,26 @@ function updateCapacityTable(devId) {
     const config = window.huf_devices_config.find(d => d.id === devId);
     const defaultCap = config ? config.hims.length : 0;
     
-    // Diseño de 6 columnas para que sea más bajo (9 semanas por columna aprox)
     let html = `<div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; padding: 5px;">`;
 
     for (let col = 0; col < 6; col++) {
         html += `<div style="background: white; border: 1px solid #ddd; border-radius: 4px;">
                     <table style="width:100%; border-collapse: collapse; font-size: 10px;">
                         <thead style="background: #444; color: white;">
-                            <tr>
-                                <th style="padding: 4px;">W</th>
-                                <th style="padding: 4px;">CAP</th>
-                            </tr>
+                            <tr><th style="padding: 4px;">W</th><th style="padding: 4px;">CAP</th></tr>
                         </thead>
                         <tbody>`;
         
-        // Calculamos el inicio y fin de cada columna (9 o 8 semanas por columna)
         let weeksPerCol = Math.ceil(52 / 6);
         for (let row = 0; row < weeksPerCol; row++) {
             const w = (col * weeksPerCol) + row + 1;
             if (w > 52) break;
 
-            const val = (window.customCapacity[devId] && window.customCapacity[devId][w] !== undefined) 
-                         ? window.customCapacity[devId][w] : defaultCap;
+            // Buscamos datos según el año y dispositivo
+            const val = (window.customCapacity[year] && 
+                         window.customCapacity[year][devId] && 
+                         window.customCapacity[year][devId][w] !== undefined) 
+                         ? window.customCapacity[year][devId][w] : defaultCap;
             
             html += `
                 <tr style="border-bottom: 1px solid #eee;">
@@ -3673,7 +3637,10 @@ function openannual() {
 function loadCapacityGrid() {
     const grid = document.getElementById('capMonthsGrid');
     const devId = document.getElementById('capDeviceSelect').value;
-    if(!grid || !devId) return;
+    // Obtenemos el año seleccionado del selector en tu UI
+    const year = document.getElementById('capYearSelect').value; 
+    
+    if(!grid || !devId || !year) return;
 
     grid.innerHTML = "";
     
@@ -3685,24 +3652,28 @@ function loadCapacityGrid() {
     let weekCounter = 1;
     months.forEach((month, mIdx) => {
         const monthCard = document.createElement('div');
-        // Alineación hacia arriba asegurada con inline-block o grid-start
         monthCard.style = "background: white; border: 1px solid #ddd; padding: 12px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); align-self: start;";
         
         let weeksHtml = `<h4 style="margin:0 0 12px 0; border-bottom:2px solid var(--huf-red); text-align:center; padding-bottom:5px; color:#333;">${month}</h4>`;
         
-        // Lógica de semanas por mes (5 semanas en los meses 3, 6, 9, 12 para completar 52)
         let weeksInThisMonth = ([2, 5, 8, 11].includes(mIdx)) ? 5 : 4;
 
         for(let i=0; i < weeksInThisMonth; i++) {
             if(weekCounter > 52) break;
             const w = weekCounter;
-            const val = (window.customCapacity[devId] && window.customCapacity[devId][w] !== undefined) 
-                         ? window.customCapacity[devId][w] : defaultCap;
+            
+            // MODIFICACIÓN: Buscamos primero en el año, luego en el dispositivo, luego en la semana
+            // Estructura esperada: window.customCapacity[year][devId][w]
+            const val = (window.customCapacity[year] && 
+                         window.customCapacity[year][devId] && 
+                         window.customCapacity[year][devId][w] !== undefined) 
+                         ? window.customCapacity[year][devId][w] : defaultCap;
 
             weeksHtml += `
                 <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; font-size:13px; padding: 2px 0;">
                     <span style="font-weight:bold; color:#666;">CW${w < 10 ? '0'+w : w}:</span>
                     <input type="number" id="input-cap-w-${w}" class="cap-input-field" value="${val}" 
+                           data-week="${w}"
                            style="width:55px; text-align:center; border:1px solid #ccc; border-radius:4px; padding: 4px; font-weight:bold;">
                 </div>`;
             weekCounter++;
@@ -3753,6 +3724,7 @@ function backToStatsAndRefresh() {
 function saveCapacityData() {
     const devId = document.getElementById('capDeviceSelect').value;
     const year = document.getElementById('capYearSelect').value;
+    
     if(!devId || !year) {
         Swal.fire('Error', 'Selecciona un dispositivo y un año', 'error');
         return;
@@ -3766,22 +3738,25 @@ function saveCapacityData() {
         }
     }
 
-    // Guardar en Firebase
-    db.ref(`equipmentCapacity/${devId}/${year}`).set(weeklyData)
+    // 1. Guardar en Firebase con la jerarquía correcta: year -> devId
+    // Esto asegura que cada año tenga su propia configuración de dispositivos
+    db.ref(`equipmentCapacity/${year}/${devId}`).set(weeklyData)
         .then(() => {
-            // ACTUALIZACIÓN CRÍTICA: Guardar en el objeto global que usa renderAllStats
+            // 2. ACTUALIZACIÓN DE MEMORIA ACTIVA
+            // Aseguramos que la estructura sea: window.customCapacity[year][devId]
             if(!window.customCapacity) window.customCapacity = {};
-            if(!window.customCapacity[devId]) window.customCapacity[devId] = {};
+            if(!window.customCapacity[year]) window.customCapacity[year] = {};
             
-            // Sincronizamos los datos nuevos con la memoria activa
-            window.customCapacity[devId] = weeklyData; 
+            // Sincronizamos los datos nuevos con la memoria
+            window.customCapacity[year][devId] = weeklyData; 
             
+            // 3. Persistencia en LocalStorage
             localStorage.setItem('huf_custom_capacity', JSON.stringify(window.customCapacity));
 
             Swal.fire({
                 icon: 'success',
                 title: 'Cloud Updated',
-                text: `Capacidad de ${year} guardada correctamente.`,
+                text: `Capacidad de ${year} para ${devId} guardada correctamente.`,
                 timer: 1500,
                 showConfirmButton: false
             });
