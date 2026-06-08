@@ -895,7 +895,7 @@ onkeydown="manejarTeclado(event)" onclick="hideContextMenu()">
 <div id="mainCard" class="car card-login">
     <div class="logo-container">
         <img src="logo.png" alt="HUF Logo" onerror="this.style.display='none';">
-        <p class="logo-subtitle">Developed By Omar Amador 1.20</p>
+        <p class="logo-subtitle">Developed By Omar Amador 1.21</p>
     </div>
 
     <div id="viewLogin" class="view-layer active-view"class="card">
@@ -3455,68 +3455,62 @@ function actualizarBaseDeDatos(p, a, h, w, d, y) {
 
 // 1. Función para abrir el modal de edición
 function openEditCapacityModal() {
+    // 1. Obtenemos el año y dispositivo (asegura que coincidan con tu UI)
+    const year = document.getElementById('capYearSelect')?.value || "2026";
     let options = window.huf_devices_config.map(d => `<option value="${d.id}">${d.name}</option>`).join("");
-    // Obtenemos el año actual del selector principal o por defecto 2026
-    const currentYear = document.getElementById('capYearSelect')?.value || "2026";
 
-    Swal.fire({
-        title: '<span style="font-size:18px;">ANNUAL CAPACITY PLANNER</span>',
-        html: `
-            <div style="margin-bottom: 15px; background: #f8f9fa; padding: 10px; border-radius: 8px; border: 1px solid #ddd; display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap;">
-                <label style="font-weight:bold; font-size:13px;">YEAR:</label>
-                <input type="text" id="swal-year-input" value="${currentYear}" style="width: 60px; padding: 5px; text-align: center; border: 1px solid #ccc; border-radius: 4px;">
-                
-                <label style="font-weight:bold; font-size:13px; margin-left:10px;">DEVICE:</label>
-                <select id="swal-device-select" style="width: 200px; padding: 5px; font-size: 13px;" onchange="updateCapacityTable(this.value)">
-                    <option value="">-- Select --</option>
-                    ${options}
-                </select>
-                
-                <button type="button" onclick="copyFirstToAll()" style="background: #555; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 11px;">
-                    <i class="fas fa-copy"></i> Copy W1
-                </button>
-            </div>
-            
-            <div id="capacity-editor-ui" style="display:none;">
-                <div id="capacity-table-container" style="width: 100%;"></div>
-            </div>
-
-            <div id="capacity-placeholder" style="padding: 40px; color: #bbb; text-align: center; background: #fff; border: 1px dashed #eee; border-radius: 8px;">
-                <p style="font-size:13px;">Select a device to display the 52-week grid</p>
-            </div>
-        `,
-        width: '98%',
-        showCancelButton: true,
-        confirmButtonText: 'SAVE PLAN',
-        confirmButtonColor: '#27ae60',
-        preConfirm: () => {
-            const devId = document.getElementById('swal-device-select').value;
-            const year = document.getElementById('swal-year-input').value;
-            
-            if (!devId || !year) {
-                Swal.showValidationMessage('Select device and year');
-                return false;
-            }
-            
-            // Estructura: window.customCapacity[year][devId]
-            if (!window.customCapacity[year]) window.customCapacity[year] = {};
-            if (!window.customCapacity[year][devId]) window.customCapacity[year][devId] = {};
-            
-            for (let w = 1; w <= 52; w++) {
-                const input = document.getElementById(`cap-w-${w}`);
-                if (input) window.customCapacity[year][devId][w] = parseInt(input.value) || 0;
-            }
-            
-            localStorage.setItem('huf_custom_capacity', JSON.stringify(window.customCapacity));
-            
-            // Aquí puedes llamar a tu función de guardado en Firebase:
-            // saveCapacityToFirebase(year, devId, window.customCapacity[year][devId]);
-            
-            return true;
+    // 2. Cargamos los datos desde Firebase ANTES de abrir el modal
+    // Esto es crítico: leemos la rama completa del año
+    db.ref(`equipmentCapacity/${year}`).once('value').then((snapshot) => {
+        const firebaseData = snapshot.val(); // Esto trae todos los dispositivos de ese año
+        
+        if (firebaseData) {
+            window.customCapacity[year] = firebaseData;
         }
-    }).then(result => { if(result.isConfirmed) renderAllStats(); });
-}
 
+        // 3. Abrimos el modal solo después de tener los datos
+        Swal.fire({
+            title: `<span style="font-size:18px;">ANNUAL CAPACITY PLANNER - ${year}</span>`,
+            html: `
+                <div style="margin-bottom: 15px; background: #f8f9fa; padding: 10px; border-radius: 8px; border: 1px solid #ddd; display: flex; align-items: center; justify-content: center; gap: 10px;">
+                    <label style="font-weight:bold; font-size:13px;">DEVICE:</label>
+                    <select id="swal-device-select" style="width: 250px; padding: 5px; font-size: 13px;" onchange="updateCapacityTable(this.value)">
+                        <option value="">-- Select --</option>
+                        ${options}
+                    </select>
+                </div>
+                <div id="capacity-editor-ui" style="display:none;">
+                    <div id="capacity-table-container" style="width: 100%;"></div>
+                </div>
+                <div id="capacity-placeholder" style="padding: 40px; color: #bbb; text-align: center; background: #fff; border: 1px dashed #eee; border-radius: 8px;">
+                    <p style="font-size:13px;">Select a device to load capacity from Firebase</p>
+                </div>
+            `,
+            width: '98%',
+            showCancelButton: true,
+            confirmButtonText: 'SAVE PLAN',
+            confirmButtonColor: '#27ae60',
+            preConfirm: () => {
+                const devId = document.getElementById('swal-device-select').value;
+                if (!devId) { Swal.showValidationMessage('Select a device'); return false; }
+                
+                // Guardado lógico
+                if (!window.customCapacity[year]) window.customCapacity[year] = {};
+                if (!window.customCapacity[year][devId]) window.customCapacity[year][devId] = {};
+                
+                for (let w = 1; w <= 52; w++) {
+                    const input = document.getElementById(`cap-w-${w}`);
+                    if (input) window.customCapacity[year][devId][w] = parseInt(input.value) || 0;
+                }
+                
+                // Guardar en Firebase y LocalStorage
+                db.ref(`equipmentCapacity/${year}/${devId}`).set(window.customCapacity[year][devId]);
+                localStorage.setItem('huf_custom_capacity', JSON.stringify(window.customCapacity));
+                return true;
+            }
+        });
+    });
+}
 function updateCapacityTable(devId) {
     const container = document.getElementById('capacity-table-container');
     const placeholder = document.getElementById('capacity-placeholder');
