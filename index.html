@@ -895,7 +895,7 @@ onkeydown="manejarTeclado(event)" onclick="hideContextMenu()">
 <div id="mainCard" class="car card-login">
     <div class="logo-container">
         <img src="logo.png" alt="HUF Logo" onerror="this.style.display='none';">
-        <p class="logo-subtitle">Developed By Omar Amador 1.21</p>
+        <p class="logo-subtitle">Developed By Omar Amador 1.25</p>
     </div>
 
     <div id="viewLogin" class="view-layer active-view"class="card">
@@ -3631,16 +3631,33 @@ function openannual() {
 function loadCapacityGrid() {
     const grid = document.getElementById('capMonthsGrid');
     const devId = document.getElementById('capDeviceSelect').value;
-    // Obtenemos el año seleccionado del selector en tu UI
     const year = document.getElementById('capYearSelect').value; 
     
     if(!grid || !devId || !year) return;
 
+    // FORZAR LECTURA DE FIREBASE
+    db.ref(`equipmentCapacity/${year}/${devId}`).once('value').then((snapshot) => {
+        const remoteData = snapshot.val();
+        
+        // Sincronizar memoria activa
+        if(!window.customCapacity) window.customCapacity = {};
+        if(!window.customCapacity[year]) window.customCapacity[year] = {};
+        
+        // Si hay datos remotos, actualizar la memoria
+        if (remoteData) {
+            window.customCapacity[year][devId] = remoteData;
+        }
+
+        // Proceder a renderizar
+        renderCapacityGridUI(grid, devId, year);
+    });
+}
+
+// 2. NUEVA: Función auxiliar para el renderizado (extraída para limpiar el código)
+function renderCapacityGridUI(grid, devId, year) {
     grid.innerHTML = "";
-    
     const config = window.huf_devices_config.find(d => d.id === devId);
     const defaultCap = config ? config.hims.length : 0;
-
     const months = ["JANUARY","FEBRUARY","MARCH","APRIL","MAY","JUNE","JULY","AUGUST","SEPTEMBER","OCTOBER","NOVEMBER","DECEMBER"];
     
     let weekCounter = 1;
@@ -3649,15 +3666,12 @@ function loadCapacityGrid() {
         monthCard.style = "background: white; border: 1px solid #ddd; padding: 12px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); align-self: start;";
         
         let weeksHtml = `<h4 style="margin:0 0 12px 0; border-bottom:2px solid var(--huf-red); text-align:center; padding-bottom:5px; color:#333;">${month}</h4>`;
-        
         let weeksInThisMonth = ([2, 5, 8, 11].includes(mIdx)) ? 5 : 4;
 
         for(let i=0; i < weeksInThisMonth; i++) {
             if(weekCounter > 52) break;
             const w = weekCounter;
             
-            // MODIFICACIÓN: Buscamos primero en el año, luego en el dispositivo, luego en la semana
-            // Estructura esperada: window.customCapacity[year][devId][w]
             const val = (window.customCapacity[year] && 
                          window.customCapacity[year][devId] && 
                          window.customCapacity[year][devId][w] !== undefined) 
@@ -3732,19 +3746,11 @@ function saveCapacityData() {
         }
     }
 
-    // 1. Guardar en Firebase con la jerarquía correcta: year -> devId
-    // Esto asegura que cada año tenga su propia configuración de dispositivos
     db.ref(`equipmentCapacity/${year}/${devId}`).set(weeklyData)
         .then(() => {
-            // 2. ACTUALIZACIÓN DE MEMORIA ACTIVA
-            // Aseguramos que la estructura sea: window.customCapacity[year][devId]
             if(!window.customCapacity) window.customCapacity = {};
             if(!window.customCapacity[year]) window.customCapacity[year] = {};
-            
-            // Sincronizamos los datos nuevos con la memoria
             window.customCapacity[year][devId] = weeklyData; 
-            
-            // 3. Persistencia en LocalStorage
             localStorage.setItem('huf_custom_capacity', JSON.stringify(window.customCapacity));
 
             Swal.fire({
