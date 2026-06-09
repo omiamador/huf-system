@@ -895,7 +895,7 @@ onkeydown="manejarTeclado(event)" onclick="hideContextMenu()">
 <div id="mainCard" class="car card-login">
     <div class="logo-container">
         <img src="logo.png" alt="HUF Logo" onerror="this.style.display='none';">
-        <p class="logo-subtitle">Developed By Omar Amador 1.31</p>
+        <p class="logo-subtitle">Developed By Omar Amador 1.5</p>
     </div>
 
     <div id="viewLogin" class="view-layer active-view"class="card">
@@ -4367,18 +4367,16 @@ async function openAnnual() {
         let totalPercentage = 0;
         // Cambiamos el rango: empezamos en idx 1 (Semana 2) y terminamos antes de idx 51 (Semana 51)
         // Esto excluye semana 1 (idx 0) y semana 52 (idx 51)
-        for (let idx = 1; idx < 51; idx++) {
+        for (let idx = 0; idx < 52; idx++) {
             const weekNum = idx + 1;
-            const currentMax = (window.customCapacity[dev.id] && window.customCapacity[dev.id][weekNum] !== undefined)
-                               ? window.customCapacity[dev.id][weekNum]
-                               : defaultTotalHims;
+  const currentMax = getCapacity(dev.id, weekNum, defaultTotalHims);
             
             let val = currentMax > 0 ? (occupancyCount[idx] / currentMax) * 100 : 0;
             totalPercentage += val;
         }
 
         // Dividimos entre 50 en lugar de 52
-        const avgAnnual = Math.round(totalPercentage / 50);
+        const avgAnnual = Math.round(totalPercentage / 52);
         annualData.push({ name: dev.name, id: dev.id, value: avgAnnual });
     });
 
@@ -4604,6 +4602,9 @@ function checkOverbookStatus() {
         }
     });
 }
+        const monthsLabels = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+        const shortMonths = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
 
 async function openMonthlyView() {
     const container = document.getElementById('annual-view');
@@ -4612,136 +4613,203 @@ async function openMonthlyView() {
     showModule('annual-view');
 
     window.renderMonthlyContent = function(filterValue) {
+
         const excludedDevices = ['DURAB.CART SOMA'];
         const monthlyData = []; 
-        const monthsLabels = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-        const shortMonths = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+
 
         if (!window.huf_devices_config) return;
 
         window.huf_devices_config.forEach(dev => {
+
             if (excludedDevices.includes(dev.name) || excludedDevices.includes(dev.id)) return;
 
-            let occupancyByMonth = new Array(12).fill(0);
             const defaultTotalHims = dev.hims.length || 1;
+
+            // ✅ 1. CALCULAR USO POR SEMANA (mismo que forecast)
+            let occupancyCount = new Array(52).fill(0);
 
             toolingProjects.forEach(p => p.activities.forEach(act => act.teams.forEach(t => {
                 if (t.typeId === dev.id) {
+
                     let cur = new Date(t.start);
+                    let weeksForThisTask = new Set();
+
                     for (let i = 0; i < t.days; i++) {
                         if (cur.getFullYear() === selectedYear) {
-                            occupancyByMonth[cur.getMonth()] += 1;
+
+                            let weekResult = getWeekNumber(cur);
+                            let wn = (typeof weekResult === 'object' ? weekResult.week : weekResult) - 1;
+
+                            if (wn >= 0 && wn < 52) {
+                                weeksForThisTask.add(wn);
+                            }
                         }
                         cur.setDate(cur.getDate() + 1);
                     }
+
+                    weeksForThisTask.forEach(wn => {
+                        occupancyCount[wn] += 1;
+                    });
+
                 }
             })));
 
-            const workDays = 21; 
-            let monthsBreakdown = occupancyByMonth.map((daysCount, idx) => {
-                const weekRef = (idx * 4) + 2;
-                const currentMax = (window.customCapacity && window.customCapacity[dev.id] && window.customCapacity[dev.id][weekRef])
-                                    ? window.customCapacity[dev.id][weekRef]
-                                    : defaultTotalHims;
-                const monthlyCapacity = currentMax * workDays;
-                return monthlyCapacity > 0 ? Math.round((daysCount / monthlyCapacity) * 100) : 0;
+            // ✅ 2. CALCULAR MONTHLY BASADO EN SEMANAS (FIX REAL)
+            let monthsBreakdown = new Array(12).fill(0).map((_, monthIdx) => {
+
+                let totalPercentage = 0;
+                let weeksCount = 0;
+
+                for (let week = 0; week <= 52; week++) {
+
+                    // fecha representativa de la semana
+                    let tempDate = new Date(selectedYear, 0, (week - 1) * 7);
+
+                    if (tempDate.getMonth() === monthIdx) {
+
+                        const used = occupancyCount[week - 1];
+                        const cap = getCapacity(dev.id, week, defaultTotalHims);
+
+                        let val = cap > 0 ? (used / cap) * 100 : 0;
+
+                        totalPercentage += val;
+                        weeksCount++;
+                    }
+                }
+
+                return weeksCount > 0 
+                    ? Math.round(totalPercentage / weeksCount)
+                    : 0;
             });
 
             monthlyData.push({ name: dev.name, id: dev.id, monthlyValues: monthsBreakdown });
+
         });
 
         const captureArea = document.getElementById('capture-area-monthly');
         const isAllYear = filterValue === 'all';
         let htmlContent = "";
 
+     
         if (isAllYear) {
             htmlContent = `
                 <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px;">
                     ${monthlyData.map(dev => `
-                        <div style="background: #fff; padding: 15px; border-radius: 8px; border: 1px solid #ddd; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-                            <div style="font-weight: bold; font-size: 13px; margin-bottom: 15px; color: #444; border-bottom: 1px solid #eee; padding-bottom: 5px;">${dev.name}</div>
-                            <div style="display: grid; grid-template-columns: repeat(12, 1fr); gap: 4px; height: 100px; align-items: end;">
-                                ${dev.monthlyValues.map((val, i) => {
-                                    const isOver = val > 100;
-                                    const barHeight = Math.min(val, 120); // Capamos visualmente a 120% para no romper el layout
-                                    return `
-                                    <div style="display: flex; flex-direction: column; align-items: center; height: 100%; justify-content: flex-end;">
-                                        <div style="font-size: 8px; font-weight: bold; color: ${isOver ? 'red' : '#666'};">${val}%</div>
-                                        <div style="width: 100%; height: ${barHeight}%; background: ${isOver ? 'var(--huf-red)' : '#3498db'}; border-radius: 2px 2px 0 0;"></div>
-                                        <div style="font-size: 8px; margin-top: 4px; color: #999;">${shortMonths[i]}</div>
-                                    </div>`;
-                                }).join('')}
+                        <div style="background: #fff; padding: 15px; border-radius: 8px; border: 1px solid #ddd;">
+                            <div style="font-weight: bold; font-size: 13px; margin-bottom: 15px; color: #444;">
+                                ${dev.name}
                             </div>
+
+<div style="display: flex; flex-direction: column; gap: 6px;">
+    ${dev.monthlyValues.map((val, i) => {
+
+        const isOver = val >= 100;
+        const barColor = isOver ? "var(--huf-red)" : getPastelColor(dev.id);
+
+        return `
+        <div style="display: flex; align-items: center; gap: 10px;">
+            
+            <div style="width: 35px; font-size: 11px; color: #666;">
+                ${shortMonths[i]}
+            </div>
+
+            <div style="flex: 1; background: #eee; height: 18px; border-radius: 10px; overflow: hidden; border: 1px solid #ccc;">
+                <div style="
+                    width: ${Math.min(val,100)}%;
+                    height: 100%;
+                    background: ${barColor};
+                "></div>
+            </div>
+
+            <div style="width: 40px; font-size: 11px; text-align: right; font-weight: bold; color:${isOver ? 'red':'black'};">
+                ${val}%
+            </div>
+
+        </div>`;
+    }).join('')}
+</div>
                         </div>
                     `).join('')}
                 </div>`;
-        } else {
+        } 
+        
+      
+        else {
             const monthIdx = parseInt(filterValue);
+
             htmlContent = `
                 <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px;">
                     ${monthlyData.map(dev => {
+
                         const val = dev.monthlyValues[monthIdx];
                         const isOver = val > 100;
+
                         return `
-                        <div style="background: #fff; padding: 12px; border-radius: 8px; border: 1px solid #ddd; border-left: 6px solid ${isOver ? 'var(--huf-red)' : '#3498db'};">
-                            <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 13px; margin-bottom: 8px;">
+                        <div style="background: #fff; padding: 12px; border-radius: 8px; border-left: 6px solid ${isOver ? 'var(--huf-red)' : '#3498db'};">
+                            
+                            <div style="display: flex; justify-content: space-between; font-weight: bold;">
                                 <span>${dev.name}</span>
-                                <span style="color: ${isOver ? 'red' : 'black'};">${val}%</span>
+                                <span style="color:${isOver ? 'red' : 'black'};">${val}%</span>
                             </div>
-                            <div style="background: #eee; height: 25px; border-radius: 15px; overflow: visible; border: 1px solid #ccc;">
-                                <div style="width: ${Math.min(val, 100)}%; height: 100%; background: ${isOver ? 'var(--huf-red)' : '#3498db'};"></div>
+
+                            <div style="background: #eee; height: 25px; border-radius: 15px;">
+                                <div style="width:${Math.min(val,100)}%; height:100%; background:${isOver ? 'var(--huf-red)' : '#3498db'};"></div>
                             </div>
-                            ${isOver ? `<div style="color: red; font-size: 10px; font-weight: bold; margin-top: 5px;">⚠ OVER CAPACITY</div>` : ''}
+
+                            ${isOver ? `<div style="color:red;font-size:10px;">⚠ OVER CAPACITY</div>` : ''}
+
                         </div>`;
                     }).join('')}
                 </div>`;
         }
+
         captureArea.innerHTML = `
-            <h2 style="text-align: center; margin-top: 0; color: #333; font-family: sans-serif;">
-                HUF MX - ${isAllYear ? 'ANNUAL BREAKDOWN' : monthsLabels[parseInt(filterValue)].toUpperCase()} (${selectedYear})
+            <h2 style="text-align:center;">
+                HUF MX - ${isAllYear ? 'MONTHLY BREAKDOWN' : monthsLabels[parseInt(filterValue)].toUpperCase()} (${selectedYear})
             </h2>
             ${htmlContent}
         `;
     };
 
     container.innerHTML = `
-        <div class="header-tooling" style="padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; background: #f8f9fa; border-bottom: 1px solid #ddd;">
-            <div style="display: flex; align-items: center; gap: 10px;">
-                <button class="btn-back" onclick="showModule('viewStats')">⬅ BACK</button>
-                <select id="month-selector" class="btn-tooling" style="background: white; color: #333; border: 1px solid #ccc; padding: 5px 10px;">
-                    <option value="all">View: All Year (Monthly Breakdown)</option>
-                    ${['January','February','March','April','May','June','July','August','September','October','November','December'].map((m,i)=>`<option value="${i}">${m}</option>`).join('')}
-                </select>
-            </div>
-            <button id="download-monthly-btn" class="btn-tooling" style="background: var(--huf-red); color: white; padding: 8px 15px; border-radius: 4px; border: none; font-weight: bold; cursor: pointer;">
-                💾 SAVE IMAGE
-            </button>
-        </div>
-        <div id="capture-area-monthly" style="background: white; padding: 25px;"></div>
+<div class="header-tooling" style="padding: 10px 20px; display: flex; justify-content: space-between; align-items: center;">
+
+    <div style="display: flex; align-items: center; gap: 10px;">
+        
+        <button class="btn-back" onclick="showModule('viewStats')">
+            ⬅ BACK
+        </button>
+
+        <select id="month-selector" class="btn-tooling" style="background: white; color: #333; border: 1px solid #ccc; padding: 5px 10px;">
+            <option value="all">All Year</option>
+            ${monthsLabels.map((m,i)=>`<option value="${i}">${m}</option>`).join('')}
+        </select>
+
+    </div>
+
+    <button id="download-monthly-btn" class="btn-tooling" style="
+        background: var(--huf-red); 
+        color: white; 
+        padding: 8px 15px; 
+        border-radius: 4px; 
+        cursor: pointer; 
+        border: none; 
+        font-weight: bold;
+    ">
+        💾 SAVE IMAGE
+    </button>
+
+</div>
+
+        <div id="capture-area-monthly"></div>
     `;
 
-    document.getElementById('month-selector').addEventListener('change', (e) => window.renderMonthlyContent(e.target.value));
+    document.getElementById('month-selector')
+        .addEventListener('change', e => window.renderMonthlyContent(e.target.value));
+
     window.renderMonthlyContent('all');
-
-    document.getElementById('download-monthly-btn').addEventListener('click', function() {
-        const target = document.getElementById('capture-area-monthly');
-        const fileName = document.getElementById('month-selector').options[document.getElementById('month-selector').selectedIndex].text;
-        if (typeof html2canvas === 'undefined') {
-            const script = document.createElement('script');
-            script.src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";
-            script.onload = () => executeCapture(target, fileName);
-            document.head.appendChild(script);
-        } else { executeCapture(target, fileName); }
-    });
-
-    function executeCapture(element, name) {
-        html2canvas(element, { scale: 2 }).then(canvas => {
-            const link = document.createElement('a');
-            link.download = `HUF_Report_${name}_${selectedYear}.png`;
-            link.href = canvas.toDataURL();
-            link.click();
-        });
-    }
 }
 
 </script>
