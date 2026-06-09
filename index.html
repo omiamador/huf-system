@@ -2392,6 +2392,22 @@ function renderGantt() {
     setTimeout(() => { if (typeof syncFloatingLabels === "function") syncFloatingLabels(); }, 150);
     renderAllStats();
 }
+
+function getCapacity(devId, weekNum, defaultTotalHims) {
+
+    // 🔴 IMPORTANTE: ahora incluye el año
+    if (
+        window.customCapacity &&
+        window.customCapacity[selectedYear] &&
+        window.customCapacity[selectedYear][devId] &&
+        window.customCapacity[selectedYear][devId][weekNum] !== undefined
+    ) {
+        return window.customCapacity[selectedYear][devId][weekNum];
+    }
+
+    return defaultTotalHims;
+}
+
 function renderAllStats() {
     const container = document.getElementById('statsMainContainer'); 
     if (!window.customCapacity) {
@@ -2463,14 +2479,12 @@ function renderAllStats() {
             const weekNum = idx + 1;
             const isTodayWeek = (selectedYear === currentYear && weekNum === currentWeekNum);
 
-            const currentMaxEquips = (window.customCapacity[dev.id] && window.customCapacity[dev.id][weekNum] !== undefined)
-                                     ? window.customCapacity[dev.id][weekNum]
-                                     : defaultTotalHims;
+     const currentMaxEquips = getCapacity(dev.id, weekNum, defaultTotalHims);
 
             let equipsUsedTotal = totalEquipsOccupied; 
             let val = currentMaxEquips > 0 ? (equipsUsedTotal / currentMaxEquips) * 100 : (equipsUsedTotal > 0 ? 100 : 0);
             
-            let h = val; 
+        let h = Math.min(val, 100);
             let displayVal = Math.round(val);
 
             let isCritical = val >= 100;
@@ -2482,8 +2496,7 @@ function renderAllStats() {
             let centerX = ((idx + 0.5) / 52) * 1000;
             pathD += (idx === 0 ? "M" : " L") + `${centerX} ${100 - (h > 100 ? 100 : h)}`; 
             
-            const labelTooltip = `${isTodayWeek ? '[HOY] ' : ''}CW${weekNum}: ${displayVal}% (${equipsUsedTotal} de ${currentMaxEquips} Equipos)`;
-
+           const labelTooltip = `${isTodayWeek ? '[HOY] ' : ''}CW${weekNum}: ${displayVal}% (${equipsUsedTotal} de ${currentMaxEquips} Equipos)`;
             return `
                 <div class="stats-week-col" 
                      title="${labelTooltip}" 
@@ -4730,6 +4743,7 @@ async function openMonthlyView() {
         });
     }
 }
+
 </script>
 </body>
 </html>
