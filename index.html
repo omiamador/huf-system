@@ -1123,7 +1123,8 @@ onkeydown="manejarTeclado(event)" onclick="hideContextMenu()">
 
 
 
-           
+            
+            <!-- <button id="toggleHIMPanelBtn" class="admin-only" onclick="toggleHIMPanel()" style="background:#6c757d; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; height: 36px; margin-right:8px;">Show HIMs</button> -->
             <button class="admin-only" onclick="addToolingRow()" style="background: var(--huf-red); color: white; border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; height: 38px;">ADD TASK</button>
         </div>
 
@@ -1370,6 +1371,8 @@ onkeydown="manejarTeclado(event)" onclick="hideContextMenu()">
     let backupTimer;
     let loadHoursLogs = [];
     let selectedYear = new Date().getFullYear(); // Año actual por defecto
+    let selectedDeviceFilter = ""; // device id to filter projects by HIMs
+    let himPanelVisible = false; // control para mostrar/ocultar el panel de HIMs
     const CAPACIDAD_REAL = 460;
     
 db.ref('toolingProjects').on('value', (snapshot) => {
@@ -1491,12 +1494,22 @@ function guardarCambios() {
         const himSelect = document.getElementById('toolHIM');
         himSelect.innerHTML = "";
         document.getElementById('availabilityInfo').innerText = "";
-        if(!typeId) { himSelect.add(new Option("Select Device First", "")); return; }
+        if(!typeId) { 
+            himSelect.add(new Option("Select Device First", "")); 
+            selectedDeviceFilter = ""; 
+            try { renderHIMList(""); } catch(e) {}
+            try { renderGantt(); } catch(e) {}
+            return; 
+        }
         const deviceData = window.huf_devices_config.find(d => d.id === typeId);
         if (deviceData && deviceData.hims) {
             himSelect.add(new Option("-- Select HIM --", ""));
             deviceData.hims.forEach(h => himSelect.add(new Option(h, h)));
         }
+        // set device filter for Gantt and render updates
+        selectedDeviceFilter = typeId || "";
+        try { renderHIMList(typeId); } catch(e) { console.warn('renderHIMList error', e); }
+        try { renderGantt(); } catch(e) { /* ignore if not ready */ }
     }
 
     function updateMaintHIMOptions() {
@@ -1509,6 +1522,80 @@ function guardarCambios() {
             himSelect.add(new Option("-- Select HIM --", ""));
             deviceData.hims.forEach(h => himSelect.add(new Option(h, h)));
         }
+    }
+
+    // Retorna la próxima fecha libre (Date) y estado para un HIM dado
+    function getNextFreeInfo(him) {
+        const today = new Date(); today.setHours(0,0,0,0);
+        let lastProjectEnd = new Date(today);
+        let inMaintenanceNow = false;
+
+        if (Array.isArray(toolingProjects)) {
+            toolingProjects.forEach(p => {
+                (p.activities || []).forEach(act => {
+                    (act.teams || []).forEach(t => {
+                        if (t.name === him) {
+                            let end = new Date(t.start);
+                            end.setDate(end.getDate() + parseInt(t.days || 0));
+                            if (end > lastProjectEnd) lastProjectEnd = new Date(end);
+                        }
+                    });
+                });
+            });
+        }
+
+        if (Array.isArray(maintenanceLogs)) {
+            maintenanceLogs.forEach(m => {
+                if ((m.him === him) || (m.name === him)) {
+                    let mStart = new Date(m.start);
+                    let mEnd = new Date(m.end);
+                    if (today >= mStart && today <= mEnd) inMaintenanceNow = true;
+                    if (mEnd > lastProjectEnd) lastProjectEnd = new Date(mEnd);
+                }
+            });
+        }
+
+        return { nextFreeDate: lastProjectEnd, inMaintenanceNow };
+    }
+
+    // Renderiza/actualiza un panel con la lista de HIMs del dispositivo seleccionado y su próxima disponibilidad
+    function renderHIMList(deviceId) {
+        const containerRoot = document.getElementById('viewTooling');
+        if (!containerRoot) return;
+
+        let panel = document.getElementById('himListPanel');
+        if (!panel) {
+            panel = document.createElement('div');
+            panel.id = 'himListPanel';
+            panel.style = 'margin-top:12px; background:#fff; padding:10px; border-radius:8px; border:1px solid #eee; max-width: 100%; overflow:auto;';
+            const toolingBar = containerRoot.querySelector('.tooling-input-bar');
+            if (toolingBar && toolingBar.parentNode) toolingBar.parentNode.insertBefore(panel, toolingBar.nextSibling);
+            else containerRoot.appendChild(panel);
+        }
+
+        // Respect visibility flag: if hidden, keep panel hidden but update content in background
+        panel.style.display = himPanelVisible ? 'block' : 'none';
+
+        const deviceData = (window.huf_devices_config || []).find(d => d.id === deviceId);
+        if (!deviceData || !deviceData.hims) { panel.innerHTML = '<em style="color:#666">Select a device to see its HIMs and availability</em>'; return; }
+
+        const rows = deviceData.hims.map(him => {
+            const info = getNextFreeInfo(him);
+            const opts = { year: 'numeric', month: 'short', day: 'numeric' };
+            const dateStr = (info.nextFreeDate && info.nextFreeDate > new Date()) ? info.nextFreeDate.toLocaleDateString(undefined, opts) : 'Available';
+            const status = info.inMaintenanceNow ? 'MAINTENANCE' : (dateStr === 'Available' ? 'FREE' : `Busy until ${dateStr}`);
+            return `<tr><td style="padding:8px; border-bottom:1px solid #f1f1f1;">${him}</td><td style="padding:8px; border-bottom:1px solid #f1f1f1;">${status}</td><td style="padding:8px; border-bottom:1px solid #f1f1f1; text-align:right;"><button onclick="document.getElementById('toolHIM').value='${him.replace(/'/g,"\\'") }'; mostrarProximaDisponibilidad(); revisarConflictoRealTime();" style="padding:6px 8px; border-radius:4px; border:none; background:var(--huf-dark); color:white; cursor:pointer;">Select</button></td></tr>`;
+        }).join('');
+
+        panel.innerHTML = `<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;"><strong>HIMs for ${deviceData.name}</strong><span style="font-size:12px;color:#666">Click "Select" to choose in the form</span></div><table style="width:100%; border-collapse:collapse;"><thead><tr><th style="text-align:left; padding:6px; border-bottom:1px solid #eee;">HIM</th><th style="text-align:left; padding:6px; border-bottom:1px solid #eee;">Status</th><th style="width:100px"></th></tr></thead><tbody>${rows}</tbody></table>`;
+    }
+
+    function toggleHIMPanel() {
+        himPanelVisible = !himPanelVisible;
+        const panel = document.getElementById('himListPanel');
+        const btn = document.getElementById('toggleHIMPanelBtn');
+        if (panel) panel.style.display = himPanelVisible ? 'block' : 'none';
+        if (btn) btn.innerText = himPanelVisible ? 'Hide HIMs' : 'Show HIMs';
     }
 
  
@@ -2217,7 +2304,15 @@ function renderGantt() {
         return { ...p };
     });
 
-    const projectsToDisplay = categorizedProjects.filter(p => p.status === ganttStatusFilter);
+    let projectsToDisplay = categorizedProjects.filter(p => p.status === ganttStatusFilter);
+    // If a device filter is active, show only projects that use any HIM from that device
+    if (selectedDeviceFilter) {
+        const dev = (window.huf_devices_config || []).find(d => d.id === selectedDeviceFilter);
+        const himSet = dev && Array.isArray(dev.hims) ? new Set(dev.hims) : null;
+        projectsToDisplay = projectsToDisplay.filter(p => p.activities.some(a => a.teams.some(t => (
+            (t.typeId && t.typeId === selectedDeviceFilter) || (himSet && himSet.has(t.name))
+        ))));
+    }
 
     let allDates = [today];
     categorizedProjects.forEach(p => p.activities.forEach(a => a.teams.forEach(t => {
