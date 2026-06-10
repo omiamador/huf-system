@@ -7,6 +7,7 @@ window.usuarios_password = [
 	{ user: "abonilla", pass: "bonilla#12", nombre: "Antonio Bonilla", rol: "admin" },
 	{ user: "alopez", pass: "alejandro#12", nombre: "Alejandro Lopez", rol: "admin" },
 	{ user: "alejandro", pass: "ale#12", nombre: "Alejandro Lopez", rol: "admin" },
+	{ user: "acerezo", pass: "cerezo#12", nombre: "Antonio Cerezo", rol: "viewer" },
 ];
 
 var nombre_dispositivo = "JAILOR";
