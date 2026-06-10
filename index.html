@@ -1362,6 +1362,105 @@ onkeydown="manejarTeclado(event)" onclick="hideContextMenu()">
     
      Chart.register(ChartDataLabels);
      window.customCapacity = JSON.parse(localStorage.getItem('huf_custom_capacity')) || {};
+
+    // Helper: deep clone safe for plain objects used here
+    function _cloneCap(obj) { try { return JSON.parse(JSON.stringify(obj || {})); } catch(e) { return {}; } }
+
+    // Helper: comparar dos snapshots de customCapacity y loguear diferencias resumidas
+    function compareCustomCapacity(prev, next, label) {
+        prev = _cloneCap(prev);
+        next = _cloneCap(next);
+        const summary = { label, yearsAdded: [], yearsRemoved: [], devicesChanged: [] };
+
+        const prevYears = Object.keys(prev || {});
+        const nextYears = Object.keys(next || {});
+
+        nextYears.forEach(y => { if (!prevYears.includes(y)) summary.yearsAdded.push(y); });
+        prevYears.forEach(y => { if (!nextYears.includes(y)) summary.yearsRemoved.push(y); });
+
+        const yearsUnion = Array.from(new Set([...prevYears, ...nextYears]));
+        yearsUnion.forEach(y => {
+            const prevDevs = Object.keys(prev[y] || {});
+            const nextDevs = Object.keys(next[y] || {});
+            const devsUnion = Array.from(new Set([...prevDevs, ...nextDevs]));
+            devsUnion.forEach(d => {
+                const p = prev[y] && prev[y][d] ? prev[y][d] : {};
+                const n = next[y] && next[y][d] ? next[y][d] : {};
+                // comparar semanas (excluyendo 1 y 52) hasta encontrar diferencias
+                for (let w = 2; w <= 51; w++) {
+                    const pv = p[w] === undefined ? null : p[w];
+                    const nv = n[w] === undefined ? null : n[w];
+                    if (pv !== nv) {
+                        summary.devicesChanged.push({ year: y, device: d, week: w, before: pv, after: nv });
+                        break; // solo reportar la primera diferencia por dispositivo para no inundar
+                    }
+                }
+            });
+        });
+
+        console.groupCollapsed(`compareCustomCapacity: ${label}`);
+        console.log('summary', summary);
+        // mostrar detalles limitados si hay cambios
+        if (summary.devicesChanged.length > 0) console.table(summary.devicesChanged.slice(0, 30));
+        console.log('prevSnapshotSample', Object.keys(prev).slice(0,5));
+        console.log('nextSnapshotSample', Object.keys(next).slice(0,5));
+        console.groupEnd();
+    }
+
+    // Helper: comparar capacidad mensual (capacityData) por año
+    function compareCapacityData(prev, next, label) {
+        prev = _cloneCap(prev);
+        next = _cloneCap(next);
+        const summary = { label, yearsAdded: [], yearsRemoved: [], yearsChanged: [] };
+
+        const prevYears = Object.keys(prev || {});
+        const nextYears = Object.keys(next || {});
+
+        nextYears.forEach(y => { if (!prevYears.includes(y)) summary.yearsAdded.push(y); });
+        prevYears.forEach(y => { if (!nextYears.includes(y)) summary.yearsRemoved.push(y); });
+
+        const yearsUnion = Array.from(new Set([...prevYears, ...nextYears]));
+        yearsUnion.forEach(y => {
+            const p = prev[y] || [];
+            const n = next[y] || [];
+            for (let m = 0; m < 12; m++) {
+                const pv = p[m] === undefined ? null : p[m];
+                const nv = n[m] === undefined ? null : n[m];
+                if (pv !== nv) { summary.yearsChanged.push({ year: y, month: m+1, before: pv, after: nv }); break; }
+            }
+        });
+
+        console.groupCollapsed(`compareCapacityData: ${label}`);
+        console.log('summary', summary);
+        if (summary.yearsChanged.length > 0) console.table(summary.yearsChanged.slice(0,30));
+        console.log('prevYearsSample', Object.keys(prev).slice(0,5));
+        console.log('nextYearsSample', Object.keys(next).slice(0,5));
+        console.groupEnd();
+    }
+
+    // Preload completo de equipmentCapacity (centraliza la lógica)
+    async function preloadEquipmentCapacity() {
+        if (window._capacitiesPreloaded) return;
+        try {
+            const snap = await db.ref('equipmentCapacity').once('value');
+            const data = snap.val() || {};
+            const before = _cloneCap(window.customCapacity);
+            window.customCapacity = window.customCapacity || {};
+            Object.keys(data).forEach(year => {
+                window.customCapacity[year] = data[year] || {};
+            });
+            compareCustomCapacity(before, window.customCapacity, 'preloadEquipmentCapacity full load');
+            localStorage.setItem('huf_custom_capacity', JSON.stringify(window.customCapacity));
+            window._capacitiesPreloaded = true;
+        } catch (err) {
+            console.error('preloadEquipmentCapacity error', err);
+            throw err;
+        }
+    }
+
+    // Log inicial: qué se cargó desde localStorage al arrancar
+    window._initialLocalCustomCapacity = _cloneCap(window.customCapacity);
+    console.info('customCapacity: loaded from localStorage (initial)', Object.keys(window._initialLocalCustomCapacity || {}));
     const TIEMPO_RESPALDO_MINUTOS = 30; 
     let stage = ""; let pad; let userSession = ""; 
     let toolingProjects = []; 
@@ -1607,7 +1706,16 @@ function guardarCambios() {
         (viewId === 'viewTooling' || viewId === 'viewStats' || viewId === 'viewShutdown' || viewId === 'viewMaintenance') ? card.classList.add('wide-view') : card.classList.remove('wide-view');
     
         if(viewId === 'viewTooling') renderGantt();
-        if(viewId === 'viewStats') setTimeout(renderAllStats, 100);
+        if(viewId === 'viewStats') {
+            // Asegurar que las capacidades estén precargadas antes de renderizar
+            if (!window._capacitiesPreloaded) {
+                try { 
+                    preloadEquipmentCapacity().then(() => setTimeout(renderAllStats, 100));
+                } catch(e) { console.warn('preloadEquipmentCapacity error', e); setTimeout(renderAllStats, 100); }
+            } else {
+                setTimeout(renderAllStats, 100);
+            }
+        }
         if(viewId === 'main-app') initApp();
         if(viewId === 'capacity-view') showCapacityEditor();
         if(viewId === 'annual-view');
@@ -2575,16 +2683,18 @@ function renderAllStats() {
 
         let pathD = "";
         
-        let bars = occupancyCount.map((totalEquipsOccupied, idx) => {
-            const weekNum = idx + 1;
+        // Excluir semana 1 y 52 de las estadísticas/visualización
+        const weeksToShow = occupancyCount.slice(1, 51); // indices 1..50 -> semanas 2..51
+        let bars = weeksToShow.map((totalEquipsOccupied, idx) => {
+            const weekNum = idx + 2; // porque slice empieza en semana 2
             const isTodayWeek = (selectedYear === currentYear && weekNum === currentWeekNum);
 
-     const currentMaxEquips = getCapacity(dev.id, weekNum, defaultTotalHims);
+            const currentMaxEquips = getCapacity(dev.id, weekNum, defaultTotalHims);
 
             let equipsUsedTotal = totalEquipsOccupied; 
             let val = currentMaxEquips > 0 ? (equipsUsedTotal / currentMaxEquips) * 100 : (equipsUsedTotal > 0 ? 100 : 0);
             
-        let h = Math.min(val, 100);
+            let h = Math.min(val, 100);
             let displayVal = Math.round(val);
 
             let isCritical = val >= 100;
@@ -2593,10 +2703,10 @@ function renderAllStats() {
             let barColor = isCritical ? "var(--huf-red)" : getPastelColor(dev.id);
             let textColor = isCritical ? "#ffffff" : "#000000";
             
-            let centerX = ((idx + 0.5) / 52) * 1000;
+            let centerX = ((idx + 0.5) / weeksToShow.length) * 1000; // usar 50 como total
             pathD += (idx === 0 ? "M" : " L") + `${centerX} ${100 - (h > 100 ? 100 : h)}`; 
             
-           const labelTooltip = `${isTodayWeek ? '[HOY] ' : ''}CW${weekNum}: ${displayVal}% (${equipsUsedTotal} de ${currentMaxEquips} Equipos)`;
+            const labelTooltip = `${isTodayWeek ? '[HOY] ' : ''}CW${weekNum}: ${displayVal}% (${equipsUsedTotal} de ${currentMaxEquips} Equipos)`;
             return `
                 <div class="stats-week-col" 
                      title="${labelTooltip}" 
@@ -2890,18 +3000,17 @@ async function initApp() {
         await Promise.all([
             db.ref(DB_CAPACITY).once('value').then(snap => {
                 const data = snap.val() || {};
-                
-                // Actualizamos el objeto global que usan las gráficas
-                window.customCapacity = data;
-                
-                // Actualizamos el caché local para consistencia
-                localStorage.setItem('huf_custom_capacity', JSON.stringify(data));
+                const beforeCap = _cloneCap(capacityData);
+                capacityData = data || {};
+                compareCapacityData(beforeCap, capacityData, 'initApp DB_CAPACITY load');
             }),
             db.ref(DB_PROJECTS).once('value').then(snap => {
                 const data = snap.val();
                 projectLogs = [];
                 if(data) Object.keys(data).forEach(k => projectLogs.push({ id: k, ...data[k] }));
-            })
+            }),
+            // Usar la nueva función de precarga (centraliza la lógica)
+            preloadEquipmentCapacity()
         ]);
 
         // 3. Inicializar componentes visuales
@@ -2916,6 +3025,9 @@ async function initApp() {
         
         if (typeof renderAllStats === 'function') renderAllStats();
         if (typeof renderGantt === 'function') renderGantt();
+
+        // Inicializar selectores de capacidad para forzar carga del primer dispositivo
+        try { if (typeof initCapacitySelectors === 'function') initCapacitySelectors(); } catch(e) { console.warn('initCapacitySelectors failed', e); }
 
     } catch (error) {
         console.error("Error al inicializar la app:", error);
@@ -3684,10 +3796,14 @@ function updateCapacityTable(devId) {
                         </thead>
                         <tbody>`;
         
-        let weeksPerCol = Math.ceil(52 / 6);
-        for (let row = 0; row < weeksPerCol; row++) {
-            const w = (col * weeksPerCol) + row + 1;
-            if (w > 52) break;
+        // Generamos la lista de semanas visibles (2..51) y la particionamos en 6 columnas
+        const weeks = [];
+        for (let ww = 2; ww <= 51; ww++) weeks.push(ww);
+        let weeksPerCol = Math.ceil(weeks.length / 6);
+            for (let row = 0; row < weeksPerCol; row++) {
+                const idx = (col * weeksPerCol) + row;
+                if (idx >= weeks.length) break;
+                const w = weeks[idx];
 
             // Buscamos datos según el año y dispositivo
             const val = (window.customCapacity[year] && 
@@ -3772,11 +3888,20 @@ function loadCapacityGrid() {
         
         // Si hay datos remotos, actualizar la memoria
         if (remoteData) {
+            const beforeDev = _cloneCap(window.customCapacity);
             window.customCapacity[year][devId] = remoteData;
+            compareCustomCapacity(beforeDev, window.customCapacity, `loadCapacityGrid remoteData ${year}/${devId}`);
         }
 
-        // Proceder a renderizar
-        renderCapacityGridUI(grid, devId, year);
+                // Proceder a renderizar
+    renderCapacityGridUI(grid, devId, year);
+
+    // Forzar refresco de estadísticas y gráficas usando la nueva capacidad
+    if (typeof renderAllStats === 'function') try { renderAllStats(); } catch(e) { console.warn('renderAllStats error', e); }
+    if (typeof updateUI === 'function') try { updateUI(); } catch(e) { /* optional */ }
+    if (window.charts && window.charts.length) {
+        window.charts.forEach(c => { try { c.update(); } catch(e) {} });
+    }
     });
 }
 
@@ -3798,6 +3923,8 @@ function renderCapacityGridUI(grid, devId, year) {
         for(let i=0; i < weeksInThisMonth; i++) {
             if(weekCounter > 52) break;
             const w = weekCounter;
+                // Ocultar semanas 1 y 52: no renderizamos inputs para esas semanas
+                if (w === 1 || w === 52) { weekCounter++; continue; }
             
             const val = (window.customCapacity[year] && 
                          window.customCapacity[year][devId] && 
@@ -3828,14 +3955,14 @@ function applyValueToAllWeeks() {
 
     Swal.fire({
         title: 'Confirm Action',
-        text: `This will set ${val} units for all 52 weeks. Are you sure?`,
+        text: `This will set ${val} units for all 50 visible weeks (weeks 2..51). Are you sure?`,
         icon: 'warning',
         showCancelButton: true,
         confirmButtonColor: '#555',
         confirmButtonText: 'Yes, change all'
     }).then((result) => {
         if (result.isConfirmed) {
-            for (let w = 1; w <= 52; w++) {
+            for (let w = 2; w <= 51; w++) {
                 const input = document.getElementById(`input-cap-w-${w}`);
                 if (input) input.value = val;
             }
@@ -3876,8 +4003,15 @@ function saveCapacityData() {
         .then(() => {
             if(!window.customCapacity) window.customCapacity = {};
             if(!window.customCapacity[year]) window.customCapacity[year] = {};
+            const beforeSave = _cloneCap(window.customCapacity);
             window.customCapacity[year][devId] = weeklyData; 
             localStorage.setItem('huf_custom_capacity', JSON.stringify(window.customCapacity));
+            compareCustomCapacity(beforeSave, window.customCapacity, `saveCapacityData ${year}/${devId}`);
+
+            // Refrescar vista y gráficas tras guardar
+            if (typeof renderAllStats === 'function') try { renderAllStats(); } catch(e) { console.warn('renderAllStats error', e); }
+            if (typeof updateUI === 'function') try { updateUI(); } catch(e) { }
+            if (window.charts && window.charts.length) window.charts.forEach(c => { try { c.update(); } catch(e) {} });
 
             Swal.fire({
                 icon: 'success',
@@ -4480,16 +4614,18 @@ async function openAnnual() {
         let totalPercentage = 0;
         // Cambiamos el rango: empezamos en idx 1 (Semana 2) y terminamos antes de idx 51 (Semana 51)
         // Esto excluye semana 1 (idx 0) y semana 52 (idx 51)
-        for (let idx = 0; idx < 52; idx++) {
-            const weekNum = idx + 1;
-  const currentMax = getCapacity(dev.id, weekNum, defaultTotalHims);
-            
+        // Excluir semana 1 y 52: tomar índices 1..50 (semanas 2..51)
+        let weeksConsidered = 0;
+        for (let idx = 1; idx <= 50; idx++) {
+            const weekNum = idx + 1; // idx 1 -> semana 2
+            const currentMax = getCapacity(dev.id, weekNum, defaultTotalHims);
             let val = currentMax > 0 ? (occupancyCount[idx] / currentMax) * 100 : 0;
             totalPercentage += val;
+            weeksConsidered++;
         }
 
-        // Dividimos entre 50 en lugar de 52
-        const avgAnnual = Math.round(totalPercentage / 52);
+        // Dividimos entre el número de semanas consideradas (50)
+        const avgAnnual = weeksConsidered > 0 ? Math.round(totalPercentage / weeksConsidered) : 0;
         annualData.push({ name: dev.name, id: dev.id, value: avgAnnual });
     });
             // <button id="download-annual-btn" class="btn-tooling" style="background: var(--huf-red); color: white; padding: 8px 15px; border-radius: 4px; cursor: pointer; border: none; font-weight: bold;">
@@ -4775,7 +4911,8 @@ async function openMonthlyView() {
                 let totalPercentage = 0;
                 let weeksCount = 0;
 
-                for (let week = 1; week <= 52; week++) {
+                // Excluir semana 1 y 52: iterar semanas 2..51
+                for (let week = 2; week <= 51; week++) {
 
                     // fecha representativa de la semana
                     let tempDate = new Date(selectedYear, 0, (week - 1) * 7);
