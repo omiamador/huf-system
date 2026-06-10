@@ -8,7 +8,7 @@ window.huf_devices_config = [
     {
         id: "1",
         name: "CHAMBER SE",
-        hims: ["HIM-1138", "HIM-0941", "HIM-2664", "HIM-2662", "HIM-0916", "HIM-0917", "HIM-1139", "HIM-2663"]
+        hims: ["HIM-1138", "HIM-0941", "HIM-2664", "HIM-0916", "HIM-0917", "HIM-1139"]
     },
 
     /**Thermotron chamber-*/
