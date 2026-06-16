@@ -20,7 +20,6 @@
 
 
     <script src="devices.js"></script>
-    <script src="config.js"></script>
     <style>
         :root { 
             --huf-red: #aa1c25; 
@@ -29,7 +28,7 @@
             --today-blue: #00ff4c; 
             --success-green: #28a745; 
             --warning-orange: #ffc107; 
-            --maint-purple: #6f42c1;
+            --maint-purple: #6f42c1;    
             --priority-high: #ff4d4d;
             --priority-med: #ffc107;
             --priority-low: #28a745;
@@ -905,11 +904,13 @@ onkeydown="manejarTeclado(event)" onclick="hideContextMenu()">
             <input type="text" id="userInput" class="input-login" placeholder="User" oninput="limpiarError()">
             <input type="password" id="passInput" class="input-login" placeholder="Password" oninput="limpiarError()">
             <button class="btn-send" onclick="validarAcceso()">ENTER</button>
+            <button class="btn-send" onclick="openRegisterRequestModal()" style="background:#915454; margin-top:8px;">REGISTER USER</button>
         </div>
     </div>
     
 
     <div id="viewMenu" class="view-layer">
+        <button id="btnModeradorUsuarios" class="btn-logout" onclick="openUserAdminPanel()" style="right: 95px; background: var(--huf-red); display:none;">USERS</button>
         <button class="btn-logout" onclick="logout()">LOGOUT</button>
         <div class="login-box">
             <h2>forecast huf system</h2></div>
@@ -1343,6 +1344,7 @@ onkeydown="manejarTeclado(event)" onclick="hideContextMenu()">
     const DB_PROJECTS = "load_hours_projects";
     const DB_CAPACITY = "capacity_settings";
     const DB_CONFIG = "app_config";
+    const DB_USERS = "app_users";
     const DB_TOOLING = 'toolingLogs'; // <--- ESTA ES LA QUE TE FALTA
     const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
     const monthNamesShort = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
@@ -1473,7 +1475,376 @@ onkeydown="manejarTeclado(event)" onclick="hideContextMenu()">
     let selectedDeviceFilter = ""; // device id to filter projects by HIMs
     let himPanelVisible = false; // control para mostrar/ocultar el panel de HIMs
     const CAPACIDAD_REAL = 460;
-    
+
+    let appUsersCache = [];
+    let userSystemBootPromise = null;
+    let currentUserRecord = null;
+
+    function normalizeRole(role) {
+        if (!role) return 'viewer';
+        const map = { moderator: 'moderator', moderador: 'moderator', admin: 'admin', viewer: 'viewer', lector: 'viewer', read: 'viewer', readonly: 'viewer' };
+        return map[String(role).toLowerCase().trim()] || 'viewer';
+    }
+    function isReadOnlyRole(role) { return normalizeRole(role) === 'viewer'; }
+    function isPrivilegedRole(role) { return ['admin', 'moderator'].includes(normalizeRole(role)); }
+    function isModeratorRole(role) { return normalizeRole(role) === 'moderator'; }
+    function escapeHtmlSafe(value) {
+        return String(value ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+    function safeUserKey(value) {
+        return String(value || '').trim().toLowerCase().replace(/[^a-z0-9._-]+/g, '_');
+    }
+    function usersSnapshotToArray(snapshotValue) {
+        const data = snapshotValue || {};
+        return Object.keys(data).map(key => ({ id: key, ...data[key], rol: normalizeRole(data[key]?.rol), estado: data[key]?.estado || 'approved' }));
+    }
+    async function getUsersFromDB(force = false) {
+        if (appUsersCache.length && !force) return appUsersCache;
+        const snap = await db.ref(DB_USERS).once('value');
+        appUsersCache = usersSnapshotToArray(snap.val());
+        return appUsersCache;
+    }
+    function getSeedUsersObject() {
+        return {
+            seed_moderator: { nombre: 'Moderador General', user: 'moderador', pass: 'mod123', rol: 'moderator', estado: 'approved', creadoEn: new Date().toISOString(), creadoPor: 'system' },
+            seed_admin: { nombre: 'Administrador Base', user: 'admin', pass: 'admin123', rol: 'admin', estado: 'approved', creadoEn: new Date().toISOString(), creadoPor: 'system' },
+            seed_viewer: { nombre: 'Usuario Lector', user: 'viewer', pass: 'viewer123', rol: 'viewer', estado: 'approved', creadoEn: new Date().toISOString(), creadoPor: 'system' }
+        };
+    }
+    async function bootUserAccessSystem() {
+        if (userSystemBootPromise) return userSystemBootPromise;
+        userSystemBootPromise = (async () => {
+            try {
+                const usersRef = db.ref(DB_USERS);
+                const snap = await usersRef.once('value');
+                if (!snap.exists()) {
+                    await usersRef.set(getSeedUsersObject());
+                }
+                const freshSnap = await usersRef.once('value');
+                appUsersCache = usersSnapshotToArray(freshSnap.val());
+                usersRef.on('value', (realtimeSnap) => {
+                    appUsersCache = usersSnapshotToArray(realtimeSnap.val());
+                    toggleModeratorUsersButton();
+                });
+            } catch (error) {
+                console.error('bootUserAccessSystem error', error);
+            }
+            return appUsersCache;
+        })();
+        return userSystemBootPromise;
+    }
+    async function ensureUniqueUsername(username, excludedId = null) {
+        const users = await getUsersFromDB(true);
+        const normalized = safeUserKey(username);
+        return !users.some(user => safeUserKey(user.user) === normalized && user.id !== excludedId);
+    }
+    function getCurrentStoredRole() {
+        return normalizeRole(localStorage.getItem('role_huf') || userRole || 'viewer');
+    }
+    function toggleModeratorUsersButton() {
+        const btn = document.getElementById('btnModeradorUsuarios');
+        if (!btn) return;
+        btn.style.display = isModeratorRole(getCurrentStoredRole()) ? 'block' : 'none';
+    }
+    async function openRegisterRequestModal() {
+    await bootUserAccessSystem();
+
+    Swal.fire({
+        title: '<h3 style="margin:0; font-weight:600;">Request User Access</h3>',
+        html: `
+            <div style="text-align: left; padding: 10px 0;">
+                <label style="display:block; margin-bottom:5px; font-weight:500; font-size:14px;">Full Name</label>
+                <input id="reqFullName" class="swal2-input" placeholder="..." style="margin:0 0 15px 0; width:100%; box-sizing:border-box;">
+                
+                <label style="display:block; margin-bottom:5px; font-weight:500; font-size:14px;">Username</label>
+                <input id="reqUser" class="swal2-input" placeholder="Preferent same as windows..." style="margin:0 0 15px 0; width:100%; box-sizing:border-box;">
+                
+                <label style="display:block; margin-bottom:5px; font-weight:500; font-size:14px;">Password</label>
+                <input id="reqPass" class="swal2-input" type="password" placeholder="Minimum 4 characters" style="margin:0 0 15px 0; width:100%; box-sizing:border-box;">
+                
+                <label style="display:block; margin-bottom:5px; font-weight:500; font-size:14px;">Access Level</label>
+                <select id="reqRole" class="swal2-input" style="margin:0 0 15px 0; width:100%; box-sizing:border-box;">
+                    <option value="viewer">Viewer</option>
+                    <option value="admin">Admin</option>
+                </select>
+                
+                <div style="font-size: 13px; color: #666; background: #f9f9f9; padding: 10px; border-radius: 4px; border-left: 4px solid var(--huf-red);">
+                    <strong>Note:</strong> Your account will remain in <em>pending</em> status until verified by an administrator.
+                </div>
+            </div>
+        `,
+        width: '500px',
+        confirmButtonText: 'Submit Request',
+        confirmButtonColor: 'var(--huf-red)',
+        showCancelButton: true,
+        cancelButtonText: 'Cancel',
+        focusConfirm: false,
+        preConfirm: async () => {
+            const nombre = document.getElementById('reqFullName').value.trim();
+            const user = document.getElementById('reqUser').value.trim();
+            const pass = document.getElementById('reqPass').value.trim();
+            const rol = normalizeRole(document.getElementById('reqRole').value);
+
+            if (!nombre || !user || !pass) {
+                Swal.showValidationMessage('Please fill in all required fields.');
+                return false;
+            }
+            if (pass.length < 4) {
+                Swal.showValidationMessage('Password is too short (min 4 characters).');
+                return false;
+            }
+            if (!(await ensureUniqueUsername(user))) {
+                Swal.showValidationMessage('The username is already taken.');
+                return false;
+            }
+            return { nombre, user, pass, rol };
+        }
+    }).then(async result => {
+        if (!result.isConfirmed) return;
+
+        const { nombre, user, pass, rol } = result.value;
+        const newKey = `usr_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+        
+        try {
+            await db.ref(`${DB_USERS}/${newKey}`).set({
+                nombre,
+                user,
+                pass,
+                rol,
+                estado: 'pending',
+                creadoEn: new Date().toISOString(),
+                creadoPor: 'self-request'
+            });
+
+            await getUsersFromDB(true);
+
+            Swal.fire({
+                icon: 'success',
+                title: 'Request Received',
+                text: 'Your registration has been sent. An administrator will review your profile shortly.',
+                confirmButtonColor: 'var(--huf-red)'
+            });
+        } catch (error) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'There was a problem submitting your request. Please try again later.'
+            });
+        }
+    });
+}
+    function buildUsersAdminHtml(users) {
+        const pending = users.filter(u => u.estado === 'pending').sort((a, b) => (a.creadoEn || '').localeCompare(b.creadoEn || ''));
+        const active = users.filter(u => u.estado !== 'pending').sort((a, b) => (a.user || '').localeCompare(b.user || ''));
+        const pendingRows = pending.length ? pending.map(u => `
+            <tr>
+                <td style="padding:8px; border-bottom:1px solid #eee; text-align:left;">${escapeHtmlSafe(u.nombre || '')}</td>
+                <td style="padding:8px; border-bottom:1px solid #eee;">${escapeHtmlSafe(u.user || '')}</td>
+                <td style="padding:8px; border-bottom:1px solid #eee;">
+                    <select data-role-select="${u.id}" style="width:100%; padding:6px;">
+                        <option value="viewer" ${normalizeRole(u.rol) === 'viewer' ? 'selected' : ''}>Viewer</option>
+                        <option value="admin" ${normalizeRole(u.rol) === 'admin' ? 'selected' : ''}>Admin</option>
+                        <option value="moderator" ${normalizeRole(u.rol) === 'moderator' ? 'selected' : ''}>Moderator</option>
+                    </select>
+                </td>
+                <td style="padding:8px; border-bottom:1px solid #eee;"><span style="font-weight:bold; color:#ff9800;">PENDING</span></td>
+                <td style="padding:8px; border-bottom:1px solid #eee; white-space:nowrap;">
+                    <button data-user-action="approve" data-user-id="${u.id}" style="background:#28a745; color:#fff; border:none; padding:6px 10px; border-radius:4px; cursor:pointer; margin-right:6px;">Approve</button>
+                    <button data-user-action="reject" data-user-id="${u.id}" style="background:#aa1c25; color:#fff; border:none; padding:6px 10px; border-radius:4px; cursor:pointer;">Reject</button>
+                </td>
+            </tr>`).join('') : `<tr><td colspan="5" style="padding:12px; color:#666;">No pending requests.</td></tr>`;
+        const activeRows = active.length ? active.map(u => `
+            <tr>
+                <td style="padding:8px; border-bottom:1px solid #eee; text-align:left;">${escapeHtmlSafe(u.nombre || '')}</td>
+                <td style="padding:8px; border-bottom:1px solid #eee;">${escapeHtmlSafe(u.user || '')}</td>
+                <td style="padding:8px; border-bottom:1px solid #eee;">
+                    <select data-role-select-active="${u.id}" style="width:100%; padding:6px;" ${u.user === 'moderador' ? 'disabled' : ''}>
+                        <option value="viewer" ${normalizeRole(u.rol) === 'viewer' ? 'selected' : ''}>Viewer</option>
+                        <option value="admin" ${normalizeRole(u.rol) === 'admin' ? 'selected' : ''}>Admin</option>
+                        <option value="moderator" ${normalizeRole(u.rol) === 'moderator' ? 'selected' : ''}>Moderator</option>
+                    </select>
+                </td>
+                <td style="padding:8px; border-bottom:1px solid #eee;"><span style="font-weight:bold; color:${u.estado === 'approved' ? '#28a745' : '#aa1c25'};">${u.estado === 'approved' ? 'APPROVED' : 'REJECTED'}</span></td>
+                <td style="padding:8px; border-bottom:1px solid #eee; white-space:nowrap;">
+                    ${u.estado === 'approved' ? `<button data-user-action="reset-pending" data-user-id="${u.id}" style="background:#555; color:#fff; border:none; padding:6px 10px; border-radius:4px; cursor:pointer; margin-right:6px;">Pending</button>` : `<button data-user-action="approve" data-user-id="${u.id}" style="background:#28a745; color:#fff; border:none; padding:6px 10px; border-radius:4px; cursor:pointer; margin-right:6px;">Reactivate</button>`}
+                    ${u.user === 'moderador' ? `<button disabled style="background:#999; color:#fff; border:none; padding:6px 10px; border-radius:4px; opacity:.65;">Protected</button>` : `<button data-user-action="delete" data-user-id="${u.id}" style="background:#aa1c25; color:#fff; border:none; padding:6px 10px; border-radius:4px; cursor:pointer;">Delete</button>`}
+                </td>
+            </tr>`).join('') : `<tr><td colspan="5" style="padding:12px; color:#666;">No users found.</td></tr>`;
+        return `
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:12px;">
+                <div style="font-size:12px; color:#555; text-align:left;">Moderator can approve requests, assign roles and create users directly without touching the current UI or project functions.</div>
+                <button id="btnCreateDirectUser" style="background:var(--huf-red); color:#fff; border:none; padding:8px 14px; border-radius:6px; cursor:pointer; font-weight:bold;">+ CREATE USER</button>
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:18px; text-align:left;">
+                <div>
+                    <h3 style="margin:0 0 10px 0; color:#aa1c25; font-size:16px;">Pending Requests</h3>
+                    <div style="max-height:360px; overflow:auto; border:1px solid #ddd; border-radius:8px;">
+                        <table style="width:100%; min-width:620px; border-collapse:collapse;">
+                            <thead><tr><th style="background:#555; color:#fff; padding:10px;">Name</th><th style="background:#555; color:#fff; padding:10px;">User</th><th style="background:#555; color:#fff; padding:10px;">Role</th><th style="background:#555; color:#fff; padding:10px;">Status</th><th style="background:#555; color:#fff; padding:10px;">Action</th></tr></thead>
+                            <tbody>${pendingRows}</tbody>
+                        </table>
+                    </div>
+                </div>
+                <div>
+                    <h3 style="margin:0 0 10px 0; color:#aa1c25; font-size:16px;">Registered Users</h3>
+                    <div style="max-height:360px; overflow:auto; border:1px solid #ddd; border-radius:8px;">
+                        <table style="width:100%; min-width:620px; border-collapse:collapse;">
+                            <thead><tr><th style="background:#555; color:#fff; padding:10px;">Name</th><th style="background:#555; color:#fff; padding:10px;">User</th><th style="background:#555; color:#fff; padding:10px;">Role</th><th style="background:#555; color:#fff; padding:10px;">Status</th><th style="background:#555; color:#fff; padding:10px;">Action</th></tr></thead>
+                            <tbody>${activeRows}</tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>`;
+    }
+    async function wireUserAdminPanelEvents() {
+        const modal = Swal.getHtmlContainer();
+        if (!modal) return;
+        const bindAction = (selector, handler) => modal.querySelectorAll(selector).forEach(el => el.addEventListener('click', handler));
+        const bindChange = (selector, handler) => modal.querySelectorAll(selector).forEach(el => el.addEventListener('change', handler));
+        const createBtn = modal.querySelector('#btnCreateDirectUser');
+        if (createBtn) createBtn.addEventListener('click', openCreateUserModal);
+        bindAction('[data-user-action]', async (ev) => {
+            const action = ev.currentTarget.getAttribute('data-user-action');
+            const id = ev.currentTarget.getAttribute('data-user-id');
+            if (!id) return;
+            if (action === 'delete') await deleteManagedUser(id);
+            if (action === 'approve') await approveManagedUser(id);
+            if (action === 'reject') await rejectManagedUser(id);
+            if (action === 'reset-pending') await setManagedUserPending(id);
+        });
+        bindChange('[data-role-select]', async (ev) => {
+            await updateManagedUserRole(ev.currentTarget.getAttribute('data-role-select'), ev.currentTarget.value);
+        });
+        bindChange('[data-role-select-active]', async (ev) => {
+            await updateManagedUserRole(ev.currentTarget.getAttribute('data-role-select-active'), ev.currentTarget.value);
+        });
+    }
+    async function refreshUserAdminPanel() {
+        if (!Swal.isVisible()) return;
+        const users = await getUsersFromDB(true);
+        const html = buildUsersAdminHtml(users);
+        const modal = Swal.getHtmlContainer();
+        if (modal) {
+            modal.innerHTML = html;
+            await wireUserAdminPanelEvents();
+        }
+    }
+    async function openUserAdminPanel() {
+        await bootUserAccessSystem();
+        if (!isModeratorRole(getCurrentStoredRole())) {
+            Swal.fire({ icon:'error', title:'Restricted', text:'Only moderator can manage new users.', confirmButtonColor:'var(--huf-red)' });
+            return;
+        }
+        const users = await getUsersFromDB(true);
+        Swal.fire({
+            title: '<span style="color:#aa1c25">User Access Control</span>',
+            width: '95%',
+            maxWidth: '1280px',
+            showConfirmButton: false,
+            showCloseButton: true,
+            html: buildUsersAdminHtml(users),
+            didOpen: wireUserAdminPanelEvents
+        });
+    }
+    async function approveManagedUser(id) {
+        const modal = Swal.getHtmlContainer();
+        const roleSelect = modal ? modal.querySelector(`[data-role-select="${id}"]`) : null;
+        const chosenRole = roleSelect ? normalizeRole(roleSelect.value) : null;
+        const activeRoleSelect = modal ? modal.querySelector(`[data-role-select-active="${id}"]`) : null;
+        const finalRole = chosenRole || (activeRoleSelect ? normalizeRole(activeRoleSelect.value) : null);
+        const payload = { estado: 'approved', aprobadoEn: new Date().toISOString(), aprobadoPor: localStorage.getItem('user_name_huf') || userSession || 'moderator' };
+        if (finalRole) payload.rol = finalRole;
+        await db.ref(`${DB_USERS}/${id}`).update(payload);
+        await refreshUserAdminPanel();
+    }
+    async function rejectManagedUser(id) {
+        await db.ref(`${DB_USERS}/${id}`).update({ estado: 'rejected', rechazadoEn: new Date().toISOString(), aprobadoPor: localStorage.getItem('user_name_huf') || userSession || 'moderator' });
+        await refreshUserAdminPanel();
+    }
+    async function setManagedUserPending(id) {
+        await db.ref(`${DB_USERS}/${id}`).update({ estado: 'pending' });
+        await refreshUserAdminPanel();
+    }
+    async function deleteManagedUser(id) {
+        const users = await getUsersFromDB(true);
+        const target = users.find(u => u.id === id);
+        if (!target) return;
+        if (target.user === 'moderador') {
+            Swal.fire({ icon:'warning', title:'Protected user', text:'The seed moderator cannot be deleted.', confirmButtonColor:'var(--huf-red)' });
+            return;
+        }
+        const ok = await Swal.fire({ icon:'warning', title:'Delete user?', text:`${target.user} will be removed permanently.`, showCancelButton:true, confirmButtonColor:'var(--huf-red)' });
+        if (!ok.isConfirmed) return;
+        await db.ref(`${DB_USERS}/${id}`).remove();
+        await refreshUserAdminPanel();
+    }
+    async function updateManagedUserRole(id, role) {
+        if (!id) return;
+        await db.ref(`${DB_USERS}/${id}`).update({ rol: normalizeRole(role) });
+        const currentId = localStorage.getItem('user_id_huf');
+        if (currentId && currentId === id) {
+            const newRole = normalizeRole(role);
+            localStorage.setItem('role_huf', newRole);
+            userRole = newRole;
+            aplicarRestriccionesRol();
+            toggleModeratorUsersButton();
+        }
+    }
+    async function openCreateUserModal() {
+        const result = await Swal.fire({
+            title: 'Create User',
+            width: '560px',
+            confirmButtonColor: 'var(--huf-red)',
+            focusConfirm: false,
+            html: `
+                <input id="createFullName" class="swal2-input" placeholder="Full Name">
+                <input id="createUser" class="swal2-input" placeholder="User">
+                <input id="createPass" class="swal2-input" type="password" placeholder="Password">
+                <select id="createRole" class="swal2-input">
+                    <option value="viewer">Viewer</option>
+                    <option value="admin">Admin</option>
+                    <option value="moderator">Moderator</option>
+                </select>
+            `,
+            preConfirm: async () => {
+                const nombre = document.getElementById('createFullName').value.trim();
+                const user = document.getElementById('createUser').value.trim();
+                const pass = document.getElementById('createPass').value.trim();
+                const rol = normalizeRole(document.getElementById('createRole').value);
+                if (!nombre || !user || !pass) {
+                    Swal.showValidationMessage('Complete all fields.');
+                    return false;
+                }
+                if (pass.length < 4) {
+                    Swal.showValidationMessage('Password must contain at least 4 characters.');
+                    return false;
+                }
+                if (!(await ensureUniqueUsername(user))) {
+                    Swal.showValidationMessage('That username already exists.');
+                    return false;
+                }
+                return { nombre, user, pass, rol };
+            }
+        });
+        if (!result.isConfirmed || !result.value) return;
+        const newKey = `usr_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+        await db.ref(`${DB_USERS}/${newKey}`).set({
+            nombre: result.value.nombre,
+            user: result.value.user,
+            pass: result.value.pass,
+            rol: result.value.rol,
+            estado: 'approved',
+            creadoEn: new Date().toISOString(),
+            creadoPor: localStorage.getItem('user_name_huf') || userSession || 'moderator'
+        });
+        await openUserAdminPanel();
+    }
+
 db.ref('toolingProjects').on('value', (snapshot) => {
         toolingProjects = snapshot.val() || [];
      
@@ -1537,7 +1908,7 @@ db.ref('toolingProjects').on('value', (snapshot) => {
 function guardarCambios() {
     // 1. VALIDACIÓN DE SEGURIDAD (Nivel de Datos)
     // Verificamos si el rol guardado en localStorage es diferente de 'admin'
-    if (localStorage.getItem('role_huf') !== 'admin') {
+    if (!isPrivilegedRole(localStorage.getItem('role_huf'))) {
         Swal.fire({
             icon: 'error',
             title: 'Access Denied',
@@ -1724,29 +2095,31 @@ function guardarCambios() {
 
 let userRole = 'viewer'; // Variable global de control
 
-function validarAcceso() {
-    const u = document.getElementById('userInput').value;
+async function validarAcceso() {
+    await bootUserAccessSystem();
+    const u = document.getElementById('userInput').value.trim();
     const p = document.getElementById('passInput').value;
-    
-    // Buscamos el usuario en la lista de config.js
-    const user = (window.usuarios_password || []).find(item => item.user === u && item.pass === p);
-    
+    const users = await getUsersFromDB(true);
+    const user = users.find(item => String(item.user || '').trim() === u && String(item.pass || '') === p);
     if (user) {
-        userSession = user.nombre;
-        userRole = user.rol || 'viewer'; // Si no tiene rol definido, por defecto es lector
-        
-        // Guardamos en localStorage para persistencia
+        if (user.estado === 'pending') {
+            return Swal.fire({ icon: 'info', title: 'Pending approval', text: 'Your access request is still waiting for moderator approval.', confirmButtonColor: 'var(--huf-red)' });
+        }
+        if (user.estado === 'rejected') {
+            return Swal.fire({ icon: 'warning', title: 'Access rejected', text: 'Your user is rejected. Ask the moderator to reactivate it.', confirmButtonColor: 'var(--huf-red)' });
+        }
+        currentUserRecord = user;
+        userSession = user.nombre || user.user;
+        userRole = normalizeRole(user.rol || 'viewer');
         localStorage.setItem('role_huf', userRole);
-
-        // Aplicamos el bloqueo visual inmediatamente
+        localStorage.setItem('user_id_huf', user.id);
+        localStorage.setItem('user_name_huf', userSession);
         aplicarRestriccionesRol();
-
+        toggleModeratorUsersButton();
         const card = document.getElementById('mainCard');
         card.classList.remove('card-login');
-        
         popularDeviceTypes(); 
         showModule('viewMenu');
-        
         const configCalendario = {
             weekNumbers: true, 
             dateFormat: "Y-m-d",
@@ -1755,20 +2128,16 @@ function validarAcceso() {
                 if(typeof revisarConflictoRealTime === "function") revisarConflictoRealTime();
             }
         };
-
-        flatpickr("#toolStart", configCalendario);
-        flatpickr("#shutStart, #shutEnd, #maintStart, #maintEnd", { 
-            weekNumbers: true, 
-            dateFormat: "Y-m-d" 
-        });
-        
-        console.log("Acceso concedido como: " + userRole);
+        try {
+            flatpickr("#toolStart", configCalendario);
+            flatpickr("#shutStart, #shutEnd, #maintStart, #maintEnd", { weekNumbers: true, dateFormat: "Y-m-d" });
+        } catch (err) { console.warn('flatpickr init skipped', err); }
+        console.log('Acceso concedido como: ' + userRole);
     } else { 
         document.getElementById('loginError').style.display = 'block'; 
     }
 }
-    function logout() { userSession = ""; showModule('viewLogin'); if(backupTimer) clearInterval(backupTimer); document.getElementById('mainCard').classList.add('card-login');
-    showModule('viewLogin');
+    function logout() { userSession = ""; currentUserRecord = null; userRole = 'viewer'; localStorage.removeItem('role_huf'); localStorage.removeItem('user_id_huf'); localStorage.removeItem('user_name_huf'); if(backupTimer) clearInterval(backupTimer); document.getElementById('mainCard').classList.add('card-login'); aplicarRestriccionesRol(); toggleModeratorUsersButton(); showModule('viewLogin');
 }
     
     function manejarTeclado(event) {
@@ -4542,16 +4911,17 @@ function editBarFull(pIdx, aIdx, tIdx) {
 }
 function aplicarRestriccionesRol() {
     const role = localStorage.getItem('role_huf') || userRole;
-    if (role === 'viewer') {
+    if (isReadOnlyRole(role)) {
         document.body.classList.add('is-readonly');
     } else {
         document.body.classList.remove('is-readonly');
     }
+    toggleModeratorUsersButton();
 }
 function accesoEquipment() {
     const role = localStorage.getItem('role_huf');
 
-    if (role === 'admin') {
+    if (isPrivilegedRole(role)) {
         // Si es admin, va al editor completo
         showModule('viewTooling'); 
     } else {
@@ -4566,7 +4936,7 @@ function accesoEquipment() {
 function volverAtras() {
     const role = localStorage.getItem('role_huf');
 
-    if (role === 'admin') {
+    if (isPrivilegedRole(role)) {
         // El administrador regresa a la tabla de edición
         showModule('viewTooling');
     } else {
@@ -5052,6 +5422,11 @@ async function openMonthlyView() {
     window.renderMonthlyContent('all');
 }
 
+
+bootUserAccessSystem().then(() => {
+    aplicarRestriccionesRol();
+    toggleModeratorUsersButton();
+}).catch(err => console.warn('User system bootstrap failed', err));
 </script>
 </body>
 </html>
