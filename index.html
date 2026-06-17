@@ -876,6 +876,18 @@ body.is-readonly select.admin-only {
     </style>
 
     
+
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#aa1c25">
+    <meta name="color-scheme" content="light">
+    <meta name="description" content="HUF System Hub - Forecast, equipment, maintenance, shutdown and manpower planning.">
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="dns-prefetch" href="//www.gstatic.com">
+    <link rel="dns-prefetch" href="//cdn.jsdelivr.net">
+
 </head>
 <body 
 
@@ -903,8 +915,15 @@ onkeydown="manejarTeclado(event)" onclick="hideContextMenu()">
             <div id="loginError">⚠️ Invalid User or Password</div>
             <input type="text" id="userInput" class="input-login" placeholder="User" oninput="limpiarError()">
             <input type="password" id="passInput" class="input-login" placeholder="Password" oninput="limpiarError()">
-            <button class="btn-send" onclick="validarAcceso()">ENTER</button>
-            <button class="btn-send" onclick="openRegisterRequestModal()" style="background:#915454; margin-top:8px;">REGISTER USER</button>
+            <button class="btn-send" onclick="validarAcceso()">Sign In</button>
+
+        <div class="register-hint" style="margin-top: 20px; text-align: center; font-size: 0.9em; color: #555;">
+            <p>Don't have an account yet?</p>
+            <p>Click below to register in the system and obtain your credentials.</p>
+        
+            
+            <button class="btn-send" onclick="openRegisterRequestModal()">Create Account</button>
+            </div>
         </div>
     </div>
     
@@ -923,15 +942,31 @@ onkeydown="manejarTeclado(event)" onclick="hideContextMenu()">
 
 
 <div id="viewStats" class="view-layer">
-    <button class="btn-back" onclick="volverAtras()">⬅ BACK</button>
-
-    
+    <button class="btn-back" onclick="volverAtras()">⬅ BACK</button>      
     <h2>HUF MX - FORECAST DEVICES TYPE</h2>
-        <button class="btn-tool admin-only" style="background:var(--huf-red); margin-left:00px;" onclick="goToCapacityEditor()">⚙️ EDIT CAPACITY</button>
-        <button class="btn-tool admin-only" style="background:var(--huf-red); margin-left:00px;" onclick="openAnnual()">⚙️ VIEW ANNUAL</button>
-        <button class="btn-tool admin-only" style="background:var(--huf-red); margin-left:00px;" onclick="openMonthlyView()">📅 VIEW MONTHLY</button>
+
+    <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:15px;">
+        <button class="btn-tool admin-only" style="background:var(--huf-red);" onclick="goToCapacityEditor()">⚙️ EDIT CAPACITY</button>
+        <button class="btn-tool" style="background:var(--huf-red);" onclick="openAnnual()">⚙️ VIEW ANNUAL</button>
+        <button class="btn-tool" style="background:var(--huf-red);" onclick="openMonthlyView()">📅 VIEW MONTHLY</button>
+
+        <div style="display:flex; align-items:center; gap:8px; margin-left:auto;">
+            <label for="statsYearSelector" style="font-weight:bold; font-size:12px; margin:0;">YEAR</label>
+            <select id="statsYearSelector"
+                    onchange="changeStatsYear(this.value)"
+                    style="padding:5px; border-radius:4px;">
+                <option value="2024">2024</option>
+                <option value="2025">2025</option>
+                <option value="2026" selected>2026</option>
+                <option value="2027">2027</option>
+                <option value="2028">2028</option>
+            </select>
+        </div>
+    </div>
+
     <div id="statsMainContainer" class="stats-view-container"></div>
 </div>
+
 
 
     
@@ -5427,6 +5462,244 @@ bootUserAccessSystem().then(() => {
     aplicarRestriccionesRol();
     toggleModeratorUsersButton();
 }).catch(err => console.warn('User system bootstrap failed', err));
+
+function changeStatsYear(year) {
+    selectedYear = parseInt(year, 10);
+
+    // Sincroniza el selector de Tooling si existe
+    const toolingYearSelector = document.getElementById('yearSelector');
+    if (toolingYearSelector) {
+        toolingYearSelector.value = selectedYear;
+    }
+
+    // Sincroniza el selector de Stats
+    const statsYearSelector = document.getElementById('statsYearSelector');
+    if (statsYearSelector) {
+        statsYearSelector.value = selectedYear;
+    }
+
+    // Redibuja las gráficas de Forecast Devices Type
+    if (typeof renderAllStats === 'function') {
+        renderAllStats();
+    }
+}
+
+
+/* ========= NON-INVASIVE QUALITY IMPROVEMENTS (ADD-ON ONLY) ========= */
+(function () {
+    const HUF_ENHANCEMENT_VERSION = '1.0.0';
+    const DRAFT_STORAGE_KEY = 'huf_system_hub_drafts_v1';
+    const DRAFT_FIELDS = [
+        'toolProject', 'toolTask', 'toolStart', 'toolDays', 'deviceType', 'toolHIM',
+        'projectName', 'projectNumber', 'projectYear', 'priority', 'projectStatus',
+        'projectLocation', 'projectComments', 'projectPO', 'maintDeviceType', 'maintHIM',
+        'maintStart', 'maintEnd', 'maintDesc', 'shutStart', 'shutEnd',
+        'ganttSearch', 'fName', 'fNum', 'fComm', 'fPO', 'userInput'
+    ];
+    let draftDirty = false;
+
+    function safeGet(id) {
+        try { return document.getElementById(id); } catch (e) { return null; }
+    }
+
+    function readDrafts() {
+        try {
+            return JSON.parse(localStorage.getItem(DRAFT_STORAGE_KEY) || '{}');
+        } catch (e) {
+            console.warn('Draft read error', e);
+            return {};
+        }
+    }
+
+    function writeDrafts(data) {
+        try {
+            localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(data || {}));
+        } catch (e) {
+            console.warn('Draft write error', e);
+        }
+    }
+
+    function captureDrafts() {
+        const bag = readDrafts();
+        DRAFT_FIELDS.forEach(id => {
+            const el = safeGet(id);
+            if (!el) return;
+            if (typeof el.value !== 'undefined') {
+                bag[id] = el.value;
+            }
+        });
+        writeDrafts(bag);
+        draftDirty = Object.values(bag).some(v => String(v || '').trim() !== '');
+    }
+
+    function restoreDrafts() {
+        const bag = readDrafts();
+        Object.entries(bag).forEach(([id, value]) => {
+            const el = safeGet(id);
+            if (!el || typeof el.value === 'undefined') return;
+            if (!String(el.value || '').trim() && String(value || '').trim()) {
+                el.value = value;
+                el.dispatchEvent(new Event('change', { bubbles: true }));
+                el.dispatchEvent(new Event('input', { bubbles: true }));
+            }
+        });
+        draftDirty = Object.values(bag).some(v => String(v || '').trim() !== '');
+    }
+
+    function clearRelevantDrafts(ids) {
+        const bag = readDrafts();
+        (ids || []).forEach(id => delete bag[id]);
+        writeDrafts(bag);
+        draftDirty = Object.values(bag).some(v => String(v || '').trim() !== '');
+    }
+
+    function attachDraftPersistence() {
+        DRAFT_FIELDS.forEach(id => {
+            const el = safeGet(id);
+            if (!el || el.dataset.hufDraftBound === '1') return;
+            const handler = () => captureDrafts();
+            el.addEventListener('input', handler, { passive: true });
+            el.addEventListener('change', handler, { passive: true });
+            el.dataset.hufDraftBound = '1';
+        });
+    }
+
+    function enhanceAccessibility() {
+        const map = {
+            userInput: { 'aria-label': 'User', autocomplete: 'username', autocapitalize: 'off', spellcheck: 'false' },
+            passInput: { 'aria-label': 'Password', autocomplete: 'current-password' },
+            ganttSearch: { 'aria-label': 'Search project or HIM', autocomplete: 'off', autocapitalize: 'off', spellcheck: 'false' },
+            toolProject: { 'aria-label': 'Project Name', autocomplete: 'off' },
+            toolTask: { 'aria-label': 'Activity', autocomplete: 'off' },
+            maintDesc: { 'aria-label': 'Maintenance Description', autocomplete: 'off' },
+            projectName: { 'aria-label': 'Project Name Description', autocomplete: 'off' },
+            projectNumber: { 'aria-label': 'Project Number', autocomplete: 'off' },
+            projectComments: { 'aria-label': 'Comments', autocomplete: 'off' },
+            projectPO: { 'aria-label': 'PO', autocomplete: 'off' },
+            fName: { 'aria-label': 'Filter by project', autocomplete: 'off' },
+            fNum: { 'aria-label': 'Filter by project number', autocomplete: 'off' },
+            fComm: { 'aria-label': 'Filter by comments', autocomplete: 'off' },
+            fPO: { 'aria-label': 'Filter by PO', autocomplete: 'off' }
+        };
+        Object.entries(map).forEach(([id, attrs]) => {
+            const el = safeGet(id);
+            if (!el) return;
+            Object.entries(attrs).forEach(([key, value]) => el.setAttribute(key, value));
+        });
+        const loginBtn = document.querySelector('#viewLogin .btn-send');
+        if (loginBtn) loginBtn.setAttribute('aria-label', 'Enter the system');
+    }
+
+    function installQualityHotkeys() {
+        if (window.__hufHotkeysInstalled) return;
+        window.__hufHotkeysInstalled = true;
+        document.addEventListener('keydown', function (event) {
+            const key = (event.key || '').toLowerCase();
+            if ((event.ctrlKey || event.metaKey) && key === 'k') {
+                const candidates = ['ganttSearch', 'fName', 'toolProject', 'projectName'];
+                const target = candidates.map(safeGet).find(el => el && el.offsetParent !== null);
+                if (target) {
+                    event.preventDefault();
+                    target.focus();
+                    if (typeof target.select === 'function') target.select();
+                }
+            }
+            if (event.key === 'Escape') {
+                try { if (typeof hideContextMenu === 'function') hideContextMenu(); } catch (e) {}
+                try { if (window.Swal && Swal.isVisible()) Swal.close(); } catch (e) {}
+            }
+        }, { passive: false });
+    }
+
+    function installUnsavedGuard() {
+        if (window.__hufUnloadGuardInstalled) return;
+        window.__hufUnloadGuardInstalled = true;
+        window.addEventListener('beforeunload', function (event) {
+            if (!draftDirty) return;
+            event.preventDefault();
+            event.returnValue = '';
+        });
+    }
+
+    function installErrorBoundary() {
+        if (window.__hufErrorBoundaryInstalled) return;
+        window.__hufErrorBoundaryInstalled = true;
+        window.addEventListener('error', function (event) {
+            console.error('[HUF System Hub][' + HUF_ENHANCEMENT_VERSION + '] Runtime error:', event.error || event.message);
+        });
+        window.addEventListener('unhandledrejection', function (event) {
+            console.error('[HUF System Hub][' + HUF_ENHANCEMENT_VERSION + '] Promise rejection:', event.reason);
+        });
+    }
+
+    function installPeriodicBindingRefresh() {
+        setInterval(() => {
+            attachDraftPersistence();
+            enhanceAccessibility();
+        }, 1500);
+    }
+
+    function wrapFunction(functionName, afterRun) {
+        const originalFn = window[functionName];
+        if (typeof originalFn !== 'function' || originalFn.__wrappedByHufEnhancements) return;
+        const wrapped = function () {
+            const result = originalFn.apply(this, arguments);
+            try { afterRun.apply(this, arguments); } catch (e) { console.warn(functionName + ' enhancement hook error', e); }
+            return result;
+        };
+        wrapped.__wrappedByHufEnhancements = true;
+        window[functionName] = wrapped;
+    }
+
+    function patchSaveActions() {
+        wrapFunction('addToolingRow', function () {
+            clearRelevantDrafts(['toolProject', 'toolTask', 'toolStart', 'toolDays', 'deviceType', 'toolHIM']);
+        });
+        wrapFunction('saveData', function () {
+            clearRelevantDrafts(['projectName', 'projectNumber', 'projectYear', 'priority', 'projectStatus', 'projectLocation', 'projectComments', 'projectPO']);
+        });
+        wrapFunction('setMaintenance', function () {
+            clearRelevantDrafts(['maintDeviceType', 'maintHIM', 'maintStart', 'maintEnd', 'maintDesc']);
+        });
+        wrapFunction('setShutdown', function () {
+            clearRelevantDrafts(['shutStart', 'shutEnd']);
+        });
+        wrapFunction('logout', function () {
+            clearRelevantDrafts(['userInput']);
+        });
+    }
+
+    function bootNonInvasiveEnhancements() {
+        enhanceAccessibility();
+        restoreDrafts();
+        attachDraftPersistence();
+        installQualityHotkeys();
+        installUnsavedGuard();
+        installErrorBoundary();
+        patchSaveActions();
+        installPeriodicBindingRefresh();
+        console.info('[HUF System Hub] Non-invasive enhancements loaded:', {
+            version: HUF_ENHANCEMENT_VERSION,
+            features: [
+                'viewport-meta',
+                'resource-preconnect',
+                'accessibility-attributes',
+                'draft-autosave-restore',
+                'unsaved-changes-guard',
+                'keyboard-shortcuts',
+                'global-error-boundary'
+            ]
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', bootNonInvasiveEnhancements, { once: true });
+    } else {
+        bootNonInvasiveEnhancements();
+    }
+})();
+/* ========= END NON-INVASIVE QUALITY IMPROVEMENTS ========= */
+
 </script>
 </body>
 </html>
